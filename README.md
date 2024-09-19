@@ -63,7 +63,7 @@ git clone https://github.com/husarion/panther-navigation
 
 ```bash
 xhost +local:docker
-export POINTCLOUD2_TOPIC={/point_cloud_topic} # change topic name to match your lidar pointcloud2 topic
+export POINTCLOUD2_TOPIC=/velodyne_points # change topic name to match your lidar pointcloud2 topic
 export SLAM=True # if you have map you can run navigation without SLAM
 export USE_SIM_TIME=True
 ```
