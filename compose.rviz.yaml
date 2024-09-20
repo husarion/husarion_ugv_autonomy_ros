@@ -1,6 +1,6 @@
 services:
   rviz:
-    image: husarion/rviz2:humble-11.2.4
+    image: husarion/rviz2:humble-11.2.11-20240320
     container_name: rviz2
     network_mode: host
     ipc: host
