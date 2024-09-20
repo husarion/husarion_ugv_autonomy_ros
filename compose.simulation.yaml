@@ -1,6 +1,6 @@
 services:
   panther_gazebo:
-    image: husarion/panther-gazebo:humble-ros2-devel
+    image: husarion/panther-gazebo:humble-2.1.1-20240828
     container_name: panther_gazebo
     network_mode: host
     runtime: nvidia
