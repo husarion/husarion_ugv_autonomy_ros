@@ -8,6 +8,7 @@ services:
       - ./maps:/maps
     environment:
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - POINTCLOUD2_TOPIC=${POINTCLOUD2_TOPIC:-err}
       - SAVE_MAP_PERIOD=${SAVE_MAP_PERIOD-10}
     command: >
       ros2 launch nav2_bringup bringup_launch.py
