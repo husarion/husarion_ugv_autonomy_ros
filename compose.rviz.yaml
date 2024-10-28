@@ -12,3 +12,6 @@ services:
       - ROS_DOMAIN_ID=0
       - DISPLAY=${DISPLAY:?err}
       - LIBGL_ALWAYS_SOFTWARE=1
+    command: >
+      rviz2 --ros-args
+        -r __ns:=/panther

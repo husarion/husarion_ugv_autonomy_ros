@@ -3,9 +3,14 @@ Panels:
     Help Height: 0
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /Global Options1
+        - /Maps1/Map1/Topic1
+        - /Maps1/Map1/Update Topic1
+        - /Maps1/Global Map1/Topic1
+        - /Maps1/Local Map1/Topic1
       Splitter Ratio: 0.6294117569923401
-    Tree Height: 898
+    Tree Height: 607
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -53,37 +58,7 @@ Visualization Manager:
               Show Axes: false
               Show Trail: false
               Value: true
-            camera_color_frame:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            camera_color_optical_frame:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            camera_depth_frame:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            camera_depth_optical_frame:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            camera_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-            camera_orbbec_astra_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
             cover_link:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
-              Value: true
-            fl_range:
               Alpha: 1
               Show Axes: false
               Show Trail: false
@@ -92,24 +67,28 @@ Visualization Manager:
               Show Axes: false
               Show Trail: false
               Value: true
-            fr_range:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
             fr_wheel_link:
               Alpha: 1
               Show Axes: false
               Show Trail: false
               Value: true
+            front_bumper_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
             imu_link:
               Alpha: 1
               Show Axes: false
               Show Trail: false
-            laser:
+            lights_channel_1_link:
               Alpha: 1
               Show Axes: false
               Show Trail: false
-            rl_range:
+            lights_channel_2_link:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+            rear_bumper_link:
               Alpha: 1
               Show Axes: false
               Show Trail: false
@@ -118,16 +97,16 @@ Visualization Manager:
               Show Axes: false
               Show Trail: false
               Value: true
-            rr_range:
-              Alpha: 1
-              Show Axes: false
-              Show Trail: false
             rr_wheel_link:
               Alpha: 1
               Show Axes: false
               Show Trail: false
               Value: true
-            slamtec_rplidar_a2_link:
+            velodyne:
+              Alpha: 1
+              Show Axes: false
+              Show Trail: false
+            velodyne_puck_link:
               Alpha: 1
               Show Axes: false
               Show Trail: false
@@ -136,7 +115,7 @@ Visualization Manager:
             Inertia: false
             Mass: false
           Name: Robot Model
-          TF Prefix: ""
+          TF Prefix: panther
           Update Interval: 0
           Value: true
           Visual Enabled: true
@@ -154,19 +133,74 @@ Visualization Manager:
             Value: local_costmap/published_footprint
           Value: true
         - Class: rviz_default_plugins/TF
-          Enabled: false
+          Enabled: true
           Frame Timeout: 15
           Frames:
             All Enabled: false
+            panther/base_link:
+              Value: true
+            panther/body_link:
+              Value: true
+            panther/cover_link:
+              Value: true
+            panther/fl_wheel_link:
+              Value: true
+            panther/fr_wheel_link:
+              Value: true
+            panther/front_bumper_link:
+              Value: true
+            panther/imu_link:
+              Value: true
+            panther/lights_channel_1_link:
+              Value: true
+            panther/lights_channel_2_link:
+              Value: true
+            panther/map:
+              Value: true
+            panther/odom:
+              Value: true
+            panther/rear_bumper_link:
+              Value: true
+            panther/rl_wheel_link:
+              Value: true
+            panther/rr_wheel_link:
+              Value: true
+            panther/velodyne:
+              Value: true
+            panther/velodyne_puck_link:
+              Value: true
           Marker Scale: 0.4000000059604645
           Name: TF
           Show Arrows: true
           Show Axes: true
           Show Names: false
           Tree:
-            {}
+            panther/map:
+              panther/odom:
+                panther/base_link:
+                  panther/body_link:
+                    panther/cover_link:
+                      panther/velodyne_puck_link:
+                        panther/velodyne:
+                          {}
+                    panther/fl_wheel_link:
+                      {}
+                    panther/fr_wheel_link:
+                      {}
+                    panther/front_bumper_link:
+                      panther/lights_channel_1_link:
+                        {}
+                    panther/imu_link:
+                      {}
+                    panther/rear_bumper_link:
+                      panther/lights_channel_2_link:
+                        {}
+                    panther/rl_wheel_link:
+                      {}
+                    panther/rr_wheel_link:
+                      {}
           Update Interval: 0
-          Value: false
+          Value: true
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -201,6 +235,40 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: false
+        - Alpha: 1
+          Autocompute Intensity Bounds: true
+          Autocompute Value Bounds:
+            Max Value: 10
+            Min Value: -10
+            Value: true
+          Axis: Z
+          Channel Name: intensity
+          Class: rviz_default_plugins/PointCloud2
+          Color: 255; 255; 255
+          Color Transformer: Intensity
+          Decay Time: 0
+          Enabled: false
+          Invert Rainbow: false
+          Max Color: 255; 255; 255
+          Max Intensity: 0
+          Min Color: 0; 0; 0
+          Min Intensity: 0
+          Name: PointCloud2
+          Position Transformer: XYZ
+          Selectable: true
+          Size (Pixels): 3
+          Size (m): 0.009999999776482582
+          Style: Flat Squares
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: velodyne_points
+          Use Fixed Frame: true
+          Use rainbow: true
+          Value: false
       Enabled: true
       Name: Robot
     - Class: rviz_common/Group
@@ -224,8 +292,6 @@ Visualization Manager:
           Reference Frame: <Fixed Frame>
           Value: true
         - Alpha: 0.699999988079071
-          Binary representation: false
-          Binary threshold: 100
           Class: rviz_default_plugins/Map
           Color Scheme: map
           Draw Behind: false
@@ -233,7 +299,7 @@ Visualization Manager:
           Name: Map
           Topic:
             Depth: 1
-            Durability Policy: System Default
+            Durability Policy: Transient Local
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
@@ -247,8 +313,6 @@ Visualization Manager:
           Use Timestamp: false
           Value: true
         - Alpha: 0.30000001192092896
-          Binary representation: false
-          Binary threshold: 100
           Class: rviz_default_plugins/Map
           Color Scheme: costmap
           Draw Behind: false
@@ -256,10 +320,10 @@ Visualization Manager:
           Name: Global Map
           Topic:
             Depth: 5
-            Durability Policy: System Default
+            Durability Policy: Transient Local
             Filter size: 10
             History Policy: Keep Last
-            Reliability Policy: System Default
+            Reliability Policy: Reliable
             Value: global_costmap/costmap
           Update Topic:
             Depth: 5
@@ -270,8 +334,6 @@ Visualization Manager:
           Use Timestamp: false
           Value: true
         - Alpha: 0.699999988079071
-          Binary representation: false
-          Binary threshold: 100
           Class: rviz_default_plugins/Map
           Color Scheme: costmap
           Draw Behind: false
@@ -279,7 +341,7 @@ Visualization Manager:
           Name: Local Map
           Topic:
             Depth: 5
-            Durability Policy: Volatile
+            Durability Policy: Transient Local
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
@@ -535,7 +597,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: map
+    Fixed Frame: panther/map
     Frame Rate: 30
   Name: root
   Tools:
@@ -578,7 +640,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 8
+      Distance: 12
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1

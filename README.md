@@ -11,7 +11,7 @@ The provided example is configured for the Panther robot and supports any LIDAR 
 >
 > - `PointCloud2` data is being published by the LIDAR.
 > - A static transform between the LIDAR and the robot frame (e.g. `velodyne` and `base_link`) is provided.
-> - Currently version doesn't support robot `namespace`.
+> - Currently version support robot with `namespace` robot.
 
 ### Environment configuration
 

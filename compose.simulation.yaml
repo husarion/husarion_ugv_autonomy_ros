@@ -15,3 +15,4 @@ services:
     command: >
       ros2 launch panther_gazebo simulation.launch.py
       components_config_path:=/config/components.yaml
+      namespace:=panther
