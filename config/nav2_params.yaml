@@ -80,7 +80,7 @@ controller_server:
       debug_trajectory_details: true
 
       # Velocity/acceleration limits also have to be adjusted in the velocity smoother
-      min_vel_x: 0.0
+      min_vel_x: -0.25
       max_vel_x: 0.5
       acc_lim_x: 1.0
       decel_lim_x: -1.0
@@ -175,7 +175,7 @@ local_costmap:
       inflation_layer:
         plugin: nav2_costmap_2d::InflationLayer
         enabled: true
-        cost_scaling_factor: 3.0
+        cost_scaling_factor: 1.3
         inflation_radius: 1.5
 
   local_costmap_client:
@@ -228,7 +228,7 @@ global_costmap:
       inflation_layer:
         plugin: nav2_costmap_2d::InflationLayer
         enabled: true
-        cost_scaling_factor: 3.0
+        cost_scaling_factor: 1.5
         inflation_radius: 1.5
 
   global_costmap_client:
