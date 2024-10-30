@@ -2,6 +2,6 @@
 components:
   - type: LDR20
     parent_link: cover_link
-    xyz: 0.1 0.0 0.1
+    xyz: 0.2 0.0 0.05
     rpy: 0.0 0.0 0.0
     device_namespace: None

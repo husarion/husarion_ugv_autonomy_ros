@@ -5,23 +5,6 @@ x-common-config:
   env_file: .common.env
 
 services:
-  panther_gazebo:
-    image: husarion/panther-gazebo:humble-2.1.1-20240828
-    container_name: panther_gazebo
-    <<: *common-config
-    runtime: nvidia
-    environment:
-      - ROBOT_NAMESPACE=panther
-      - DISPLAY
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,display
-    volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ./config:/config
-    command: >
-      ros2 launch panther_gazebo simulation.launch.py
-        components_config_path:=/config/components.yaml
-
   pointcloud_to_laserscan:
     image: husarion/navigation2:humble-1.1.3-20230127
     container_name: pointcloud_to_laserscan
