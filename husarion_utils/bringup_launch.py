@@ -37,7 +37,7 @@ def launch_setup(context, *args, **kwargs):
 
     # Create the launch configuration variables
     namespace = LaunchConfiguration("namespace").perform(context)
-    point_cloud2_topic = LaunchConfiguration("point_cloud2_topic").perform(context)
+    observation_topic = LaunchConfiguration("observation_topic").perform(context)
     map_yaml_file = LaunchConfiguration("map").perform(context)
     use_sim_time = LaunchConfiguration("use_sim_time").perform(context)
     params_file = LaunchConfiguration("params_file").perform(context)
@@ -60,7 +60,7 @@ def launch_setup(context, *args, **kwargs):
         )
 
     params_file = ReplaceString(
-        source_file=params_file, replacements={"<point_cloud2_topic>": point_cloud2_topic}
+        source_file=params_file, replacements={"<observation_topic>": observation_topic}
     )
 
     configured_params = ParameterFile(
@@ -147,7 +147,7 @@ def generate_launch_description():
                 description="Top-level namespace",
             ),
             DeclareLaunchArgument(
-                "point_cloud2_topic",
+                "observation_topic",
                 default_value="",
                 description="Topic name for PointCloud2 messages.",
             ),

@@ -32,7 +32,7 @@ services:
       ros2 run pointcloud_to_laserscan pointcloud_to_laserscan_node
         --ros-args
         -r __ns:=/panther
-        -r cloud_in:=${POINTCLOUD2_TOPIC:-err}
+        -r cloud_in:=${OBSERVATION_TOPIC:-err}
         -p range_min:=0.82
         -p min_height:=0.1
         -p max_height:=0.5
@@ -42,7 +42,7 @@ services:
     container_name: navigation
     <<: *common-config
     volumes:
-      - ./config/nav2_params.yaml:/nav2_params.yaml
+      - ./config/nav2_${OBSERVATION_TOPIC_TYPE:-err}_params.yaml:/nav2_params.yaml
       - ./maps:/maps
       - ./husarion_utils:/husarion_utils
     environment:
@@ -51,7 +51,7 @@ services:
     command: >
       ros2 launch /husarion_utils/bringup_launch.py
         namespace:=panther
-        point_cloud2_topic:=${POINTCLOUD2_TOPIC:-err}
+        observation_topic:=${OBSERVATION_TOPIC:-err}
         map:=/maps/map.yaml
         params_file:=/nav2_params.yaml
         slam:=${SLAM:-True}
@@ -77,6 +77,7 @@ services:
 
   foxglove-ds:
     image: husarion/foxglove-bridge:humble-0.7.7-20240708
+    container_name: foxglove-bridge
     command: >
       ros2 launch foxglove_bridge foxglove_bridge_launch.xml
         capabilities:=[clientPublish,connectionGraph,assets]
