@@ -162,7 +162,7 @@ local_costmap:
         enabled: true
         observation_sources: scan
         scan:
-          topic: /<robot_namespace>/<observation_topic>
+          topic: <observation_topic>
           max_obstacle_height: 2.0
           clearing: true
           marking: true
@@ -208,13 +208,13 @@ global_costmap:
         plugin: nav2_costmap_2d::StaticLayer
         enabled: true
         map_subscribe_transient_local: true
-        map_topic: /<robot_namespace>/map
+        map_topic: map
       obstacle_layer:
         plugin: nav2_costmap_2d::ObstacleLayer
         enabled: true
         observation_sources: scan
         scan:
-          topic: /<robot_namespace>/<observation_topic>
+          topic: <observation_topic>
           max_obstacle_height: 2.0
           clearing: true
           marking: true
@@ -311,7 +311,7 @@ amcl:
     odom_frame_id: <robot_namespace>/odom
     base_frame_id: <robot_namespace>/base_link
 
-    scan_topic: scan
+    scan_topic: <observation_topic>
 
     robot_model_type: nav2_amcl::DifferentialMotionModel
 
@@ -400,7 +400,7 @@ map_server:
     odom_frame: <robot_namespace>/odom
     map_frame: <robot_namespace>/map
     base_frame: <robot_namespace>/base_link
-    scan_topic: scan
+    scan_topic: <observation_topic>
     mode: mapping #localization
 
     debug_logging: false

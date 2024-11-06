@@ -6,7 +6,7 @@ A GitHub template for Panther: creating a map using Slam Toolbox and navigation 
 
 ## 🤖 Phisical robot
 
-The provided example is configured for the Panther robot and supports any LIDAR that publishes `PointCloud2` data by setting the appropriate environment variable.
+The provided example is configured for the Panther robot and supports any LIDAR that publishes `PointCloud2` or `LaserScan` data type by setting the appropriate environment variable.
 
 > [!IMPORTANT]
 > Before running the navigation demo, ensure the following:
@@ -28,9 +28,8 @@ Setup environment:
 ```bash
 cd panther-navigation
 export OBSERVATION_TOPIC={point_cloud_topic} # change topic name to match your LIDAR pointcloud2 topic
-export OBSERVATION_TOPIC_TYPE=<msg_type> # Specify: `laserscan`, `pointcloud`
+export OBSERVATION_TOPIC_TYPE={msg_type} # Specify: `laserscan`, `pointcloud`
 export SLAM=True # if you have map you can run navigation without SLAM
-export USE_SIM_TIME=False
 ```
 
 ### 🧭 Step 2: Run navigation
@@ -66,7 +65,6 @@ xhost +local:docker
 export OBSERVATION_TOPIC=velodyne_points # simulation is created with velodyne LIDAR
 export OBSERVATION_TOPIC_TYPE=pointcloud # Specify: `laserscan`, `pointcloud`
 export SLAM=True # if you have map you can run navigation without SLAM
-export USE_SIM_TIME=True
 ```
 
 ### 🧭 Step 2: Run navigation

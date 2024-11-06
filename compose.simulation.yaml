@@ -55,7 +55,7 @@ services:
         map:=/maps/map.yaml
         params_file:=/nav2_params.yaml
         slam:=${SLAM:-True}
-        use_sim_time:=${USE_SIM_TIME:-False}
+        use_sim_time:=True
 
   foxglove:
     image: husarion/foxglove:1.84.0
@@ -78,6 +78,8 @@ services:
   foxglove-ds:
     image: husarion/foxglove-bridge:humble-0.7.7-20240708
     container_name: foxglove-bridge
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
     command: >
       ros2 launch foxglove_bridge foxglove_bridge_launch.xml
         capabilities:=[clientPublish,connectionGraph,assets]
