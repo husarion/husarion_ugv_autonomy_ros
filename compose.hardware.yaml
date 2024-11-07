@@ -2,7 +2,6 @@ x-common-config:
   &common-config
   network_mode: host
   ipc: host
-  env_file: .common.env
 
 services:
   pointcloud_to_laserscan:

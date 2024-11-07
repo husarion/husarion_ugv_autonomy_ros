@@ -208,7 +208,7 @@ global_costmap:
         plugin: nav2_costmap_2d::StaticLayer
         enabled: true
         map_subscribe_transient_local: true
-        map_topic: map
+        map_topic: /<robot_namespace>/map
       obstacle_layer:
         plugin: nav2_costmap_2d::ObstacleLayer
         enabled: true
