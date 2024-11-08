@@ -383,6 +383,7 @@ map_server:
   ros__parameters:
     use_sim_time: false
     yaml_filename: map.yaml
+    frame_id: <robot_namespace>/map
 
 ### SLAM ###
 
