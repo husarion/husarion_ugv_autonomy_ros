@@ -308,7 +308,7 @@
       },
       "Teleop!43h55pp": {
         "topic": "/<robot_namespace>/cmd_vel",
-        "publishRate": 1,
+        "publishRate": 10,
         "upButton": {
           "field": "linear-x",
           "value": 0.3
