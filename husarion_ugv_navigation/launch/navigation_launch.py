@@ -15,13 +15,15 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
-from launch.substitutions import EnvironmentVariable, LaunchConfiguration, PythonExpression
-from launch_ros.actions import LoadComposableNodes
-from launch_ros.actions import Node
+from launch.substitutions import (
+    EnvironmentVariable,
+    LaunchConfiguration,
+    PythonExpression,
+)
+from launch_ros.actions import LoadComposableNodes, Node
 from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import RewrittenYaml
 
@@ -106,8 +108,16 @@ def generate_launch_description():
         "log_level", default_value="info", description="log level"
     )
 
-    nav_to_pose_bt = {'default_nav_to_pose_bt_xml': os.path.join(husarion_dir, "behaviour_tree", "navigate_to_pose_w_replanning_and_recovery.xml")}
-    nav_throught_poses_bt = {'default_nav_through_poses_bt_xml': os.path.join(husarion_dir, "behaviour_tree", "navigate_through_poses_w_replanning_and_recovery.xml")}
+    nav_to_pose_bt = {
+        "default_nav_to_pose_bt_xml": os.path.join(
+            husarion_dir, "behaviour_tree", "navigate_to_pose_w_replanning_and_recovery.xml"
+        )
+    }
+    nav_throught_poses_bt = {
+        "default_nav_through_poses_bt_xml": os.path.join(
+            husarion_dir, "behaviour_tree", "navigate_through_poses_w_replanning_and_recovery.xml"
+        )
+    }
 
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(["not ", use_composition])),

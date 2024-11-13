@@ -12,31 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
 #include <memory>
+#include <string>
 #include <thread>
 
 #include "rclcpp/rclcpp.hpp"
 
 #include "husarion_ugv_navigation/plugins/condition/is_estop.hpp"
 
-namespace husarion_ugv_navigation
-{
+namespace husarion_ugv_navigation {
 
-IsEStop::IsEStop(
-  const std::string & condition_name,
-  const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf),
-  estop_(true),
-  topic_("hardware/e_stop")
-{
+IsEStop::IsEStop(const std::string &condition_name,
+                 const BT::NodeConfiguration &conf)
+    : BT::ConditionNode(condition_name, conf), estop_(true),
+      topic_("hardware/e_stop") {
   getInput("topic", topic_);
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   estop_sub_ = node_->create_subscription<BoolMsg>(
-    topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&IsEStop::eStopCb, this, std::placeholders::_1));
+      topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+      std::bind(&IsEStop::eStopCb, this, std::placeholders::_1));
 
-  RCLCPP_INFO_STREAM(node_->get_logger(), "Created subscriber to topic " << topic_);
+  RCLCPP_INFO_STREAM(node_->get_logger(),
+                     "Created subscriber to topic " << topic_);
 
   // Dodanie asynchronicznego wątku do obsługi spin()
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
@@ -44,8 +41,7 @@ IsEStop::IsEStop(
   spin_thread_ = std::thread([this]() { executor_->spin(); });
 }
 
-IsEStop::~IsEStop()
-{
+IsEStop::~IsEStop() {
   // Zatrzymanie wątku przy zakończeniu
   executor_->cancel();
   if (spin_thread_.joinable()) {
@@ -53,8 +49,7 @@ IsEStop::~IsEStop()
   }
 }
 
-BT::NodeStatus IsEStop::tick()
-{
+BT::NodeStatus IsEStop::tick() {
   if (estop_) {
     RCLCPP_WARN(node_->get_logger(), "E-stop activated. Halting navigation.");
     return BT::NodeStatus::SUCCESS;
@@ -62,15 +57,11 @@ BT::NodeStatus IsEStop::tick()
   return BT::NodeStatus::FAILURE;
 }
 
-void IsEStop::eStopCb(const BoolMsg::SharedPtr msg)
-{
-  estop_ = msg->data;
-}
+void IsEStop::eStopCb(const BoolMsg::SharedPtr msg) { estop_ = msg->data; }
 
-}  // namespace husarion_ugv_navigation
+} // namespace husarion_ugv_navigation
 
 #include "behaviortree_cpp_v3/bt_factory.h"
-BT_REGISTER_NODES(factory)
-{
+BT_REGISTER_NODES(factory) {
   factory.registerNodeType<husarion_ugv_navigation::IsEStop>("IsEStop");
 }

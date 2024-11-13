@@ -22,17 +22,22 @@ from launch.actions import (
 )
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import EnvironmentVariable, LaunchConfiguration, PathJoinSubstitution, PythonExpression
-from launch_ros.actions import Node
-from launch_ros.actions import PushRosNamespace
+from launch.substitutions import (
+    EnvironmentVariable,
+    LaunchConfiguration,
+    PathJoinSubstitution,
+    PythonExpression,
+)
+from launch_ros.actions import Node, PushRosNamespace
 from launch_ros.descriptions import ParameterFile
 from launch_ros.substitutions import FindPackageShare
-from nav2_common.launch import RewrittenYaml, ReplaceString
+from nav2_common.launch import ReplaceString, RewrittenYaml
+
 
 def generate_launch_description():
     # Get the launch directory
-    husarion_ugv_navigation = FindPackageShare('husarion_ugv_navigation')
-    launch_dir = PathJoinSubstitution([husarion_ugv_navigation, 'launch'])
+    husarion_ugv_navigation = FindPackageShare("husarion_ugv_navigation")
+    launch_dir = PathJoinSubstitution([husarion_ugv_navigation, "launch"])
 
     autostart = LaunchConfiguration("autostart")
     log_level = LaunchConfiguration("log_level")
@@ -51,8 +56,12 @@ def generate_launch_description():
         default_value="true",
         description="Automatically startup the nav2 stack",
     )
-    declare_log_level_arg = DeclareLaunchArgument("log_level", default_value="info", description="log level")
-    declare_map_arg = DeclareLaunchArgument("map", default_value="/maps/map.yaml", description="Full path to map yaml file to load")
+    declare_log_level_arg = DeclareLaunchArgument(
+        "log_level", default_value="info", description="log level"
+    )
+    declare_map_arg = DeclareLaunchArgument(
+        "map", default_value="/maps/map.yaml", description="Full path to map yaml file to load"
+    )
     declare_namespace_arg = DeclareLaunchArgument(
         "namespace",
         default_value=EnvironmentVariable("ROBOT_NAMESPACE", default_value=""),
@@ -71,10 +80,18 @@ def generate_launch_description():
     )
     declare_params_file_arg = DeclareLaunchArgument(
         "params_file",
-        default_value=PathJoinSubstitution([husarion_ugv_navigation, 'config', PythonExpression(["'nav2_", observation_topic_type, "_params.yaml'"])]),
+        default_value=PathJoinSubstitution(
+            [
+                husarion_ugv_navigation,
+                "config",
+                PythonExpression(["'nav2_", observation_topic_type, "_params.yaml'"]),
+            ]
+        ),
         description="Full path to the ROS2 parameters file to use for all launched nodes",
     )
-    declare_slam_arg = DeclareLaunchArgument("slam", default_value="False", description="Whether run a SLAM")
+    declare_slam_arg = DeclareLaunchArgument(
+        "slam", default_value="False", description="Whether run a SLAM"
+    )
     declare_use_composition_arg = DeclareLaunchArgument(
         "use_composition",
         default_value="True",
@@ -97,7 +114,11 @@ def generate_launch_description():
     namespace_ext = PythonExpression(["'", namespace, "' + '/' if '", namespace, "' else ''"])
 
     params_file = ReplaceString(
-        source_file=params_file, replacements={"<robot_namespace>/": namespace_ext, "<observation_topic>": observation_topic}
+        source_file=params_file,
+        replacements={
+            "<robot_namespace>/": namespace_ext,
+            "<observation_topic>": observation_topic,
+        },
     )
 
     configured_params = ParameterFile(
@@ -115,6 +136,27 @@ def generate_launch_description():
         [
             PushRosNamespace(namespace),
             Node(
+                condition=IfCondition(
+                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+                ),
+                package="pointcloud_to_laserscan",
+                executable="pointcloud_to_laserscan_node",
+                name="pointcloud_to_laserscan",
+                parameters=[
+                    configured_params,
+                    {
+                        "min_height": 0.05,
+                        "max_height": 0.5,
+                        "scan_time": 0.1,
+                        "range_min": 0.85,
+                        "range_max": 12.0,
+                        "transform_tolerance": 0.02,
+                    },
+                ],
+                remappings=[("cloud_in", observation_topic)],
+                output="screen",
+            ),
+            Node(
                 condition=IfCondition(use_composition),
                 name="nav2_container",
                 package="rclcpp_components",
@@ -124,7 +166,9 @@ def generate_launch_description():
                 output="screen",
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(PathJoinSubstitution([launch_dir, "slam_launch.py"])),
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution([launch_dir, "slam_launch.py"])
+                ),
                 condition=IfCondition(slam),
                 launch_arguments={
                     "autostart": autostart,
@@ -135,7 +179,9 @@ def generate_launch_description():
                 }.items(),
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(PathJoinSubstitution([launch_dir, "localization_launch.py"])),
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution([launch_dir, "localization_launch.py"])
+                ),
                 condition=IfCondition(PythonExpression(["not ", slam])),
                 launch_arguments={
                     "autostart": autostart,
@@ -149,7 +195,9 @@ def generate_launch_description():
                 }.items(),
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(PathJoinSubstitution([launch_dir, "navigation_launch.py"])),
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution([launch_dir, "navigation_launch.py"])
+                ),
                 launch_arguments={
                     "namespace": namespace,
                     "use_sim_time": use_sim_time,

@@ -30,14 +30,15 @@ foreach(bt_plugin ${plugin_libs})
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
 endforeach()
 
-install(TARGETS ${plugin_libs}
+install(
+  TARGETS ${plugin_libs}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
+  RUNTIME DESTINATION bin)
 
 # Rest of the files
-install(DIRECTORY behaviour_tree config launch DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY behaviour_tree config launch
+        DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY include DESTINATION include)
 
 ament_export_libraries(${plugin_libs})

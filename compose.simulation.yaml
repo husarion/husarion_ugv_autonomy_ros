@@ -23,10 +23,10 @@ services:
         namespace:=panther
 
   navigation:
+    # image: husarion/husarion-ugv-navigation:humble-0.1.0-20241113
     build:
       context: .
       dockerfile: Dockerfile
-    # image: husarion/navigation2:humble-1.1.16-20240927
     container_name: navigation
     <<: *common-config
     volumes:
@@ -34,7 +34,6 @@ services:
       - ./maps:/maps
     environment:
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-      - SAVE_MAP_PERIOD=${SAVE_MAP_PERIOD-10}
     command: >
       ros2 launch husarion_ugv_navigation bringup_launch.py
         namespace:=panther

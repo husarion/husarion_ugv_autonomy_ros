@@ -4,6 +4,14 @@ A GitHub template for Panther: creating a map using Slam Toolbox and navigation 
 
 ![autonomy-result](https://github-readme-figures.s3.eu-central-1.amazonaws.com/panther/husarion_ugv/husarion_ugv_autonomy.gif)
 
+## Requirement
+
+To simplify the execution of this project, we are utilizing [just](https://github.com/casey/just). Install it with:
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | sudo bash -s -- --to /usr/bin
+```
+
 ## 🤖 Physical robot
 
 The provided example is configured for the Panther robot and supports any LIDAR that publishes `PointCloud2` or `LaserScan` data type by setting the appropriate environment variable.
@@ -37,7 +45,7 @@ export SLAM=True # if you have map you can run navigation without SLAM
 Run navigation.
 
 ```bash
-docker compose -f compose.hardware.yaml up
+just start-hardware
 ```
 
 ### 🕹️ Step 3: Control the robot from a Web Browser
@@ -45,26 +53,17 @@ docker compose -f compose.hardware.yaml up
 1. Install husarion-webui
 
     ```bash
-    sudo snap install husarion-webui --channel=humble
+    just start-visualization
     ```
 
-2. Add new layout and configure webui.
+2. Open the your browser on your laptop and navigate to:
 
-    ```bash
-    sudo cp config/layout.json /var/snap/husarion-webui/common/foxglove-husarion-ugv-nav2.json
-    sudo snap set husarion-webui webui.layout=husarion-ugv-nav2
-    sudo snap set husarion-webui ros.namespace=panther
-    sudo snap set husarion-webui ros.transport=rmw_cyclonedds_cpp
-    sudo husarion-webui.start
-    ```
-
-3. Open the your browser on your laptop and navigate to:
-
-    http://localhost:8080/ui
+    - http://{ip_address}:8080/ui (devices in the same LAN)
+    - http://{hostname}:8080/ui (devices in the same Husarnet Network)
 
 ## 🖥️ Simulation
 
-Example demo with Navigation2, using The husarion Panther robot equipped with Velodyne Puck.
+Example demo with Navigation2, using The Husarion Panther robot equipped with Velodyne Puck.
 
 ### 🔧 Step 1: Environment configuration
 
@@ -77,7 +76,6 @@ git clone https://github.com/husarion/panther-navigation
 Setup environment:
 
 ```bash
-xhost +local:docker
 export SLAM=True # if you have map you can run navigation without SLAM
 ```
 
@@ -86,7 +84,7 @@ export SLAM=True # if you have map you can run navigation without SLAM
 Run navigation.
 
 ```bash
-docker compose -f compose.simulation.yaml up
+just start-simulation
 ```
 
 ### 🕹️ Step 3: Control the robot from a Web Browser
@@ -94,19 +92,10 @@ docker compose -f compose.simulation.yaml up
 1. Install husarion-webui
 
     ```bash
-    sudo snap install husarion-webui --channel=humble
+    just start-visualization
     ```
 
-2. Add new layout and configure webui.
+2. Open the your browser on your laptop and navigate to:
 
-    ```bash
-    sudo cp config/layout.json /var/snap/husarion-webui/common/foxglove-husarion-ugv-nav2.json
-    sudo snap set husarion-webui webui.layout=husarion-ugv-nav2
-    sudo snap set husarion-webui ros.namespace=panther
-    sudo snap set husarion-webui ros.transport=rmw_cyclonedds_cpp
-    sudo husarion-webui.start
-    ```
-
-3. Open the your browser on your laptop and navigate to:
-
-    http://localhost:8080/ui
+    - http://{ip_address}:8080/ui (devices in the same LAN)
+    - http://{hostname}:8080/ui (devices in the same Husarnet Network)
