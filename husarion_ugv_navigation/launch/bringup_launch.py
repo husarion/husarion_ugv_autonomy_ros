@@ -147,6 +147,7 @@ def generate_launch_description():
                     {
                         "min_height": 0.05,
                         "max_height": 0.5,
+                        "angle_increment": 0.01,
                         "scan_time": 0.1,
                         "range_min": 0.85,
                         "range_max": 12.0,

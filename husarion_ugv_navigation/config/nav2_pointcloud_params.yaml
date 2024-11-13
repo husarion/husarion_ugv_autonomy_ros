@@ -398,7 +398,7 @@ map_server:
 #     max_height: 0.5
 #     angle_min: -3.14
 #     angle_max: 3.14
-#     angle_increment: 0.017
+#     angle_increment: 0.01
 #     scan_time: 0.1
 #     range_min: 0.85
 #     range_max: 12.0

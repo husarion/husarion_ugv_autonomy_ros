@@ -42,14 +42,14 @@
         }
       },
       "cameraState": {
-        "perspective": true,
-        "distance": 8.79043457955289,
-        "phi": 29.999999999999723,
-        "thetaOffset": 90.000000000001,
+        "perspective": false,
+        "distance": 16.267734757346467,
+        "phi": 29.99999999999957,
+        "thetaOffset": 90.00000000000345,
         "targetOffset": [
-          1.998117666573735,
-          0.6838810519386103,
-          -1.1834213774999694e-17
+          0.2914251869950411,
+          -0.34919366740225544,
+          -5.932468837162252e-17
         ],
         "target": [
           0,
@@ -124,6 +124,12 @@
           "visible": false
         },
         "frame:panther/rr_wheel_link": {
+          "visible": false
+        },
+        "frame:panther/slamtec_rplidar_link": {
+          "visible": false
+        },
+        "frame:panther/laser": {
           "visible": false
         }
       },
@@ -202,73 +208,28 @@
       },
       "imageMode": {}
     },
-    "Teleop!43h55pp": {
-      "topic": "/panther/cmd_vel",
-      "publishRate": 10,
-      "upButton": {
-        "field": "linear-x",
-        "value": 0.3
-      },
-      "downButton": {
-        "field": "linear-x",
-        "value": -0.3
-      },
-      "leftButton": {
-        "field": "angular-z",
-        "value": 1
-      },
-      "rightButton": {
-        "field": "angular-z",
-        "value": -1
-      },
-      "foxglovePanelTitle": "Teleop"
+    "EStop!3mw7boq": {
+      "requestPayload": "{}",
+      "goServiceName": "/panther/hardware/e_stop_reset",
+      "stopServiceName": "/panther/hardware/e_stop_trigger",
+      "statusTopicName": "/panther/hardware/e_stop.data",
+      "foxglovePanelTitle": "E-stop"
     },
-    "Image!3mnp456": {
-      "cameraState": {
-        "distance": 20,
-        "perspective": true,
-        "phi": 60,
-        "target": [
-          0,
-          0,
-          0
-        ],
-        "targetOffset": [
-          0,
-          0,
-          0
-        ],
-        "targetOrientation": [
-          0,
-          0,
-          0,
-          1
-        ],
-        "thetaOffset": 45,
-        "fovy": 45,
-        "near": 0.5,
-        "far": 5000
+    "Joy!454iiby": {
+      "topic": "/panther/cmd_vel",
+      "publishRate": 5,
+      "stamped": false,
+      "advanced": false,
+      "xAxis": {
+        "field": "linear-x",
+        "limit": 1
       },
-      "followMode": "follow-pose",
-      "scene": {},
-      "transforms": {},
-      "topics": {},
-      "layers": {},
-      "publish": {
-        "type": "point",
-        "poseTopic": "/move_base_simple/goal",
-        "pointTopic": "/clicked_point",
-        "poseEstimateTopic": "/initialpose",
-        "poseEstimateXDeviation": 0.5,
-        "poseEstimateYDeviation": 0.5,
-        "poseEstimateThetaDeviation": 0.26179939
-      },
-      "imageMode": {
-        "imageTopic": "/camera/color/image_raw",
-        "calibrationTopic": "/camera/color/camera_info"
+      "yAxis": {
+        "field": "angular-z",
+        "limit": 1
       }
     },
-    "DiagnosticSummary!3ija0c": {
+    "DiagnosticSummary!3ebmih7": {
       "minLevel": 0,
       "pinnedIds": [],
       "hardwareIdFilter": "",
@@ -282,19 +243,19 @@
     "speed": 1
   },
   "layout": {
-    "first": {
-      "first": "3D!18i6zy7",
+    "first": "3D!18i6zy7",
+    "second": {
+      "first": "EStop!3mw7boq",
       "second": {
-        "first": "DiagnosticSummary!3ija0c",
-        "second": "Teleop!43h55pp",
-        "direction": "row",
-        "splitPercentage": 70.42357165984752
+        "first": "Joy!454iiby",
+        "second": "DiagnosticSummary!3ebmih7",
+        "direction": "column",
+        "splitPercentage": 60.441176470588246
       },
       "direction": "column",
-      "splitPercentage": 62.45954692556634
+      "splitPercentage": 23.423423423423422
     },
-    "second": "Image!3mnp456",
     "direction": "row",
-    "splitPercentage": 100
+    "splitPercentage": 63.489583333333336
   }
 }
