@@ -29,6 +29,7 @@ from nav2_common.launch import RewrittenYaml
 def generate_launch_description():
     # Get the launch directory
     bringup_dir = get_package_share_directory("nav2_bringup")
+    husarion_dir = get_package_share_directory("husarion_ugv_navigation")
 
     namespace = LaunchConfiguration("namespace")
     use_sim_time = LaunchConfiguration("use_sim_time")
@@ -105,6 +106,9 @@ def generate_launch_description():
         "log_level", default_value="info", description="log level"
     )
 
+    nav_to_pose_bt = {'default_nav_to_pose_bt_xml': os.path.join(husarion_dir, "behaviour_tree", "navigate_to_pose_w_replanning_and_recovery.xml")}
+    nav_throught_poses_bt = {'default_nav_through_poses_bt_xml': os.path.join(husarion_dir, "behaviour_tree", "navigate_through_poses_w_replanning_and_recovery.xml")}
+
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(["not ", use_composition])),
         actions=[
@@ -155,7 +159,7 @@ def generate_launch_description():
                 output="screen",
                 respawn=use_respawn,
                 respawn_delay=2.0,
-                parameters=[configured_params],
+                parameters=[configured_params, nav_to_pose_bt, nav_throught_poses_bt],
                 arguments=["--ros-args", "--log-level", log_level],
             ),
             Node(
@@ -227,7 +231,7 @@ def generate_launch_description():
                 package="nav2_bt_navigator",
                 plugin="nav2_bt_navigator::BtNavigator",
                 name="bt_navigator",
-                parameters=[configured_params],
+                parameters=[configured_params, nav_to_pose_bt, nav_throught_poses_bt],
             ),
             ComposableNode(
                 package="nav2_waypoint_follower",

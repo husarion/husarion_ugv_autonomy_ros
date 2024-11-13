@@ -4,64 +4,24 @@ x-common-config:
   ipc: host
 
 services:
-  pointcloud_to_laserscan:
-    image: husarion/navigation2:humble-1.1.3-20230127
-    container_name: pointcloud_to_laserscan
-    <<: *common-config
-    environment:
-      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-    command: >
-      ros2 run pointcloud_to_laserscan pointcloud_to_laserscan_node
-        --ros-args
-        -r __ns:=/panther
-        -r cloud_in:=${OBSERVATION_TOPIC:-err}
-        -p range_min:=0.82
-        -p min_height:=0.1
-        -p max_height:=0.5
-
   navigation:
-    image: husarion/navigation2:humble-1.1.16-20240927
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # image: husarion/navigation2:humble-1.1.16-20240927
     container_name: navigation
     <<: *common-config
     volumes:
-      - ./config/nav2_${OBSERVATION_TOPIC_TYPE:-err}_params.yaml:/nav2_params.yaml
+      - ./husarion_ugv_navigation:/ros2_ws/src/husarion_ugv_navigation
       - ./maps:/maps
-      - ./husarion_utils:/husarion_utils
     environment:
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
       - SAVE_MAP_PERIOD=${SAVE_MAP_PERIOD-10}
     command: >
-      ros2 launch /husarion_utils/bringup_launch.py
+      ros2 launch husarion_ugv_navigation bringup_launch.py
         namespace:=panther
-        observation_topic:=${OBSERVATION_TOPIC:-err}
-        map:=/maps/map.yaml
-        params_file:=/nav2_params.yaml
-        slam:=${SLAM:-True}
-        use_sim_time:=False
-
-  foxglove:
-    image: husarion/foxglove:1.84.0
-    container_name: foxglove
-    ports:
-      - 8080:8080
-      - 8765:8765
-    volumes:
-      - ./config/layout.json:/foxglove/default-layout.json
-      - ./foxglove-entrypoint.sh:/entrypoint.sh
-    environment:
-      - ROBOT_NAMESPACE=panther
-      - DS_TYPE=foxglove-websocket
-      - DS_PORT=8765
-      - DS_HOST=foxglove-ds
-      - UI_PORT=8080
-      - DISABLE_CACHE=true
-      - DISABLE_INTERACTION=false
-
-  foxglove-ds:
-    image: husarion/foxglove-bridge:humble-0.7.7-20240708
-    container_name: foxglove-bridge
-    environment:
-      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-    command: >
-      ros2 launch foxglove_bridge foxglove_bridge_launch.xml
-        capabilities:=[clientPublish,connectionGraph,assets]
+        observation_topic:=velodyne_points
+        observation_topic_type:=pointcloud
+        map:=./maps/map.yaml
+        slam:=True
+        use_sim_time:=True

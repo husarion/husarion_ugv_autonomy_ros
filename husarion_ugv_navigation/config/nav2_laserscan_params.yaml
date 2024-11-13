@@ -8,6 +8,7 @@ bt_navigator:
     robot_base_frame: <robot_namespace>/base_link
     odom_topic: odometry/filtered
     plugin_lib_names:
+      - is_estop
       - nav2_compute_path_to_pose_action_bt_node
       - nav2_follow_path_action_bt_node
       - nav2_back_up_action_bt_node
@@ -156,23 +157,21 @@ local_costmap:
       transform_tolerance: 0.1
       footprint: '[[0.45, 0.47], [0.45, -0.47], [-0.45, -0.47], [-0.45, 0.47]]'
 
-      plugins: [voxel_layer, inflation_layer]
-      voxel_layer:
-        plugin: nav2_costmap_2d::VoxelLayer
+      plugins: [obstacle_layer, inflation_layer]
+      obstacle_layer:
+        plugin: nav2_costmap_2d::ObstacleLayer
         enabled: true
-        footprint_clearing_enabled: true
-        observation_sources: point_cloud
-        point_cloud:
+        observation_sources: scan
+        scan:
           topic: <observation_topic>
-          min_obstacle_height: 0.1
-          max_obstacle_height: 0.5
+          max_obstacle_height: 2.0
           clearing: true
           marking: true
-          data_type: PointCloud2
-          raytrace_max_range: 12.0
-          raytrace_min_range: 0.5
-          obstacle_max_range: 12.0
-          obstacle_min_range: 0.5
+          data_type: LaserScan
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
       inflation_layer:
         plugin: nav2_costmap_2d::InflationLayer
         enabled: true
@@ -205,28 +204,26 @@ global_costmap:
       transform_tolerance: 0.1
       footprint: '[[0.45, 0.47], [0.45, -0.47], [-0.45, -0.47], [-0.45, 0.47]]'
 
-      plugins: [static_layer, voxel_layer, inflation_layer]
+      plugins: [static_layer, obstacle_layer, inflation_layer]
       static_layer:
         plugin: nav2_costmap_2d::StaticLayer
         enabled: true
         map_subscribe_transient_local: true
         map_topic: /<robot_namespace>/map
-      voxel_layer:
-        plugin: nav2_costmap_2d::VoxelLayer
+      obstacle_layer:
+        plugin: nav2_costmap_2d::ObstacleLayer
         enabled: true
-        footprint_clearing_enabled: true
-        observation_sources: point_cloud
-        point_cloud:
+        observation_sources: scan
+        scan:
           topic: <observation_topic>
-          min_obstacle_height: 0.1
-          max_obstacle_height: 0.5
+          max_obstacle_height: 2.0
           clearing: true
           marking: true
-          data_type: PointCloud2
-          raytrace_max_range: 12.0
-          raytrace_min_range: 0.5
-          obstacle_max_range: 12.0
-          obstacle_min_range: 0.5
+          data_type: LaserScan
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
       inflation_layer:
         plugin: nav2_costmap_2d::InflationLayer
         enabled: true
@@ -315,7 +312,7 @@ amcl:
     odom_frame_id: <robot_namespace>/odom
     base_frame_id: <robot_namespace>/base_link
 
-    scan_topic: scan
+    scan_topic: <observation_topic>
 
     robot_model_type: nav2_amcl::DifferentialMotionModel
 
@@ -405,7 +402,7 @@ map_server:
     odom_frame: <robot_namespace>/odom
     map_frame: <robot_namespace>/map
     base_frame: <robot_namespace>/base_link
-    scan_topic: scan
+    scan_topic: <observation_topic>
     mode: mapping #localization
 
     debug_logging: false

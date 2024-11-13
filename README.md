@@ -4,7 +4,7 @@ A GitHub template for Panther: creating a map using Slam Toolbox and navigation 
 
 ![autonomy-result](https://github-readme-figures.s3.eu-central-1.amazonaws.com/panther/husarion_ugv/husarion_ugv_autonomy.gif)
 
-## 🤖 Phisical robot
+## 🤖 Physical robot
 
 The provided example is configured for the Panther robot and supports any LIDAR that publishes `PointCloud2` or `LaserScan` data type by setting the appropriate environment variable.
 
@@ -42,13 +42,29 @@ docker compose -f compose.hardware.yaml up
 
 ### 🕹️ Step 3: Control the robot from a Web Browser
 
-Open the your browser on your laptop and navigate to:
+1. Install husarion-webui
 
-http://10.15.20.3:8080/ui
+    ```bash
+    sudo snap install husarion-webui --channel=humble
+    ```
+
+2. Add new layout and configure webui.
+
+    ```bash
+    sudo cp config/layout.json /var/snap/husarion-webui/common/foxglove-husarion-ugv-nav2.json
+    sudo snap set husarion-webui webui.layout=husarion-ugv-nav2
+    sudo snap set husarion-webui ros.namespace=panther
+    sudo snap set husarion-webui ros.transport=rmw_cyclonedds_cpp
+    sudo husarion-webui.start
+    ```
+
+3. Open the your browser on your laptop and navigate to:
+
+    http://localhost:8080/ui
 
 ## 🖥️ Simulation
 
-Example demo with Navigation2, using The Husarion Panther robot equipped with Velodyne Puck.
+Example demo with Navigation2, using The husarion Panther robot equipped with Velodyne Puck.
 
 ### 🔧 Step 1: Environment configuration
 
@@ -62,8 +78,6 @@ Setup environment:
 
 ```bash
 xhost +local:docker
-export OBSERVATION_TOPIC=velodyne_points # simulation is created with velodyne LIDAR
-export OBSERVATION_TOPIC_TYPE=pointcloud # Specify: `laserscan`, `pointcloud`
 export SLAM=True # if you have map you can run navigation without SLAM
 ```
 
@@ -77,6 +91,22 @@ docker compose -f compose.simulation.yaml up
 
 ### 🕹️ Step 3: Control the robot from a Web Browser
 
-Open the your browser on your laptop and navigate to:
+1. Install husarion-webui
 
-http://localhost:8080/ui
+    ```bash
+    sudo snap install husarion-webui --channel=humble
+    ```
+
+2. Add new layout and configure webui.
+
+    ```bash
+    sudo cp config/layout.json /var/snap/husarion-webui/common/foxglove-husarion-ugv-nav2.json
+    sudo snap set husarion-webui webui.layout=husarion-ugv-nav2
+    sudo snap set husarion-webui ros.namespace=panther
+    sudo snap set husarion-webui ros.transport=rmw_cyclonedds_cpp
+    sudo husarion-webui.start
+    ```
+
+3. Open the your browser on your laptop and navigate to:
+
+    http://localhost:8080/ui
