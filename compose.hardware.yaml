@@ -19,8 +19,8 @@ services:
     command: >
       ros2 launch husarion_ugv_navigation bringup_launch.py
         namespace:=panther
-        observation_topic:=velodyne_points
-        observation_topic_type:=pointcloud
+        observation_topic:=${OBSERVATION_TOPIC:-err}
+        observation_topic_type:=${OBSERVATION_TOPIC_TYPE:-err}
         map:=./maps/map.yaml
         slam:=True
         use_sim_time:=True
