@@ -21,6 +21,16 @@ foreach(PACKAGE IN ITEMS ${DEPENDENCIES})
   find_package(${PACKAGE} REQUIRED)
 endforeach()
 
+# Executables
+add_executable(map_autosaver_node src/map_autosaver_node.cpp)
+list(APPEND exec_nodes map_autosaver_node)
+
+foreach(node ${exec_nodes})
+  ament_target_dependencies(${node} ${DEPENDENCIES})
+endforeach()
+
+install(TARGETS ${exec_nodes} DESTINATION lib/${PROJECT_NAME})
+
 # Liblaries
 add_library(is_estop SHARED src/plugins/condition/is_estop.cpp)
 list(APPEND plugin_libs is_estop)

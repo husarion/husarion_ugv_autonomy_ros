@@ -51,9 +51,7 @@ public:
   BT::NodeStatus tick() override;
 
   /**
-   * @brief Checks if the current robot pose lies within a given distance from
-   * the goal
-   * @return bool true when goal is reached, false otherwise
+   * @brief Store value of e-stop status
    */
   void eStopCb(const BoolMsg::SharedPtr msg);
 

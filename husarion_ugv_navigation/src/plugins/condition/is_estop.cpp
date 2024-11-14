@@ -32,17 +32,12 @@ IsEStop::IsEStop(const std::string &condition_name,
       topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
       std::bind(&IsEStop::eStopCb, this, std::placeholders::_1));
 
-  RCLCPP_INFO_STREAM(node_->get_logger(),
-                     "Created subscriber to topic " << topic_);
-
-  // Dodanie asynchronicznego wątku do obsługi spin()
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_node(node_);
   spin_thread_ = std::thread([this]() { executor_->spin(); });
 }
 
 IsEStop::~IsEStop() {
-  // Zatrzymanie wątku przy zakończeniu
   executor_->cancel();
   if (spin_thread_.joinable()) {
     spin_thread_.join();

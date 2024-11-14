@@ -20,7 +20,7 @@ from launch.actions import (
     IncludeLaunchDescription,
     SetEnvironmentVariable,
 )
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     EnvironmentVariable,
@@ -183,7 +183,7 @@ def generate_launch_description():
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution([launch_dir, "localization_launch.py"])
                 ),
-                condition=IfCondition(PythonExpression(["not ", slam])),
+                condition=UnlessCondition(slam),
                 launch_arguments={
                     "autostart": autostart,
                     "container_name": "nav2_container",
@@ -208,6 +208,15 @@ def generate_launch_description():
                     "use_respawn": use_respawn,
                     "container_name": "nav2_container",
                 }.items(),
+            ),
+            Node(
+                condition=IfCondition(slam),
+                name="map_autosaver",
+                package="husarion_ugv_navigation",
+                executable="map_autosaver_node",
+                parameters=[{"autosave_period": 10.0}],
+                arguments=["--ros-args", "--log-level", log_level],
+                output="screen",
             ),
         ]
     )
