@@ -34,7 +34,7 @@
           "url": "",
           "filePath": "",
           "parameter": "",
-          "topic": "panther/robot_description",
+          "topic": "/panther/robot_description",
           "framePrefix": "panther/",
           "displayMode": "auto",
           "fallbackColor": "#ffffff",
