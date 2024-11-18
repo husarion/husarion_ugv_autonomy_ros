@@ -136,7 +136,8 @@
       "topics": {
         "/panther/map": {
           "visible": true,
-          "colorMode": "map"
+          "colorMode": "map",
+          "alpha": 0.5
         },
         "/panther/cost_cloud": {
           "visible": false
