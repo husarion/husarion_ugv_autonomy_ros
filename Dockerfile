@@ -31,7 +31,3 @@ RUN MYDISTRO=${PREFIX:-ros}; MYDISTRO=${MYDISTRO//-/} && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-COPY healthcheck.sh /healthcheck.sh
-HEALTHCHECK --interval=2s --timeout=1s --start-period=45s --retries=2 \
-    CMD ["/healthcheck.sh"]
