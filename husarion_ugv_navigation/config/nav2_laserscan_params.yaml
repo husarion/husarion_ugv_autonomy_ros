@@ -168,10 +168,10 @@ local_costmap:
           clearing: true
           marking: true
           data_type: LaserScan
-          raytrace_max_range: 3.0
-          raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
-          obstacle_min_range: 0.0
+          raytrace_max_range: 12.0
+          raytrace_min_range: 0.9
+          obstacle_max_range: 12.0
+          obstacle_min_range: 0.9
       inflation_layer:
         plugin: nav2_costmap_2d::InflationLayer
         enabled: true
@@ -220,10 +220,10 @@ global_costmap:
           clearing: true
           marking: true
           data_type: LaserScan
-          raytrace_max_range: 3.0
-          raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
-          obstacle_min_range: 0.0
+          raytrace_max_range: 12.0
+          raytrace_min_range: 0.9
+          obstacle_max_range: 12.0
+          obstacle_min_range: 0.9
       inflation_layer:
         plugin: nav2_costmap_2d::InflationLayer
         enabled: true
