@@ -24,6 +24,8 @@ AutosaveMapNode::AutosaveMapNode(const std::string &node_name,
     : Node(node_name, options), save_map_period_(MIN_SAVE_MAP_PERIOD) {
   this->declare_parameter<double>("autosave_period",
                                   MIN_SAVE_MAP_PERIOD.count());
+
+  this->declare_parameter<std::string>("map_directory", "/maps/map");
   double period = MIN_SAVE_MAP_PERIOD.count();
   this->get_parameter("autosave_period", period);
 
@@ -55,7 +57,7 @@ SaveMapReq::SharedPtr AutosaveMapNode::CreateSaveMapRequest() {
   request->free_thresh = 0.25;
   request->occupied_thresh = 0.65;
   request->map_topic = this->get_namespace() + std::string("/map");
-  request->map_url = "/maps/map";
+  this->get_parameter("map_directory", request->map_url);
   request->map_mode = "trinary";
   request->image_format = "png";
 
