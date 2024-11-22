@@ -25,13 +25,13 @@ services:
   navigation:
     # image: husarion/husarion-ugv-navigation:humble-0.1.0-20241113
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: navigation
     <<: *common-config
     volumes:
-      - ./husarion_ugv_navigation:/ros2_ws/src/husarion_ugv_navigation
-      - ./maps:/maps
+      - ../husarion_ugv_navigation:/ros2_ws/src/husarion_ugv_navigation
+      - ../maps:/maps
     environment:
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
     command: >
@@ -39,6 +39,5 @@ services:
         namespace:=panther
         observation_topic:=/panther/velodyne_points
         observation_topic_type:=pointcloud
-        map:=./maps/map.yaml
         slam:=True
         use_sim_time:=True

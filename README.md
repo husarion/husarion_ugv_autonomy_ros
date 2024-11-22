@@ -35,7 +35,7 @@ Setup environment:
 
 ```bash
 cd panther-navigation
-export OBSERVATION_TOPIC={point_cloud_topic} # change topic name to match your LIDAR pointcloud2 topic (e.g. /scan)
+export OBSERVATION_TOPIC={point_cloud_topic} # absolute topic name to match your LIDAR pointcloud2 topic (e.g. /scan)
 export OBSERVATION_TOPIC_TYPE={msg_type} # Specify: `laserscan`, `pointcloud`
 export SLAM=True # if you have map you can run navigation without SLAM
 ```

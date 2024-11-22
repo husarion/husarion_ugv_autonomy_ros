@@ -33,22 +33,22 @@ check-husarion-webui:
 # Start navigation on User Computer inside Husarion UGV
 start-hardware:
     #!/bin/bash
-    docker compose -f compose.hardware.yaml down
-    docker compose -f compose.hardware.yaml pull
-    docker compose -f compose.hardware.yaml up
+    docker compose -f docker/compose.hardware.yaml down
+    docker compose -f docker/compose.hardware.yaml pull
+    docker compose -f docker/compose.hardware.yaml up
 
 # Start Gazebo simulator with navigation stack
 start-simulation:
     #!/bin/bash
     xhost +local:docker
-    docker compose -f compose.simulation.yaml down
-    docker compose -f compose.simulation.yaml pull
-    docker compose -f compose.simulation.yaml up
+    docker compose -f docker/compose.simulation.yaml down
+    docker compose -f docker/compose.simulation.yaml pull
+    docker compose -f docker/compose.simulation.yaml up
 
 # Configure and run Husarion WebUI
 start-visualization: check-husarion-webui
     #!/bin/bash
-    sudo cp config/layout.json /var/snap/husarion-webui/common/foxglove-husarion-ugv-navigation.json
+    sudo cp foxglove-layout.json /var/snap/husarion-webui/common/foxglove-husarion-ugv-navigation.json
     sudo snap set husarion-webui webui.layout=husarion-ugv-navigation
     sudo snap set husarion-webui ros.namespace=panther
     sudo snap set husarion-webui ros.transport=rmw_cyclonedds_cpp
