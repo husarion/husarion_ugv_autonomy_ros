@@ -27,7 +27,7 @@ Setup environment:
 
 ```bash
 cd panther-navigation
-export OBSERVATION_TOPIC={point_cloud_topic} # change topic name to match your LIDAR pointcloud2 topic
+export OBSERVATION_TOPIC={point_cloud_topic} # absolute topic name, change topic name to match your LIDAR PointCloud2 or LaserScan topic
 export OBSERVATION_TOPIC_TYPE={msg_type} # Specify: `laserscan`, `pointcloud`
 export SLAM=True # if you have map you can run navigation without SLAM
 ```
@@ -62,7 +62,7 @@ Setup environment:
 
 ```bash
 xhost +local:docker
-export OBSERVATION_TOPIC=velodyne_points # simulation is created with velodyne LIDAR
+export OBSERVATION_TOPIC=/panther/velodyne_points # absolute topic name, simulation is created with velodyne LIDAR
 export OBSERVATION_TOPIC_TYPE=pointcloud # Specify: `laserscan`, `pointcloud`
 export SLAM=True # if you have map you can run navigation without SLAM
 ```
