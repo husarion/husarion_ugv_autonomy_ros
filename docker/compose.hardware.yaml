@@ -22,4 +22,4 @@ services:
         observation_topic:=${OBSERVATION_TOPIC:-err}
         observation_topic_type:=${OBSERVATION_TOPIC_TYPE:-err}
         slam:=True
-        use_sim_time:=True
+        use_sim_time:=False
