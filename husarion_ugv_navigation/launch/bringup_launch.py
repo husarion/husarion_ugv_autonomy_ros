@@ -214,7 +214,7 @@ def generate_launch_description():
                 name="map_autosaver",
                 package="husarion_ugv_navigation",
                 executable="map_autosaver_node",
-                parameters=[{"autosave_period": 10.0}],
+                parameters=[configured_params],
                 arguments=["--ros-args", "--log-level", log_level],
                 output="screen",
             ),

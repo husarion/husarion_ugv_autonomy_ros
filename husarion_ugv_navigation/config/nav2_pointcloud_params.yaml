@@ -388,6 +388,12 @@ map_server:
     yaml_filename: map.yaml
     frame_id: <robot_namespace>/map
 
+map_autosaver:
+  ros__parameters:
+    use_sim_time: false
+    autosave_period: 15.0
+    map_directory: /maps/map
+
 # FIXME: Parameters are set in launch file
 # pointcloud_to_laserscan:
 #   ros__parameters:
