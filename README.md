@@ -1,19 +1,29 @@
 # panther-navigation
 
-A GitHub template for Panther: creating a map using Slam Toolbox and navigation with localization using Nav2
+A GitHub template for Panther: creating a map using Slam Toolbox and navigation with localization using Nav2.
 
-## 🤖 Phisical robot
+![autonomy-result](https://github-readme-figures.s3.eu-central-1.amazonaws.com/panther/husarion_ugv/husarion_ugv_autonomy.gif)
 
-The provided example is configured for the Panther robot and supports any LIDAR that publishes `PointCloud2` data by setting the appropriate environment variable.
+## Requirement
+
+To simplify the execution of this project, we are utilizing [just](https://github.com/casey/just). Install it with:
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | sudo bash -s -- --to /usr/bin
+```
+
+## 🤖 Physical robot
+
+The provided example is configured for the Panther robot and supports any LIDAR that publishes `PointCloud2` or `LaserScan` data type by setting the appropriate environment variable.
 
 > [!IMPORTANT]
 > Before running the navigation demo, ensure the following:
 >
-> - `PointCloud2` data is being published by the LIDAR.
-> - A static transform between the LIDAR and the robot frame (e.g. `velodyne` and `base_link`) is provided.
-> - Currently version doesn't support robot `namespace`.
+> - This demo should be run on **User Computer** with IP address: **`10.15.20.3/24`**.
+> - LIDAR publish messages of type: **`PointCloud2`** or **`LaserScan`**.
+> - A static transformation between LIDAR and robot frame is provided. The value of the **`frame_id`** field inside the published message must connect to the robot's `base_link`.
 
-### Environment configuration
+### 🔧 Step 1: Environment configuration
 
 Download this repository:
 
@@ -25,34 +35,37 @@ Setup environment:
 
 ```bash
 cd panther-navigation
-source setup_virtual_desktop.sh
-export POINTCLOUD2_TOPIC={point_cloud_topic} # change topic name to match your LIDAR pointcloud2 topic
+export OBSERVATION_TOPIC={point_cloud_topic} # absolute topic name to match your LIDAR pointcloud2 topic (e.g. /scan)
+export OBSERVATION_TOPIC_TYPE={msg_type} # Specify: `laserscan`, `pointcloud`
 export SLAM=True # if you have map you can run navigation without SLAM
-export USE_SIM_TIME=False
 ```
 
-### Setup navigation parameters
-
-Navigation parameters for mapping and nav2 are stored inside `/config` directory. You can modify these files to suit your needs. For example, you can change the costmap observation source topic to match your LIDAR.
-
-### Run navigation
+### 🧭 Step 2: Run navigation
 
 Run navigation.
 
 ```bash
-source setup_virtual_desktop.sh
-docker compose -f compose.pc2ls.yaml -f compose.nav2.yaml -f compose.vnc.yaml -f compose.rviz.yaml up
+just start-hardware
 ```
 
-To access the NUC desktop and Rviz2 interface go to [10.15.20.3:8080](http://10.15.20.3:8080/vnc_auto.html) in your browser. You need to specify the password (default: husarion).
+### 🕹️ Step 3: Control the robot from a Web Browser
 
-To drive the robot around use Rviz2. Specify the robot goal position by choosing `2D Goal Pose` and clicking on the provided map. The robot should generate a valid path and follow it. You can also use the `2D Pose Estimate` button to fix the robot's position on the map.
+1. Install husarion-webui
+
+    ```bash
+    just start-visualization
+    ```
+
+2. Open the your browser on your laptop and navigate to:
+
+    - http://{ip_address}:8080/ui (devices in the same LAN)
+    - http://{hostname}:8080/ui (devices in the same Husarnet Network)
 
 ## 🖥️ Simulation
 
 Example demo with Navigation2, using The Husarion Panther robot equipped with Velodyne Puck.
 
-### Environment configuration
+### 🔧 Step 1: Environment configuration
 
 Download this repository:
 
@@ -63,18 +76,26 @@ git clone https://github.com/husarion/panther-navigation
 Setup environment:
 
 ```bash
-xhost +local:docker
-export POINTCLOUD2_TOPIC=velodyne_points # simulation is created with velodyne LIDAR
 export SLAM=True # if you have map you can run navigation without SLAM
-export USE_SIM_TIME=True
 ```
 
-### Run navigation
+### 🧭 Step 2: Run navigation
 
 Run navigation.
 
 ```bash
-docker compose -f compose.simulation.yaml  -f compose.pc2ls.yaml -f compose.nav2.yaml -f compose.rviz.yaml up
+just start-simulation
 ```
 
-To drive the robot around use Rviz2. First, use the `2D Pose Estimate` button to fix the robot's position. Specify the robot goal position by choosing `2D Goal Pose` and clicking on the provided map. The robot should generate a valid path and follow it.
+### 🕹️ Step 3: Control the robot from a Web Browser
+
+1. Install husarion-webui
+
+    ```bash
+    just start-visualization
+    ```
+
+2. Open the your browser on your laptop and navigate to:
+
+    - http://{ip_address}:8080/ui (devices in the same LAN)
+    - http://{hostname}:8080/ui (devices in the same Husarnet Network)

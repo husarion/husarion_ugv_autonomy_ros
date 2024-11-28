@@ -4,10 +4,11 @@
 bt_navigator:
   ros__parameters:
     use_sim_time: false
-    global_frame: map
-    robot_base_frame: base_link
+    global_frame: <robot_namespace>/map
+    robot_base_frame: <robot_namespace>/base_link
     odom_topic: odometry/filtered
     plugin_lib_names:
+      - is_estop
       - nav2_compute_path_to_pose_action_bt_node
       - nav2_follow_path_action_bt_node
       - nav2_back_up_action_bt_node
@@ -33,7 +34,11 @@ bt_navigator:
       - nav2_remove_passed_goals_action_bt_node
       - nav2_compute_path_through_poses_action_bt_node
 
-bt_navigator_rclcpp_node:
+bt_navigator_navigate_through_poses_rclcpp_node:
+  ros__parameters:
+    use_sim_time: false
+
+bt_navigator_navigate_to_pose_rclcpp_node:
   ros__parameters:
     use_sim_time: false
 
@@ -80,7 +85,7 @@ controller_server:
       debug_trajectory_details: true
 
       # Velocity/acceleration limits also have to be adjusted in the velocity smoother
-      min_vel_x: 0.0
+      min_vel_x: -0.25
       max_vel_x: 0.5
       acc_lim_x: 1.0
       decel_lim_x: -1.0
@@ -101,7 +106,7 @@ controller_server:
       vy_samples: 0
       vtheta_samples: 20
 
-      transform_tolerance: 1.0
+      transform_tolerance: 0.2
       short_circuit_trajectory_evaluation: true
 
       trajectory_generator_name: dwb_plugins::StandardTrajectoryGenerator
@@ -131,17 +136,14 @@ controller_server:
       RotateToGoal.slowing_factor: 5.0
       RotateToGoal.lookahead_time: -1.0
 
-controller_server_rclcpp_node:
-  ros__parameters:
-    use_sim_time: false
-
 local_costmap:
   local_costmap:
     ros__parameters:
       use_sim_time: false
 
-      global_frame: odom
-      robot_base_frame: base_link
+      global_frame: <robot_namespace>/odom
+      robot_base_frame: <robot_namespace>/base_link
+      transform_tolerance: 0.1
 
       update_frequency: 5.0
       publish_frequency: 2.0
@@ -158,40 +160,31 @@ local_costmap:
       plugins: [obstacle_layer, inflation_layer]
       obstacle_layer:
         plugin: nav2_costmap_2d::ObstacleLayer
-        enabled: true
-        footprint_clearing_enabled: true
+        min_obstacle_height: 0.1
+        max_obstacle_height: 0.5
         observation_sources: scan
         scan:
-          topic: <point_cloud2_topic>
-          min_obstacle_height: 0.2
-          max_obstacle_height: 0.5
+          topic: <observation_topic>
           clearing: true
           marking: true
-          data_type: PointCloud2
-          raytrace_max_range: 5.0
-          raytrace_min_range: 0.0
-          obstacle_max_range: 5.0
-          obstacle_min_range: 0.25
+          data_type: LaserScan
+          raytrace_max_range: 12.0
+          raytrace_min_range: 0.9
+          obstacle_max_range: 12.0
+          obstacle_min_range: 0.9
       inflation_layer:
         plugin: nav2_costmap_2d::InflationLayer
-        enabled: true
-        cost_scaling_factor: 3.0
+        cost_scaling_factor: 1.3
         inflation_radius: 1.5
-
-  local_costmap_client:
-    ros__parameters:
-      use_sim_time: false
-  local_costmap_rclcpp_node:
-    ros__parameters:
-      use_sim_time: false
 
 global_costmap:
   global_costmap:
     ros__parameters:
       use_sim_time: false
 
-      global_frame: map
-      robot_base_frame: base_link
+      global_frame: <robot_namespace>/map
+      robot_base_frame: <robot_namespace>/base_link
+      transform_tolerance: 0.1
 
       update_frequency: 1.0
       publish_frequency: 1.0
@@ -206,37 +199,28 @@ global_costmap:
       plugins: [static_layer, obstacle_layer, inflation_layer]
       static_layer:
         plugin: nav2_costmap_2d::StaticLayer
-        enabled: true
         map_subscribe_transient_local: true
-        map_topic: /map
+        map_topic: /<robot_namespace>/map
       obstacle_layer:
         plugin: nav2_costmap_2d::ObstacleLayer
-        enabled: true
-        footprint_clearing_enabled: true
+        min_obstacle_height: 0.1
+        max_obstacle_height: 0.5
         observation_sources: scan
         scan:
-          topic: <point_cloud2_topic>
-          min_obstacle_height: 0.2
-          max_obstacle_height: 0.5
+          topic: <observation_topic>
           clearing: true
           marking: true
-          data_type: PointCloud2
-          raytrace_max_range: 5.0
-          raytrace_min_range: 0.0
-          obstacle_max_range: 5.0
-          obstacle_min_range: 0.25
+          data_type: LaserScan
+          raytrace_max_range: 12.0
+          raytrace_min_range: 0.9
+          obstacle_max_range: 12.0
+          obstacle_min_range: 0.9
       inflation_layer:
         plugin: nav2_costmap_2d::InflationLayer
-        enabled: true
-        cost_scaling_factor: 3.0
+        cost_scaling_factor: 1.5
         inflation_radius: 1.5
-
-  global_costmap_client:
-    ros__parameters:
-      use_sim_time: false
-  global_costmap_rclcpp_node:
-    ros__parameters:
-      use_sim_time: false
+        inflate_around_unknown: false
+        inflate_unknown: false
 
 planner_server:
   ros__parameters:
@@ -256,16 +240,12 @@ planner_server:
       cost_travel_multiplier: 2.0 # Cost multiplier to apply to search to steer away from high cost areas. Larger values will place in the center of aisles more exactly (if non-`FREE` cost potential field exists) but take slightly longer to compute. To optimize for speed, a value of 1.0 is reasonable. A reasonable tradeoff value is 2.0. A value of 0.0 effective disables steering away from obstacles and acts like a naive binary search A*.
       use_final_approach_orientation: false # Whether to set the final path pose at the goal's orientation to the requested orientation (false) or in line with the approach angle so the robot doesn't rotate to heading (true)
 
-planner_server_rclcpp_node:
-  ros__parameters:
-    use_sim_time: false
-
 recoveries_server:
   ros__parameters:
     use_sim_time: false
 
-    global_frame: odom
-    robot_base_frame: base_link
+    global_frame: <robot_namespace>/odom
+    robot_base_frame: <robot_namespace>/base_link
     transform_tolerance: 0.1
 
     costmap_topic: local_costmap/costmap_raw
@@ -300,8 +280,22 @@ waypoint_follower:
     waypoint_task_executor_plugin: wait_at_waypoint
     wait_at_waypoint:
       plugin: nav2_waypoint_follower::WaitAtWaypoint
-      enabled: true
-      waypoint_pause_duration: 200
+      waypoint_pause_duration: 5
+
+velocity_smoother:
+  ros__parameters:
+    use_sim_time: True
+    smoothing_frequency: 20.0
+    scale_velocities: False
+    feedback: OPEN_LOOP
+    max_velocity: [0.5, 0.0, 1.0]
+    min_velocity: [-0.5, 0.0, -1.0]
+    max_accel: [2.5, 0.0, 3.2]
+    max_decel: [-2.5, 0.0, -3.2]
+    odom_topic: <robot_namespace>/odom
+    odom_duration: 0.1
+    deadband_velocity: [0.0, 0.0, 0.0]
+    velocity_timeout: 1.0
 
 ### LOCALIZATION ###
 
@@ -309,11 +303,11 @@ amcl:
   ros__parameters:
     use_sim_time: false
 
-    global_frame_id: map
-    odom_frame_id: odom
-    base_frame_id: base_link
+    global_frame_id: <robot_namespace>/map
+    odom_frame_id: <robot_namespace>/odom
+    base_frame_id: <robot_namespace>/base_link
 
-    scan_topic: scan
+    scan_topic: <observation_topic>
 
     robot_model_type: nav2_amcl::DifferentialMotionModel
 
@@ -371,24 +365,17 @@ amcl:
     z_rand: 0.5
     z_short: 0.05
 
-amcl_map_client:
-  ros__parameters:
-    use_sim_time: false
-
-amcl_rclcpp_node:
-  ros__parameters:
-    use_sim_time: false
-
 ### MAP SERVER ###
 
 map_server:
   ros__parameters:
     use_sim_time: false
     yaml_filename: map.yaml
+    frame_id: <robot_namespace>/map
 
 ### SLAM ###
 
-slam_toolbox:
+<robot_namespace>/slam_toolbox:
   ros__parameters:
     # Plugin params
     solver_plugin: solver_plugins::CeresSolver
@@ -399,10 +386,10 @@ slam_toolbox:
     ceres_loss_function: None #HuberLoss
 
     # ROS Parameters
-    odom_frame: odom
-    map_frame: map
-    base_frame: base_link
-    scan_topic: /scan
+    odom_frame: <robot_namespace>/odom
+    map_frame: <robot_namespace>/map
+    base_frame: <robot_namespace>/base_link
+    scan_topic: <observation_topic>
     mode: mapping #localization
 
     debug_logging: false

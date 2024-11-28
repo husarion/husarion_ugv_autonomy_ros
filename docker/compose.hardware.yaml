@@ -1,0 +1,25 @@
+x-common-config:
+  &common-config
+  network_mode: host
+  ipc: host
+
+services:
+  navigation:
+    # image: husarion/husarion-ugv-navigation:humble-0.1.0-20241113
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: navigation
+    <<: *common-config
+    volumes:
+      - ../husarion_ugv_navigation:/ros2_ws/src/husarion_ugv_navigation
+      - ../maps:/maps
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    command: >
+      ros2 launch husarion_ugv_navigation bringup_launch.py
+        namespace:=panther
+        observation_topic:=${OBSERVATION_TOPIC:-err}
+        observation_topic_type:=${OBSERVATION_TOPIC_TYPE:-err}
+        slam:=True
+        use_sim_time:=False

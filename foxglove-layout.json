@@ -1,0 +1,262 @@
+{
+  "configById": {
+    "3D!18i6zy7": {
+      "layers": {
+        "845139cb-26bc-40b3-8161-8ab60af4baf5": {
+          "visible": true,
+          "frameLocked": true,
+          "label": "Grid",
+          "instanceId": "845139cb-26bc-40b3-8161-8ab60af4baf5",
+          "layerId": "foxglove.Garid",
+          "size": 10,
+          "divisions": 10,
+          "lineWidth": 1,
+          "color": "#248eff",
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "order": 1
+        },
+        "160e6e08-676d-470b-95d1-a3784efa5993": {
+          "visible": true,
+          "frameLocked": true,
+          "label": "URDF",
+          "instanceId": "160e6e08-676d-470b-95d1-a3784efa5993",
+          "layerId": "foxglove.Urdf",
+          "sourceType": "topic",
+          "url": "",
+          "filePath": "",
+          "parameter": "",
+          "topic": "/panther/robot_description",
+          "framePrefix": "panther/",
+          "displayMode": "auto",
+          "fallbackColor": "#ffffff",
+          "order": 2
+        }
+      },
+      "cameraState": {
+        "perspective": false,
+        "distance": 16.267734757346467,
+        "phi": 29.99999999999957,
+        "thetaOffset": 90.00000000000345,
+        "targetOffset": [
+          0.2914251869950411,
+          -0.34919366740225544,
+          -5.932468837162252e-17
+        ],
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "followTf": "panther/map",
+      "scene": {
+        "transforms": {
+          "showLabel": true,
+          "editable": true
+        },
+        "enableStats": true,
+        "ignoreColladaUpAxis": false,
+        "meshUpAxis": "z_up"
+      },
+      "transforms": {
+        "frame:panther/map": {
+          "visible": false
+        },
+        "frame:panther/body_link": {
+          "visible": false
+        },
+        "frame:panther/base_link": {
+          "visible": false
+        },
+        "frame:panther/cover_link": {
+          "visible": false
+        },
+        "frame:panther/front_bumper_link": {
+          "visible": false
+        },
+        "frame:panther/imu_link": {
+          "visible": false
+        },
+        "frame:panther/rear_bumper_link": {
+          "visible": false
+        },
+        "frame:panther/velodyne_puck_link": {
+          "visible": false
+        },
+        "frame:panther/lights_channel_1_link": {
+          "visible": false
+        },
+        "frame:panther/lights_channel_2_link": {
+          "visible": false
+        },
+        "frame:panther/velodyne": {
+          "visible": false
+        },
+        "frame:panther/odom": {
+          "visible": false
+        },
+        "frame:panther/fl_wheel_link": {
+          "visible": false
+        },
+        "frame:panther/fr_wheel_link": {
+          "visible": false
+        },
+        "frame:panther/rl_wheel_link": {
+          "visible": false
+        },
+        "frame:panther/rr_wheel_link": {
+          "visible": false
+        },
+        "frame:panther/slamtec_rplidar_link": {
+          "visible": false
+        },
+        "frame:panther/laser": {
+          "visible": false
+        }
+      },
+      "topics": {
+        "/panther/map": {
+          "visible": true,
+          "colorMode": "map",
+          "alpha": 0.5
+        },
+        "/panther/cost_cloud": {
+          "visible": false
+        },
+        "/panther/plan": {
+          "visible": true,
+          "lineWidth": 0.1,
+          "gradient": [
+            "#00ff1eff",
+            "#00b12b80"
+          ]
+        },
+        "/panther/plan_smoothed": {
+          "visible": false
+        },
+        "/panther/received_global_plan": {
+          "visible": false
+        },
+        "/panther/global_costmap/published_footprint": {
+          "visible": false
+        },
+        "/panther/global_costmap/costmap": {
+          "visible": true,
+          "colorMode": "costmap",
+          "alpha": 0.25
+        },
+        "/panther/local_costmap/costmap": {
+          "visible": true,
+          "colorMode": "costmap",
+          "alpha": 0.5
+        },
+        "/panther/pose": {
+          "visible": false,
+          "type": "arrow"
+        },
+        "/panther/scan": {
+          "visible": true,
+          "colorField": "intensity",
+          "colorMode": "colormap",
+          "colorMap": "turbo",
+          "explicitAlpha": 1,
+          "pointSize": 4
+        },
+        "/panther/marker": {
+          "visible": false,
+          "showOutlines": true
+        },
+        "/panther/goal_pose": {
+          "visible": true,
+          "type": "arrow",
+          "color": "#13ff00ff"
+        },
+        "/panther/local_plan": {
+          "visible": true,
+          "gradient": [
+            "#ff0000ff",
+            "#ff000080"
+          ]
+        }
+      },
+      "publish": {
+        "type": "pose",
+        "poseTopic": "/panther/goal_pose",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "imageMode": {}
+    },
+    "EStop!3mw7boq": {
+      "requestPayload": "{}",
+      "goServiceName": "/panther/hardware/e_stop_reset",
+      "stopServiceName": "/panther/hardware/e_stop_trigger",
+      "statusTopicName": "/panther/hardware/e_stop.data",
+      "foxglovePanelTitle": "E-stop"
+    },
+    "Joy!454iiby": {
+      "topic": "/panther/cmd_vel",
+      "publishRate": 5,
+      "stamped": false,
+      "advanced": false,
+      "xAxis": {
+        "field": "linear-x",
+        "limit": 1
+      },
+      "yAxis": {
+        "field": "angular-z",
+        "limit": 1
+      }
+    },
+    "DiagnosticSummary!3ebmih7": {
+      "minLevel": 0,
+      "pinnedIds": [],
+      "hardwareIdFilter": "",
+      "topicToRender": "/panther/diagnostics",
+      "sortByLevel": true
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1
+  },
+  "layout": {
+    "first": "3D!18i6zy7",
+    "second": {
+      "first": "EStop!3mw7boq",
+      "second": {
+        "first": "Joy!454iiby",
+        "second": "DiagnosticSummary!3ebmih7",
+        "direction": "column",
+        "splitPercentage": 60.441176470588246
+      },
+      "direction": "column",
+      "splitPercentage": 23.423423423423422
+    },
+    "direction": "row",
+    "splitPercentage": 63.489583333333336
+  }
+}
