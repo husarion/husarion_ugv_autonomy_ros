@@ -22,7 +22,8 @@ foreach(PACKAGE IN ITEMS ${DEPENDENCIES})
 endforeach()
 
 # Executables
-add_executable(map_autosaver_node src/map_autosaver_node.cpp)
+add_executable(map_autosaver_node src/map_autosaver_main.cpp
+                                  src/map_autosaver_node.cpp)
 list(APPEND exec_nodes map_autosaver_node)
 
 foreach(node ${exec_nodes})
