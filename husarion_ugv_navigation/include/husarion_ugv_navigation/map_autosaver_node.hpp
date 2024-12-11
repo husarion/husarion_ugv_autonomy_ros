@@ -25,6 +25,7 @@ namespace husarion_ugv_navigation {
 
 constexpr auto SAVE_MAP_CONNECTION_TIMEOUT = std::chrono::seconds(2);
 constexpr auto MIN_SAVE_MAP_PERIOD = std::chrono::seconds(5);
+constexpr auto DEFAULT_MAP_PERIOD = std::chrono::seconds(10);
 
 using SaveMapReq = nav2_msgs::srv::SaveMap::Request;
 
@@ -34,7 +35,7 @@ public:
                   const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
 
 private:
-  std::chrono::duration<double> save_map_period_ = MIN_SAVE_MAP_PERIOD;
+  std::chrono::duration<double> autosave_period_ = DEFAULT_MAP_PERIOD;
   rclcpp::Client<nav2_msgs::srv::SaveMap>::SharedPtr save_map_client_;
   rclcpp::TimerBase::SharedPtr save_map_timer_;
 
