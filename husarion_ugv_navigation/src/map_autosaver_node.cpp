@@ -16,8 +16,11 @@
 
 namespace husarion_ugv_navigation {
 
-constexpr auto SAVE_MAP_CONNECTION_TIMEOUT = 2s;
-constexpr auto MIN_SAVE_MAP_PERIOD = 5s;
+{
+  using namespace std::chrono_literals;
+  constexpr auto SAVE_MAP_CONNECTION_TIMEOUT = 2s;
+  constexpr auto MIN_SAVE_MAP_PERIOD = 5s;
+}
 
 AutosaveMapNode::AutosaveMapNode(const std::string &node_name,
                                  const rclcpp::NodeOptions &options)
@@ -31,16 +34,16 @@ AutosaveMapNode::AutosaveMapNode(const std::string &node_name,
 
   save_map_period_ = std::chrono::duration<double>(period);
   if (save_map_period_ < MIN_SAVE_MAP_PERIOD) {
-    save_map_period_ = MIN_SAVE_MAP_PERIOD;
-  }
+    RCLCPP_WARN_STREAM(get_logger(), "autosave_period is too short. It will be set to the minimum period of " << MIN_SAVE_MAP_PERIOD.count() << " seconds");
+  save_map_period_ = MIN_SAVE_MAP_PERIOD;
+    }
 
   save_map_client_ =
       this->create_client<nav2_msgs::srv::SaveMap>("map_saver/save_map");
   save_map_timer_ = this->create_wall_timer(
       save_map_period_, std::bind(&AutosaveMapNode::SaveMapCB, this));
 
-  RCLCPP_INFO(get_logger(), "Map saver initialized with period %.2lf seconds",
-              save_map_period_.count());
+  RCLCPP_INFO_STREAM(get_logger(), "Map saver initialized with period " << std::fixed << std::setprecision(3) << seconds << " seconds");
 }
 
 void AutosaveMapNode::SaveMapCB() {
@@ -48,7 +51,7 @@ void AutosaveMapNode::SaveMapCB() {
     auto request = CreateSaveMapRequest();
    save_map_client_->async_send_request(request);
   } else {
-    RCLCPP_DEBUG(get_logger(), "save_map service unavailable");
+    RCLCPP_WARN(get_logger(), "map_saver/save_map service unavailable");
   }
 }
 

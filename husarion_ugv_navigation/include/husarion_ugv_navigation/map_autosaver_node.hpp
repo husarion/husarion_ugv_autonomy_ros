@@ -15,18 +15,19 @@
 #ifndef HUSARION_UGV_NAVIGATION_HUSARION_UGV_NAVIGATION_MAP_AUTOSAVER_HPP
 #define HUSARION_UGV_NAVIGATION_HUSARION_UGV_NAVIGATION_MAP_AUTOSAVER_HPP
 
-#include "nav2_msgs/srv/save_map.hpp"
-#include "rclcpp/rclcpp.hpp"
 #include <chrono>
+
+#include <rclcpp/rclcpp.hpp>
+
+#include <nav2_msgs/srv/save_map.hpp>
 
 namespace husarion_ugv_navigation {
 
-using namespace std::chrono_literals;
+
 using SaveMapReq = nav2_msgs::srv::SaveMap::Request;
 
 class AutosaveMapNode : public rclcpp::Node {
 public:
-  AutosaveMapNode() = delete;
   AutosaveMapNode(const std::string &node_name,
                   const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
 
