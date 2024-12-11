@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef HUSARION_UGV_NAVIGATION_MAP_AUTOSAVER_HPP
-#define HUSARION_UGV_NAVIGATION_MAP_AUTOSAVER_HPP
+#ifndef HUSARION_UGV_NAVIGATION_HUSARION_UGV_NAVIGATION_MAP_AUTOSAVER_HPP
+#define HUSARION_UGV_NAVIGATION_HUSARION_UGV_NAVIGATION_MAP_AUTOSAVER_HPP
 
 #include "nav2_msgs/srv/save_map.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -42,4 +42,4 @@ private:
 
 } // namespace husarion_ugv_navigation
 
-#endif // HUSARION_UGV_NAVIGATION_MAP_AUTOSAVER_HPP
+#endif // HUSARION_UGV_NAVIGATION_HUSARION_UGV_NAVIGATION_MAP_AUTOSAVER_HPP

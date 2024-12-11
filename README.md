@@ -1,6 +1,6 @@
 # panther-navigation
 
-A GitHub template for Panther: creating a map using Slam Toolbox and navigation with localization using Nav2.
+A GitHub template for Husarion UGVs: creating a map using Slam Toolbox and navigation with localization using Nav2.
 
 ![autonomy-result](https://github-readme-figures.s3.eu-central-1.amazonaws.com/panther/husarion_ugv/husarion_ugv_autonomy.gif)
 
@@ -20,8 +20,8 @@ The provided example is configured for the Panther robot and supports any LIDAR 
 > Before running the navigation demo, ensure the following:
 >
 > - This demo should be run on **User Computer** with IP address: **`10.15.20.3/24`**.
-> - LIDAR publish messages of type: **`PointCloud2`** or **`LaserScan`**.
-> - A static transformation between LIDAR and robot frame is provided. The value of the **`frame_id`** field inside the published message must connect to the robot's `base_link`.
+> - a LIDAR publishes messages of type: **`PointCloud2`** or **`LaserScan`**.
+> - A static transformation between a LIDAR and a robot frame is provided. The value of the **`frame_id`** field inside the published message must connect to the robot's `base_link`.
 
 ### 🔧 Step 1: Environment configuration
 
@@ -50,7 +50,7 @@ just start-hardware
 
 ### 🕹️ Step 3: Control the robot from a Web Browser
 
-1. Install husarion-webui
+1. Install and run husarion-webui
 
     ```bash
     just start-visualization
@@ -63,7 +63,7 @@ just start-hardware
 
 ## 🖥️ Simulation
 
-Example demo with Navigation2, using The Husarion Panther robot equipped with Velodyne Puck.
+Example demo with Navigation2, using The Husarion Panther robot equipped with the Velodyne Puck.
 
 ### 🔧 Step 1: Environment configuration
 
@@ -89,7 +89,7 @@ just start-simulation
 
 ### 🕹️ Step 3: Control the robot from a Web Browser
 
-1. Install husarion-webui
+1. Install and run husarion-webui
 
     ```bash
     just start-visualization

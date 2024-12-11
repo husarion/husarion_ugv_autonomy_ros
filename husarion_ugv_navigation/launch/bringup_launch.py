@@ -54,18 +54,21 @@ def generate_launch_description():
     declare_autostart_arg = DeclareLaunchArgument(
         "autostart",
         default_value="true",
-        description="Automatically startup the nav2 stack",
+        description="Automatically startup the nav2 stack.",
     )
     declare_log_level_arg = DeclareLaunchArgument(
-        "log_level", default_value="info", description="log level"
+        "log_level",
+        default_value="info",
+        description="Logging level.",
+        choices=["debug", "info", "warning", "error"],
     )
     declare_map_arg = DeclareLaunchArgument(
-        "map", default_value="/maps/map.yaml", description="Full path to map yaml file to load"
+        "map", default_value="/maps/map.yaml", description="Full path to map yaml file to load."
     )
     declare_namespace_arg = DeclareLaunchArgument(
         "namespace",
         default_value=EnvironmentVariable("ROBOT_NAMESPACE", default_value=""),
-        description="Top-level namespace",
+        description="Top-level namespace.",
     )
     declare_observation_topic_arg = DeclareLaunchArgument(
         "observation_topic",
@@ -87,15 +90,15 @@ def generate_launch_description():
                 PythonExpression(["'nav2_", observation_topic_type, "_params.yaml'"]),
             ]
         ),
-        description="Full path to the ROS2 parameters file to use for all launched nodes",
+        description="Full path to the ROS2 parameters file to use for all launched nodes.",
     )
     declare_slam_arg = DeclareLaunchArgument(
-        "slam", default_value="False", description="Whether run a SLAM"
+        "slam", default_value="False", description="Whether run a SLAM."
     )
     declare_use_composition_arg = DeclareLaunchArgument(
         "use_composition",
         default_value="True",
-        description="Whether to use composed bringup",
+        description="Whether to use composed bringup.",
     )
     declare_use_respawn_arg = DeclareLaunchArgument(
         "use_respawn",
@@ -105,7 +108,7 @@ def generate_launch_description():
     declare_use_sim_time_arg = DeclareLaunchArgument(
         "use_sim_time",
         default_value="false",
-        description="Use simulation (Gazebo) clock if true",
+        description="Use simulation (Gazebo) clock if true.",
     )
 
     # Create our own temporary YAML files that include substitutions
@@ -131,7 +134,6 @@ def generate_launch_description():
         allow_substs=True,
     )
 
-    # Specify the actions
     bringup_cmd_group = GroupAction(
         [
             PushRosNamespace(namespace),

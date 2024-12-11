@@ -9,6 +9,7 @@ check-husarion-webui:
     #!/bin/bash
     if ! command -v snap &> /dev/null; then
         echo "Snap is not installed. Please install Snap first and try again."
+        echo "sudo apt install snapd"
         exit 1
     fi
 
