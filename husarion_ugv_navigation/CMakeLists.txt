@@ -32,7 +32,7 @@ endforeach()
 
 install(TARGETS ${exec_nodes} DESTINATION lib/${PROJECT_NAME})
 
-# Liblaries
+# Libraries
 add_library(is_estop SHARED src/plugins/condition/is_estop.cpp)
 list(APPEND plugin_libs is_estop)
 

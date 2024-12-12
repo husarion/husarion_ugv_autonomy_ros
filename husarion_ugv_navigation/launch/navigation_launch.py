@@ -30,7 +30,6 @@ from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
-    # Get the launch directory
     bringup_dir = get_package_share_directory("nav2_bringup")
     husarion_dir = get_package_share_directory("husarion_ugv_navigation")
 
@@ -287,6 +286,7 @@ def generate_launch_description():
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
+    
     # Add the actions to launch all of the navigation nodes
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
