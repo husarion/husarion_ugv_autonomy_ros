@@ -10,7 +10,7 @@ repositories:
   panther_ros:
     type: git
     url: https://github.com/husarion/panther_ros
-    version: 863c835f0ac64ebf793db17a1f0f048a37497726
+    version: 934504568370794c9851d3d09a0099a30050cdec
   panther_msgs:
     type: git
     url: https://github.com/husarion/panther_msgs.git
