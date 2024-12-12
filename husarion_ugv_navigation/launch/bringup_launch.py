@@ -35,7 +35,6 @@ from nav2_common.launch import ReplaceString, RewrittenYaml
 
 
 def generate_launch_description():
-    # Get the launch directory
     husarion_ugv_navigation = FindPackageShare("husarion_ugv_navigation")
     launch_dir = PathJoinSubstitution([husarion_ugv_navigation, "launch"])
 
@@ -120,7 +119,7 @@ def generate_launch_description():
     params_file = ReplaceString(
         source_file=params_file,
         replacements={
-            "<robot_namespace>/": namespace_ext,
+            "<namespace>/": namespace_ext,
             "<observation_topic>": scan_topic,
             "<scan_topic>": scan_topic,
             "<is_laserscan>": is_laserscan,
@@ -131,7 +130,7 @@ def generate_launch_description():
     configured_params = ParameterFile(
         RewrittenYaml(
             source_file=params_file,
-            root_key=namespace,
+            # root_key=namespace,
             param_rewrites=param_substitutions,
             convert_types=True,
         ),
