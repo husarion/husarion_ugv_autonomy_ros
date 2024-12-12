@@ -27,11 +27,13 @@ from nav2_common.launch import ReplaceString
 
 
 def generate_launch_description():
+    husarion_ugv_docking_dir = FindPackageShare("husarion_ugv_docking")
+
     docking_server_config_path = LaunchConfiguration("docking_server_config_path")
     declare_docking_server_config_path_arg = DeclareLaunchArgument(
         "docking_server_config_path",
         default_value=PathJoinSubstitution(
-            [FindPackageShare("husarion_ugv_docking"), "config", "docking_server.yaml"]
+            [husarion_ugv_docking_dir, "config", "docking_server.yaml"]
         ),
         description=("Path to docking server configuration file."),
     )
@@ -40,9 +42,18 @@ def generate_launch_description():
     declare_apriltag_config_path_arg = DeclareLaunchArgument(
         "apriltag_config_path",
         default_value=PathJoinSubstitution(
-            [FindPackageShare("husarion_ugv_docking"), "config", "apriltag.yaml"]
+            [husarion_ugv_docking_dir, "config", "apriltag.yaml"]
         ),
         description=("Path to apriltag configuration file. Only used in simulation."),
+    )
+
+    bt_project_path = LaunchConfiguration("bt_project_path")
+    declare_bt_project_path_arg = DeclareLaunchArgument(
+        "bt_project_path",
+        default_value=PathJoinSubstitution(
+            [husarion_ugv_docking_dir, "behavior_trees", "docking.xml"]
+        ),
+        description=("Path to behavior tree project file."),
     )
 
     namespace = LaunchConfiguration("namespace", default="")
@@ -134,7 +145,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             PathJoinSubstitution(
                 [
-                    FindPackageShare("husarion_ugv_docking"),
+                    husarion_ugv_docking_dir,
                     "launch",
                     "station.launch.py",
                 ]
@@ -154,9 +165,25 @@ def generate_launch_description():
         ),
     )
 
+    docking_manager_node = Node(
+        package="husarion_ugv_docking",
+        executable="docking_manager_node",
+        name="docking_manager",
+        parameters=[
+            PathJoinSubstitution(
+                [husarion_ugv_docking_dir, "config", "docking_manager.yaml"]
+            ),
+            {"bt_project_path": bt_project_path},
+        ],
+        arguments=["--ros-args", "--log-level", log_level, "--log-level", "rcl:=INFO"],
+        namespace=namespace,
+        emulate_tty=True,
+    )
+
     return LaunchDescription(
         [
             declare_apriltag_config_path_arg,
+            declare_bt_project_path_arg,
             declare_docking_server_config_path_arg,
             declare_log_level,
             declare_use_wibotic_info_arg,
@@ -165,6 +192,7 @@ def generate_launch_description():
             docking_server_activate_node,
             dock_pose_publisher,
             apriltag_node,
+            docking_manager_node,
             wibotic_connector_can,
         ]
     )

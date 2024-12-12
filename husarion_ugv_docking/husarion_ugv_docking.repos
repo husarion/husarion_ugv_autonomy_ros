@@ -6,7 +6,7 @@ repositories:
   ros_components_description:
     type: git
     url: https://github.com/husarion/ros_components_description.git
-    version: b29f5637a243b0008ac197032575c8df47883b2c
+    version: 517350ac672b7383c3377e63244353a104096c39
   panther_ros:
     type: git
     url: https://github.com/husarion/panther_ros
