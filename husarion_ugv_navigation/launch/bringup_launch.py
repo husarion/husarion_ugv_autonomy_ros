@@ -45,6 +45,7 @@ def generate_launch_description():
     observation_topic = LaunchConfiguration("observation_topic")
     observation_topic_type = LaunchConfiguration("observation_topic_type")
     params_file = LaunchConfiguration("params_file")
+    pc2ls_params_file = LaunchConfiguration("pc2ls_params_file")
     slam = LaunchConfiguration("slam")
     use_composition = LaunchConfiguration("use_composition")
     use_respawn = LaunchConfiguration("use_respawn")
@@ -84,6 +85,13 @@ def generate_launch_description():
         "params_file",
         default_value=PathJoinSubstitution(
             [husarion_ugv_navigation, "config", "nav2_params.yaml"]
+        ),
+        description="Full path to the ROS2 parameters file to use for all launched nodes.",
+    )
+    declare_pc2ls_params_file_arg = DeclareLaunchArgument(
+        "pc2ls_params_file",
+        default_value=PathJoinSubstitution(
+            [husarion_ugv_navigation, "config", "pc2ls_params.yaml"]
         ),
         description="Full path to the ROS2 parameters file to use for all launched nodes.",
     )
@@ -130,7 +138,7 @@ def generate_launch_description():
     configured_params = ParameterFile(
         RewrittenYaml(
             source_file=params_file,
-            # root_key=namespace,
+            root_key=namespace,
             param_rewrites=param_substitutions,
             convert_types=True,
         ),
@@ -147,18 +155,7 @@ def generate_launch_description():
                 package="pointcloud_to_laserscan",
                 executable="pointcloud_to_laserscan_node",
                 name="pointcloud_to_laserscan",
-                parameters=[
-                    configured_params,
-                    {
-                        "min_height": 0.05,
-                        "max_height": 0.5,
-                        "angle_increment": 0.01,
-                        "scan_time": 0.1,
-                        "range_min": 0.85,
-                        "range_max": 12.0,
-                        "transform_tolerance": 0.02,
-                    },
-                ],
+                parameters=[pc2ls_params_file],
                 remappings=[("cloud_in", observation_topic)],
                 output="screen",
             ),
@@ -236,6 +233,7 @@ def generate_launch_description():
             declare_observation_topic_arg,
             declare_observation_topic_type_arg,
             declare_params_file_arg,
+            declare_pc2ls_params_file_arg,
             declare_slam_arg,
             declare_use_composition_arg,
             declare_use_respawn_arg,
