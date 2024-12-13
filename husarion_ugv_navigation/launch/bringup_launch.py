@@ -93,7 +93,7 @@ def generate_launch_description():
         default_value=PathJoinSubstitution(
             [husarion_ugv_navigation, "config", "pc2ls_params.yaml"]
         ),
-        description="Full path to the ROS2 parameters file to use for all launched nodes.",
+        description="Full path to the ROS2 parameters file to use for pointcloud_to_laserscan nodes.",
     )
     declare_slam_arg = DeclareLaunchArgument(
         "slam", default_value="False", description="Whether run a SLAM."
