@@ -47,6 +47,20 @@ def generate_launch_description():
         description=("Path to apriltag configuration file. Only used in simulation."),
     )
 
+    camera_color_topic = LaunchConfiguration("camera_color_topic")
+    declare_camera_color_topic_arg = DeclareLaunchArgument(
+        "camera_color_topic",
+        default_value="/camera/color/image_raw",
+        description="Color camera topic",
+    )
+
+    camera_info_topic = LaunchConfiguration("camera_info_topic")
+    declare_camera_info_topic_arg = DeclareLaunchArgument(
+        "camera_info_topic",
+        default_value="/camera/color/camera_info",
+        description="Camera info topic",
+    )
+
     bt_project_path = LaunchConfiguration("bt_project_path")
     declare_bt_project_path_arg = DeclareLaunchArgument(
         "bt_project_path",
@@ -131,12 +145,12 @@ def generate_launch_description():
     apriltag_node = Node(
         package="apriltag_ros",
         executable="apriltag_node",
-        parameters=[{"use_sim_time": True}, apriltag_config_path],
+        parameters=[{"use_sim_time": use_sim}, apriltag_config_path],
         namespace=namespace,
         emulate_tty=True,
         remappings={
-            "camera_info": "camera/color/camera_info",
-            "image_rect": "camera/color/image_raw",
+            "camera_info": camera_info_topic,
+            "image_rect": camera_color_topic,
             "detections": "docking/april_tags",
         }.items(),
     )
@@ -184,6 +198,8 @@ def generate_launch_description():
         [
             declare_apriltag_config_path_arg,
             declare_bt_project_path_arg,
+            declare_camera_color_topic_arg,
+            declare_camera_info_topic_arg,
             declare_docking_server_config_path_arg,
             declare_log_level,
             declare_use_wibotic_info_arg,

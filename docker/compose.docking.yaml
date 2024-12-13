@@ -19,3 +19,6 @@ services:
       ros2 launch husarion_ugv_docking docking.launch.py
         namespace:=panther
         use_sim_time:=False
+        use_wibotic_info:=False
+        camera_color_topic:=/panther/color/image_raw
+        camera_color_info_topic:=/panther/color/camera_info

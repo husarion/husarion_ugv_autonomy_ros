@@ -57,3 +57,8 @@ The package contains a `ChargingDock` plugin for the [opennav_docking](https://g
 - `<dock_name>.apriltag_id` [*int*, default: **0**]: AprilTag ID of a dock.
 - `<dock_name>.dock_frame` [*string*, default: **main_wibotic_transmitter_link**]: A frame id to compare with fixed frame if docked.
 - `<dock_name>.pose` [*list*, default: **[0.0, 0.0, 0.0]**]: A pose of a dock on the map. If the simulation is used a dock is spawned in this pose.
+
+
+<!-- Override description
+ros2 launch panther_description overwrite_robot_description.launch.py controller_config_path:=$(pwd)/panther_ros/panther_description/config/components.yaml namespace:=panther
+ -->
