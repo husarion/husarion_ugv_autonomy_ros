@@ -37,8 +37,10 @@ Setup environment:
 cd panther-navigation
 export OBSERVATION_TOPIC={point_cloud_topic} # absolute topic name to match your LIDAR pointcloud2 topic (e.g. /scan)
 export OBSERVATION_TOPIC_TYPE={msg_type} # Specify: `laserscan`, `pointcloud`
-export SLAM=True # if you have map you can run navigation without SLAM
 ```
+
+> [!NOTE]
+> Additional arguments are detailed in the [Launch Arguments](#launch-arguments) section.
 
 ### 🧭 Step 2: Run navigation
 
@@ -73,12 +75,6 @@ Download this repository:
 git clone https://github.com/husarion/panther-navigation
 ```
 
-Setup environment:
-
-```bash
-export SLAM=True # if you have map you can run navigation without SLAM
-```
-
 ### 🧭 Step 2: Run navigation
 
 Run navigation.
@@ -99,3 +95,20 @@ just start-simulation
 
     - http://{ip_address}:8080/ui (devices in the same LAN)
     - http://{hostname}:8080/ui (devices in the same Husarnet Network)
+
+## Launch Arguments
+
+| Argument                 | Description <br/> ***Type:*** `Default`                                                                         |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `autostart`              | Automatically startup the nav2 stack. <br/> ***bool:*** `True`                                                  |
+| `log_level`              | Logging level. <br/> ***string*** `info` (choices: `debug`, `info`, `warning`, `error`, `custom`)               |
+| `map`                    | Path to map yaml file to load. <br/> ***string:*** `/maps/map.yaml`                                        |
+| `namespace`              | Add namespace to all launched nodes. <br/> ***string:*** `env(ROBOT_NAMESPACE)`                                 |
+| `observation_topic`      | Topic name for LaserScan or PointCloud2 observation messages type. <br/> `''`                                   |
+| `observation_topic_type` | Observation topic type. <br/> ***string:*** `pointcloud` (choices: `laserscan`, `pointcloud`)                   |
+| `params_file`            | Path to the parameters file to use for all nav2 related nodes. <br/> ***string:*** [`nav2_params.yaml](./husarion_ugv_navigation/config/nav2_params.yaml)  |
+| `pc2ls_params_file`      | Path to the parameters file to use for pointcloud_to_laserscan node. <br/> ***string:*** [`pc2ls_params.yaml](./husarion_ugv_navigation/config/pc2ls_params.yaml) |
+| `slam`                   | Whether run a SLAM. <br/> ***bool:*** `False`                                                                   |
+| `use_composition`        | Whether to use composed bringup. <br/> ***bool:*** `True`                                                       |
+| `use_respawn`            | Whether to respawn if a node crashes. Applied when composition is disabled. <br/> ***bool:*** `False`           |
+| `use_sim_time`           | Use simulation (Gazebo) clock if true. <br/> ***bool:*** `False`                                                |

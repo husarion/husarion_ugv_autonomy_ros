@@ -63,12 +63,12 @@ def generate_launch_description():
         choices=["debug", "info", "warning", "error"],
     )
     declare_map_arg = DeclareLaunchArgument(
-        "map", default_value="/maps/map.yaml", description="Full path to map yaml file to load."
+        "map", default_value="/maps/map.yaml", description="Path to map yaml file to load."
     )
     declare_namespace_arg = DeclareLaunchArgument(
         "namespace",
         default_value=EnvironmentVariable("ROBOT_NAMESPACE", default_value=""),
-        description="Top-level namespace.",
+        description="Add namespace to all launched nodes.",
     )
     declare_observation_topic_arg = DeclareLaunchArgument(
         "observation_topic",
@@ -86,14 +86,14 @@ def generate_launch_description():
         default_value=PathJoinSubstitution(
             [husarion_ugv_navigation, "config", "nav2_params.yaml"]
         ),
-        description="Full path to the ROS2 parameters file to use for all launched nodes.",
+        description="Path to the parameters file to use for all nav2 related nodes",
     )
     declare_pc2ls_params_file_arg = DeclareLaunchArgument(
         "pc2ls_params_file",
         default_value=PathJoinSubstitution(
             [husarion_ugv_navigation, "config", "pc2ls_params.yaml"]
         ),
-        description="Full path to the ROS2 parameters file to use for pointcloud_to_laserscan nodes.",
+        description="Path to the parameters file to use for pointcloud_to_laserscan node.",
     )
     declare_slam_arg = DeclareLaunchArgument(
         "slam", default_value="False", description="Whether run a SLAM."
