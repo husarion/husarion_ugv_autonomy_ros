@@ -73,6 +73,21 @@ ament_target_dependencies(dock_pose_publisher ${PACKAGE_DEPENDENCIES})
 
 install(TARGETS dock_pose_publisher docking_manager_node DESTINATION lib/${PROJECT_NAME})
 
+add_library(dock_robot_bt_node SHARED
+            src/plugins/action/dock_robot_node.cpp)
+list(APPEND plugin_libs dock_robot_bt_node)
+
+add_library(undock_robot_bt_node SHARED
+            src/plugins/action/undock_robot_node.cpp)
+list(APPEND plugin_libs undock_robot_bt_node)
+
+foreach(bt_plugin ${plugin_libs})
+  target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
+  ament_target_dependencies(${bt_plugin} ${PACKAGE_DEPENDENCIES})
+endforeach()
+
+install(TARGETS ${plugin_libs} DESTINATION lib)
+
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 
