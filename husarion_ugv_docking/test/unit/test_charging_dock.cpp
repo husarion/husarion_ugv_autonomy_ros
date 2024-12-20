@@ -148,7 +148,7 @@ TEST_F(TestChargingDock, GetRefinedPose)
 
   geometry_msgs::msg::PoseStamped pose;
 
-  ASSERT_THROW({ dock_->getRefinedPose(pose); }, opennav_docking_core::FailedToDetectDock);
+  ASSERT_FALSE(dock_->getRefinedPose(pose));
 
   dock_pose->header.frame_id = kOdomFrame;
   dock_->setDockPose(dock_pose);
@@ -200,7 +200,7 @@ TEST_F(TestChargingDock, IsDocked)
 TEST_F(TestChargingDock, IsChargingNoWiboticInfo)
 {
   ActivateWiboticInfo();
-  ASSERT_THROW({ dock_->isCharging(); }, opennav_docking_core::FailedToCharge);
+  ASSERT_FALSE(dock_->isCharging());
 }
 
 TEST_F(TestChargingDock, IsChargingTimeout)

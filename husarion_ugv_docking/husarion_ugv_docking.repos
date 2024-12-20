@@ -11,10 +11,6 @@ repositories:
     type: git
     url: https://github.com/husarion/panther_ros
     version: 934504568370794c9851d3d09a0099a30050cdec
-  panther_msgs:
-    type: git
-    url: https://github.com/husarion/panther_msgs.git
-    version: ros2-devel
   behaviortree_ros2:
     type: git
     url: https://github.com/BehaviorTree/BehaviorTree.ROS2

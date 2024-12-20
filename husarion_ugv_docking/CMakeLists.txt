@@ -10,9 +10,11 @@ set(PACKAGE_DEPENDENCIES
     behaviortree_ros2
     geometry_msgs
     lifecycle_msgs
-    opennav_docking_core
     opennav_docking
+    opennav_docking_core
+    opennav_docking_msgs
     husarion_ugv_manager
+    husarion_ugv_msgs
     husarion_ugv_utils
     pluginlib
     rclcpp
@@ -80,6 +82,27 @@ if(BUILD_TESTING)
   ament_target_dependencies(${PROJECT_NAME}_test_charging_dock
                             ${PACKAGE_DEPENDENCIES})
 
+
+  ament_add_gtest(
+    ${PROJECT_NAME}_test_dock_robot_node
+    test/unit/plugins/action/test_dock_robot_node.cpp
+    src/plugins/action/dock_robot_node.cpp)
+  list(APPEND plugin_tests ${PROJECT_NAME}_test_dock_robot_node)
+
+  ament_add_gtest(
+    ${PROJECT_NAME}_test_undock_robot_node
+    test/unit/plugins/action/test_undock_robot_node.cpp
+    src/plugins/action/undock_robot_node.cpp)
+  list(APPEND plugin_tests ${PROJECT_NAME}_test_undock_robot_node)
+
+  foreach(bt_node_test ${plugin_tests})
+    target_include_directories(
+      ${bt_node_test}
+      PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test>
+             $<INSTALL_INTERFACE:include>)
+
+    ament_target_dependencies(${bt_node_test} ${PACKAGE_DEPENDENCIES})
+  endforeach()
 endif()
 
 ament_export_include_directories(include)
