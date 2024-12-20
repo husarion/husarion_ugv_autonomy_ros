@@ -118,6 +118,13 @@ if(BUILD_TESTING)
 
     ament_target_dependencies(${bt_node_test} ${PACKAGE_DEPENDENCIES})
   endforeach()
+
+  ament_add_gtest(${PROJECT_NAME}_test_tf2_utils test/unit/test_tf2_utils.cpp)
+  target_include_directories(
+    ${PROJECT_NAME}_test_tf2_utils
+    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+           $<INSTALL_INTERFACE:include>)
+  ament_target_dependencies(${PROJECT_NAME}_test_tf2_utils ${PACKAGE_DEPENDENCIES})
 endif()
 
 ament_export_include_directories(include)

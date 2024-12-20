@@ -19,7 +19,8 @@
 #include <nav2_util/node_utils.hpp>
 
 #include "husarion_ugv_utils/common_utilities.hpp"
-#include "husarion_ugv_utils/tf2_utils.hpp"
+
+#include "husarion_ugv_docking/tf2_utils.hpp"
 
 namespace husarion_ugv_docking
 {
@@ -184,9 +185,9 @@ bool ChargingDock::isDocked()
   geometry_msgs::msg::PoseStamped robot_pose;
   robot_pose.header.frame_id = base_frame_name_;
 
-  robot_pose = husarion_ugv_utils::tf2_utils::TransformPose(tf2_buffer_, robot_pose, fixed_frame_name_);
+  robot_pose = husarion_ugv_docking::tf2_utils::TransformPose(tf2_buffer_, robot_pose, fixed_frame_name_);
 
-  return husarion_ugv_utils::tf2_utils::ArePosesNear(
+  return husarion_ugv_docking::tf2_utils::ArePosesNear(
     robot_pose, dock_pose_, docking_distance_threshold_, docking_yaw_threshold_);
 }
 
