@@ -13,12 +13,14 @@ services:
     <<: *common-config
     volumes:
       - ../husarion_ugv_docking:/ros2_ws/src/husarion_ugv_docking
+      - ./config:/config
     environment:
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - CYCLONE_DDS_URI=file:///config/cyclonedds.xml
     command: >
       ros2 launch husarion_ugv_docking docking.launch.py
         namespace:=panther
         use_sim_time:=False
         use_wibotic_info:=False
-        camera_color_topic:=/panther/color/image_raw
-        camera_color_info_topic:=/panther/color/camera_info
+        camera_color_topic:=/camera/color/image_raw
+        camera_color_info_topic:=/camera/color/camera_info

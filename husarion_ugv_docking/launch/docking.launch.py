@@ -194,6 +194,22 @@ def generate_launch_description():
         emulate_tty=True,
     )
 
+    spawn_charging_docs = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution(
+                [
+                    husarion_ugv_docking_dir,
+                    "launch",
+                    "spawn_charging_docks.launch.py",
+                ]
+            ),
+        ),
+        launch_arguments={
+            "namespace": namespace,
+        }.items(),
+        condition=IfCondition(use_sim),
+    )
+
     return LaunchDescription(
         [
             declare_apriltag_config_path_arg,
@@ -210,5 +226,6 @@ def generate_launch_description():
             apriltag_node,
             docking_manager_node,
             wibotic_connector_can,
+            spawn_charging_docs
         ]
     )
