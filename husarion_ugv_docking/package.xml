@@ -28,7 +28,7 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>ros_components_description</depend>
-  <depend>ros-gz-sim</depend>
+  <depend>ros_gz_sim</depend>
   <depend>sensor_msgs</depend>
   <depend>std_srvs</depend>
   <depend>tf2_ros</depend>

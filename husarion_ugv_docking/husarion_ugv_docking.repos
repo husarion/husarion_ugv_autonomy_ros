@@ -7,10 +7,10 @@ repositories:
     type: git
     url: https://github.com/husarion/ros_components_description.git
     version: 517350ac672b7383c3377e63244353a104096c39
-  panther_ros:
+  husarion_ugv_ros:
     type: git
     url: https://github.com/husarion/panther_ros
-    version: 934504568370794c9851d3d09a0099a30050cdec
+    version: 08f556bcde2ee6d504b24c0c8841309fdd5eae16
   behaviortree_ros2:
     type: git
     url: https://github.com/BehaviorTree/BehaviorTree.ROS2
