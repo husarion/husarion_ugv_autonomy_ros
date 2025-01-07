@@ -1,5 +1,5 @@
 ---
-name: Build/Publish ROS Docker Image
+name: Create and Push Docking Docker
 
 on:
   workflow_dispatch:
