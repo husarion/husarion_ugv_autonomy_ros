@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-test:
-    name: Run unit tests build type
+    name: Run unit tests build husarion_ugv_docking
     runs-on: ubuntu-22.04
 
     steps:
