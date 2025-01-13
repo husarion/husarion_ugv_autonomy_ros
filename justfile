@@ -58,3 +58,27 @@ start-visualization: check-husarion-webui
     local_ip=$(hostname -I | awk '{print $1}')
     hostname=$(hostname)
     echo "Open a web browser and go to http://$local_ip:8080/ui or http://$hostname:8080/ui if your device is connected to the same Husarnet network."
+
+# Stop Husarion WebUI
+stop-visualization: check-husarion-webui
+    #!/bin/bash
+    sudo husarion-webui.stop
+
+# Start Husarion Docking
+start-docking:
+    #!/bin/bash
+    docker compose -f docker/compose.docking.yaml down
+    docker compose -f docker/compose.docking.yaml pull
+    docker compose -f docker/compose.docking.yaml up
+
+# Dock Husarion UGV to the charging dock
+dock:
+    #!/bin/bash
+    docker compose -f docker/compose.docking.yaml exec docking bash -c \
+     "source install/setup.bash && ros2 action send_goal /lynx/dock_robot opennav_docking_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: true, dock_id: main }\""
+
+# Undock Husarion UGV from the charging dock
+undock:
+    #!/bin/bash
+    docker compose -f docker/compose.docking.yaml exec docking bash -c \
+     "source install/setup.bash && ros2 action send_goal /lynx/undock_robot opennav_docking_msgs/action/UndockRobot \" {  dock_type: charging_dock }\""

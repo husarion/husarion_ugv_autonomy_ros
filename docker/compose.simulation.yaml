@@ -5,7 +5,7 @@ x-common-config:
 
 services:
   husarion_ugv_gazebo:
-    image: husarion/panther-gazebo:humble-2.1.1-20240828
+    image: husarion/panther-gazebo:humble-ros2-devel
     container_name: husarion_ugv_gazebo
     <<: *common-config
     runtime: nvidia
@@ -18,7 +18,7 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ./config:/config
     command: >
-      ros2 launch panther_gazebo simulation.launch.py
+      ros2 launch husarion_ugv_gazebo simulation.launch.py
         components_config_path:=/config/components.yaml
         namespace:=panther
 
@@ -39,5 +39,5 @@ services:
         namespace:=panther
         observation_topic:=/panther/velodyne_points
         observation_topic_type:=pointcloud
-        slam:=True
+        slam:=${SLAM:-True}
         use_sim_time:=True

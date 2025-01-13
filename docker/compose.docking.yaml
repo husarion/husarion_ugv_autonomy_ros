@@ -22,5 +22,8 @@ services:
         namespace:=panther
         use_sim_time:=False
         use_wibotic_info:=False
-        camera_color_topic:=/camera/color/image_raw
-        camera_color_info_topic:=/camera/color/camera_info
+        camera_image_topic:=${CAMERA_IMAGE_TOPIC:-/camera/color/image_raw}
+        camera_info_topic:=${CAMERA_INFO_TOPIC:-/camera/color/camera_info}
+        docking_server_config_path:=/config/docking_server.yaml
+        apriltag_config_path:=/config/apriltag.yaml
+        use_sim:=False

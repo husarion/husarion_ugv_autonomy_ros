@@ -47,9 +47,9 @@ def generate_launch_description():
         description=("Path to apriltag configuration file. Only used in simulation."),
     )
 
-    camera_color_topic = LaunchConfiguration("camera_color_topic")
+    camera_color_topic = LaunchConfiguration("camera_image_topic")
     declare_camera_color_topic_arg = DeclareLaunchArgument(
-        "camera_color_topic",
+        "camera_image_topic",
         default_value="/camera/color/image_raw",
         description="Color camera topic",
     )

@@ -15,26 +15,14 @@
 # limitations under the License.
 
 import os
-from tempfile import NamedTemporaryFile
 
-import imageio
 import yaml
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
-from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
-
-def generate_apriltag_and_get_path(tag_id):
-    from moms_apriltag import TagGenerator2
-
-    tag_generator = TagGenerator2("tag36h11")
-    tag_image = tag_generator.generate(tag_id, scale=1000)
-    with NamedTemporaryFile(suffix=f"_tag_{tag_id}.png", delete=False) as temp_file:
-        imageio.imwrite(temp_file.name, tag_image)
-        return temp_file.name
 
 
 def spawn_stations(context, *args, **kwargs):
