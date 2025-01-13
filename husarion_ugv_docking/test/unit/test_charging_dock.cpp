@@ -27,27 +27,24 @@
 static constexpr char kBaseFrame[] = "base_link";
 static constexpr char kOdomFrame[] = "odom";
 
-class ChargingDockWrapper : public husarion_ugv_docking::ChargingDock
-{
+class ChargingDockWrapper : public husarion_ugv_docking::ChargingDock {
 public:
-  void setDockPose(geometry_msgs::msg::PoseStamped::SharedPtr msg)
-  {
+  void setDockPose(geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     husarion_ugv_docking::ChargingDock::setDockPose(msg);
   }
 
-  void setWiboticInfo(wibotic_msgs::msg::WiboticInfo::SharedPtr msg)
-  {
+  void setWiboticInfo(wibotic_msgs::msg::WiboticInfo::SharedPtr msg) {
     husarion_ugv_docking::ChargingDock::setWiboticInfo(msg);
   }
 };
 
-class TestChargingDock : public ::testing::Test
-{
+class TestChargingDock : public ::testing::Test {
 protected:
   TestChargingDock();
-  void SetTransform(
-    const std::string & frame_id, const std::string & child_frame_id,
-    const builtin_interfaces::msg::Time & stamp, const geometry_msgs::msg::Transform & transform);
+  void SetTransform(const std::string &frame_id,
+                    const std::string &child_frame_id,
+                    const builtin_interfaces::msg::Time &stamp,
+                    const geometry_msgs::msg::Transform &transform);
 
   void ActivateWiboticInfo();
 
@@ -57,8 +54,7 @@ protected:
   tf2_ros::Buffer::SharedPtr tf_buffer_;
 };
 
-TestChargingDock::TestChargingDock()
-{
+TestChargingDock::TestChargingDock() {
   node_ = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_node");
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
 
@@ -66,16 +62,17 @@ TestChargingDock::TestChargingDock()
   tf_buffer_->setUsingDedicatedThread(true);
 
   dock_ = std::make_shared<ChargingDockWrapper>();
-  dock_pose_pub = node_->create_publisher<geometry_msgs::msg::PoseStamped>("dock_pose", 10);
+  dock_pose_pub =
+      node_->create_publisher<geometry_msgs::msg::PoseStamped>("dock_pose", 10);
 
   node_->configure();
   node_->activate();
 }
 
 void TestChargingDock::SetTransform(
-  const std::string & frame_id, const std::string & child_frame_id,
-  const builtin_interfaces::msg::Time & stamp, const geometry_msgs::msg::Transform & transform)
-{
+    const std::string &frame_id, const std::string &child_frame_id,
+    const builtin_interfaces::msg::Time &stamp,
+    const geometry_msgs::msg::Transform &transform) {
   geometry_msgs::msg::TransformStamped transform_stamped;
   transform_stamped.header.stamp = stamp;
   transform_stamped.header.frame_id = frame_id;
@@ -85,33 +82,31 @@ void TestChargingDock::SetTransform(
   tf_buffer_->setTransform(transform_stamped, "unittest", true);
 }
 
-void TestChargingDock::ActivateWiboticInfo()
-{
+void TestChargingDock::ActivateWiboticInfo() {
   node_->declare_parameter("dock.use_wibotic_info", true);
   node_->declare_parameter("dock.wibotic_info_timeout", 1.0);
   dock_->configure(node_, "dock", tf_buffer_);
   dock_->activate();
 }
 
-TEST_F(TestChargingDock, FailConfigureNoNode)
-{
+TEST_F(TestChargingDock, FailConfigureNoNode) {
   node_.reset();
-  ASSERT_THROW({ dock_->configure(node_, "dock", tf_buffer_); }, std::runtime_error);
+  ASSERT_THROW(
+      { dock_->configure(node_, "dock", tf_buffer_); }, std::runtime_error);
 }
 
-TEST_F(TestChargingDock, FailConfigureNoTfBuffer)
-{
+TEST_F(TestChargingDock, FailConfigureNoTfBuffer) {
   tf_buffer_.reset();
-  ASSERT_THROW({ dock_->configure(node_, "dock", tf_buffer_); }, std::runtime_error);
+  ASSERT_THROW(
+      { dock_->configure(node_, "dock", tf_buffer_); }, std::runtime_error);
 }
 
-TEST_F(TestChargingDock, GetStagingPoseLocal)
-{
+TEST_F(TestChargingDock, GetStagingPoseLocal) {
   dock_->configure(node_, "dock", tf_buffer_);
   dock_->activate();
 
   geometry_msgs::msg::PoseStamped::SharedPtr dock_pose =
-    std::make_shared<geometry_msgs::msg::PoseStamped>();
+      std::make_shared<geometry_msgs::msg::PoseStamped>();
   dock_pose->pose.position.x = 1.0;
   dock_pose->pose.position.y = 1.0;
   dock_pose->pose.position.z = 0.0;
@@ -120,7 +115,8 @@ TEST_F(TestChargingDock, GetStagingPoseLocal)
   dock_->setDockPose(dock_pose);
 
   geometry_msgs::msg::PoseStamped pose;
-  geometry_msgs::msg::PoseStamped staging_pose = dock_->getStagingPose(pose.pose, kOdomFrame);
+  geometry_msgs::msg::PoseStamped staging_pose =
+      dock_->getStagingPose(pose.pose, kOdomFrame);
 
   ASSERT_FLOAT_EQ(staging_pose.pose.position.x, 0.3);
   ASSERT_FLOAT_EQ(staging_pose.pose.position.y, 1.0);
@@ -131,14 +127,13 @@ TEST_F(TestChargingDock, GetStagingPoseLocal)
 // TEST_F(TestChargingDock, GetStagingPoseGlobal){
 // }
 
-TEST_F(TestChargingDock, GetRefinedPose)
-{
+TEST_F(TestChargingDock, GetRefinedPose) {
   node_->declare_parameter("dock.external_detection_timeout", 0.5);
   dock_->configure(node_, "dock", tf_buffer_);
   dock_->activate();
 
   geometry_msgs::msg::PoseStamped::SharedPtr dock_pose =
-    std::make_shared<geometry_msgs::msg::PoseStamped>();
+      std::make_shared<geometry_msgs::msg::PoseStamped>();
   dock_pose->pose.position.x = 1.0;
   dock_pose->pose.position.y = 1.0;
   dock_pose->pose.position.z = 0.0;
@@ -163,8 +158,7 @@ TEST_F(TestChargingDock, GetRefinedPose)
   ASSERT_FLOAT_EQ(pose.pose.position.z, 0.0);
 }
 
-TEST_F(TestChargingDock, IsDocked)
-{
+TEST_F(TestChargingDock, IsDocked) {
   node_->declare_parameter("dock.external_detection_timeout", 0.5);
   dock_->configure(node_, "dock", tf_buffer_);
   dock_->activate();
@@ -176,7 +170,7 @@ TEST_F(TestChargingDock, IsDocked)
 
   SetTransform(kOdomFrame, kBaseFrame, node_->now(), transform);
   geometry_msgs::msg::PoseStamped::SharedPtr dock_pose =
-    std::make_shared<geometry_msgs::msg::PoseStamped>();
+      std::make_shared<geometry_msgs::msg::PoseStamped>();
   dock_pose->header.frame_id = kOdomFrame;
   dock_pose->header.stamp = node_->now();
   dock_pose->pose.position.x = transform.translation.x - 0.1;
@@ -197,27 +191,24 @@ TEST_F(TestChargingDock, IsDocked)
   ASSERT_TRUE(dock_->isDocked());
 }
 
-TEST_F(TestChargingDock, IsChargingNoWiboticInfo)
-{
+TEST_F(TestChargingDock, IsChargingNoWiboticInfo) {
   ActivateWiboticInfo();
   ASSERT_FALSE(dock_->isCharging());
 }
 
-TEST_F(TestChargingDock, IsChargingTimeout)
-{
+TEST_F(TestChargingDock, IsChargingTimeout) {
   ActivateWiboticInfo();
 
   wibotic_msgs::msg::WiboticInfo::SharedPtr wibotic_info =
-    std::make_shared<wibotic_msgs::msg::WiboticInfo>();
+      std::make_shared<wibotic_msgs::msg::WiboticInfo>();
   dock_->setWiboticInfo(wibotic_info);
   ASSERT_FALSE(dock_->isCharging());
 }
 
-TEST_F(TestChargingDock, IsChargingCurrentZero)
-{
+TEST_F(TestChargingDock, IsChargingCurrentZero) {
   ActivateWiboticInfo();
   wibotic_msgs::msg::WiboticInfo::SharedPtr wibotic_info =
-    std::make_shared<wibotic_msgs::msg::WiboticInfo>();
+      std::make_shared<wibotic_msgs::msg::WiboticInfo>();
   wibotic_info->header.stamp = node_->now();
   wibotic_info->i_charger = 0.0;
 
@@ -225,22 +216,20 @@ TEST_F(TestChargingDock, IsChargingCurrentZero)
   ASSERT_FALSE(dock_->isCharging());
 }
 
-TEST_F(TestChargingDock, IsChargingTimeoutWithGoodCurrent)
-{
+TEST_F(TestChargingDock, IsChargingTimeoutWithGoodCurrent) {
   ActivateWiboticInfo();
   wibotic_msgs::msg::WiboticInfo::SharedPtr wibotic_info =
-    std::make_shared<wibotic_msgs::msg::WiboticInfo>();
+      std::make_shared<wibotic_msgs::msg::WiboticInfo>();
   wibotic_info->i_charger = 0.1;
 
   dock_->setWiboticInfo(wibotic_info);
   ASSERT_FALSE(dock_->isCharging());
 }
 
-TEST_F(TestChargingDock, IsChargingGoodCurrentWithoutTimeout)
-{
+TEST_F(TestChargingDock, IsChargingGoodCurrentWithoutTimeout) {
   ActivateWiboticInfo();
   wibotic_msgs::msg::WiboticInfo::SharedPtr wibotic_info =
-    std::make_shared<wibotic_msgs::msg::WiboticInfo>();
+      std::make_shared<wibotic_msgs::msg::WiboticInfo>();
   wibotic_info->i_charger = 0.1;
   wibotic_info->header.stamp = node_->now();
 
@@ -248,8 +237,7 @@ TEST_F(TestChargingDock, IsChargingGoodCurrentWithoutTimeout)
   ASSERT_TRUE(dock_->isCharging());
 }
 
-int main(int argc, char ** argv)
-{
+int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);
 

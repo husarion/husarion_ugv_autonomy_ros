@@ -41,9 +41,7 @@ def generate_launch_description():
     apriltag_config_path = LaunchConfiguration("apriltag_config_path")
     declare_apriltag_config_path_arg = DeclareLaunchArgument(
         "apriltag_config_path",
-        default_value=PathJoinSubstitution(
-            [husarion_ugv_docking_dir, "config", "apriltag.yaml"]
-        ),
+        default_value=PathJoinSubstitution([husarion_ugv_docking_dir, "config", "apriltag.yaml"]),
         description=("Path to apriltag configuration file. Only used in simulation."),
     )
 
@@ -174,9 +172,7 @@ def generate_launch_description():
         namespace=namespace,
         emulate_tty=True,
         arguments=["--ros-args", "--log-level", log_level, "--log-level", "rcl:=INFO"],
-        condition=IfCondition(
-            PythonExpression(["not ", use_sim, " and ", use_wibotic_info])
-        ),
+        condition=IfCondition(PythonExpression(["not ", use_sim, " and ", use_wibotic_info])),
     )
 
     docking_manager_node = Node(
@@ -184,9 +180,7 @@ def generate_launch_description():
         executable="docking_manager_node",
         name="docking_manager",
         parameters=[
-            PathJoinSubstitution(
-                [husarion_ugv_docking_dir, "config", "docking_manager.yaml"]
-            ),
+            PathJoinSubstitution([husarion_ugv_docking_dir, "config", "docking_manager.yaml"]),
             {"bt_project_path": bt_project_path},
         ],
         arguments=["--ros-args", "--log-level", log_level, "--log-level", "rcl:=INFO"],
@@ -226,6 +220,6 @@ def generate_launch_description():
             apriltag_node,
             docking_manager_node,
             wibotic_connector_can,
-            spawn_charging_docs
+            spawn_charging_docs,
         ]
     )

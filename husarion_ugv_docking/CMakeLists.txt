@@ -50,31 +50,28 @@ target_include_directories(
   charging_dock PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                        $<INSTALL_INTERFACE:include>)
 
-add_executable(
-  docking_manager_node
-  src/docking_manager_node_main.cpp src/docking_manager_node.cpp)
+add_executable(docking_manager_node src/docking_manager_node_main.cpp
+                                    src/docking_manager_node.cpp)
 
 target_include_directories(
-    docking_manager_node PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>)
+  docking_manager_node PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                              $<INSTALL_INTERFACE:include>)
 
-ament_target_dependencies(
-  docking_manager_node
-  ${PACKAGE_DEPENDENCIES}
-)
+ament_target_dependencies(docking_manager_node ${PACKAGE_DEPENDENCIES})
 
 install(TARGETS charging_dock LIBRARY DESTINATION lib)
 
-install(DIRECTORY behavior_trees config launch DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY behavior_trees config launch
+        DESTINATION share/${PROJECT_NAME})
 
 add_executable(dock_pose_publisher src/dock_pose_publisher_node.cpp
                                    src/dock_pose_publisher_main.cpp)
 ament_target_dependencies(dock_pose_publisher ${PACKAGE_DEPENDENCIES})
 
-install(TARGETS dock_pose_publisher docking_manager_node DESTINATION lib/${PROJECT_NAME})
+install(TARGETS dock_pose_publisher docking_manager_node
+        DESTINATION lib/${PROJECT_NAME})
 
-add_library(dock_robot_bt_node SHARED
-            src/plugins/action/dock_robot_node.cpp)
+add_library(dock_robot_bt_node SHARED src/plugins/action/dock_robot_node.cpp)
 list(APPEND plugin_libs dock_robot_bt_node)
 
 add_library(undock_robot_bt_node SHARED
@@ -97,7 +94,6 @@ if(BUILD_TESTING)
   ament_target_dependencies(${PROJECT_NAME}_test_charging_dock
                             ${PACKAGE_DEPENDENCIES})
 
-
   ament_add_gtest(
     ${PROJECT_NAME}_test_dock_robot_node
     test/unit/plugins/action/test_dock_robot_node.cpp
@@ -112,9 +108,8 @@ if(BUILD_TESTING)
 
   foreach(bt_node_test ${plugin_tests})
     target_include_directories(
-      ${bt_node_test}
-      PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test>
-             $<INSTALL_INTERFACE:include>)
+      ${bt_node_test} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test>
+                             $<INSTALL_INTERFACE:include>)
 
     ament_target_dependencies(${bt_node_test} ${PACKAGE_DEPENDENCIES})
   endforeach()
@@ -124,7 +119,8 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_test_tf2_utils
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
            $<INSTALL_INTERFACE:include>)
-  ament_target_dependencies(${PROJECT_NAME}_test_tf2_utils ${PACKAGE_DEPENDENCIES})
+  ament_target_dependencies(${PROJECT_NAME}_test_tf2_utils
+                            ${PACKAGE_DEPENDENCIES})
 endif()
 
 ament_export_include_directories(include)

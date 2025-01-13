@@ -19,14 +19,14 @@
 #include <string>
 #include <thread>
 
-#include <tf2/utils.h>
-#include <tf2_ros/buffer.h>
 #include <opennav_docking/pose_filter.hpp>
 #include <opennav_docking_core/charging_dock.hpp>
 #include <opennav_docking_core/docking_exceptions.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
+#include <tf2/utils.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2_ros/buffer.h>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <lifecycle_msgs/msg/state.hpp>
@@ -36,8 +36,7 @@
 
 #include "wibotic_msgs/msg/wibotic_info.hpp"
 
-namespace husarion_ugv_docking
-{
+namespace husarion_ugv_docking {
 
 constexpr double kWiboticChargingCurrentThreshold = 0.0;
 
@@ -45,8 +44,7 @@ constexpr double kWiboticChargingCurrentThreshold = 0.0;
  * @class ChargingDock
  * @brief A class to represent a Panther charging dock.
  */
-class ChargingDock : public opennav_docking_core::ChargingDock
-{
+class ChargingDock : public opennav_docking_core::ChargingDock {
 public:
   using SharedPtr = std::shared_ptr<ChargingDock>;
   using UniquePtr = std::unique_ptr<ChargingDock>;
@@ -60,9 +58,9 @@ public:
    * @param  name The name of this planner
    * @param  tf A pointer to a TF buffer
    */
-  void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent, const std::string & name,
-    std::shared_ptr<tf2_ros::Buffer> tf) override final;
+  void configure(const rclcpp_lifecycle::LifecycleNode::WeakPtr &parent,
+                 const std::string &name,
+                 std::shared_ptr<tf2_ros::Buffer> tf) override final;
 
   /**
    * @brief Method to cleanup resources used on shutdown.
@@ -87,14 +85,15 @@ public:
    * @param frame Dock's frame of pose
    * @return PoseStamped of staging pose in the specified frame
    */
-  PoseStampedMsg getStagingPose(
-    const geometry_msgs::msg::Pose & pose, const std::string & frame) override final;
+  PoseStampedMsg getStagingPose(const geometry_msgs::msg::Pose &pose,
+                                const std::string &frame) override final;
 
   /**
-   * @brief Method to obtain the refined pose of the dock, usually based on sensors
+   * @brief Method to obtain the refined pose of the dock, usually based on
+   * sensors
    * @param pose The initial estimate of the dock pose.
    */
-  bool getRefinedPose(PoseStampedMsg & pose) override final;
+  bool getRefinedPose(PoseStampedMsg &pose) override final;
 
   /**
    * @brief Have we made contact with dock? This can be implemented in a variety
@@ -138,23 +137,25 @@ protected:
    *
    * @param node The node to declare parameters in.
    */
-  void declareParameters(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node);
+  void
+  declareParameters(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 
   /**
    * @brief Method to get parameters.
    *
    * @param node The node to declare parameters in.
    */
-  void getParameters(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node);
+  void getParameters(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 
   /**
    * @brief Method to update and publish the staging pose.
    *
-   * Uses staging_x_offset_ and staging_yaw_offset_ to calculate the staging pose.
+   * Uses staging_x_offset_ and staging_yaw_offset_ to calculate the staging
+   * pose.
    *
    * @param frame The frame to publish the staging pose in.
    */
-  void updateAndPublishStagingPose(const std::string & frame);
+  void updateAndPublishStagingPose(const std::string &frame);
 
   /**
    * @brief Dock pose callback, used for external detection.
@@ -173,7 +174,8 @@ protected:
   /**
    * @brief Method to set the state of the dock pose publisher lifecycle node.
    *
-   * Calls async service to change the state of the dock pose publisher lifecycle node.
+   * Calls async service to change the state of the dock pose publisher
+   * lifecycle node.
    *
    * @param state The transition state to set the dock pose publisher to.
    */
@@ -195,7 +197,7 @@ protected:
   rclcpp::Subscription<PoseStampedMsg>::SharedPtr dock_pose_sub_;
   rclcpp::Subscription<WiboticInfoMsg>::SharedPtr wibotic_info_sub_;
   rclcpp::Client<lifecycle_msgs::srv::ChangeState>::SharedPtr
-    dock_pose_publisher_change_state_client_;
+      dock_pose_publisher_change_state_client_;
 
   PoseStampedMsg dock_pose_;
   PoseStampedMsg staging_pose_;
@@ -219,6 +221,6 @@ protected:
   double wibotic_info_timeout_;
 };
 
-}  // namespace husarion_ugv_docking
+} // namespace husarion_ugv_docking
 
-#endif  // HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_CHARGING_DOCK_HPP_
+#endif // HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_CHARGING_DOCK_HPP_

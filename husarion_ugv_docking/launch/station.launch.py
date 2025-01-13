@@ -20,7 +20,6 @@ import imageio
 import yaml
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
-from launch.conditions import IfCondition
 from launch.substitutions import (
     Command,
     FindExecutable,

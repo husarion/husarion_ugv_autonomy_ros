@@ -24,7 +24,6 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
-
 def spawn_stations(context, *args, **kwargs):
     docking_server_config_path = LaunchConfiguration("docking_server_config_path").perform(context)
     docking_server_config = None
