@@ -32,12 +32,12 @@ jobs:
                 ],
                 "cmake-args": [
                     "-DCMAKE_BUILD_TYPE=Release",
-                    "-DTEST_INTEGRATION=OFF",
+                    "-DTEST_INTEGRATION=OFF"
                 ]
               },
               "test": {
                 "packages-up-to": [
-                    "husarion_ugv_docking",
+                    "husarion_ugv_docking"
                 ]
               }
             }
