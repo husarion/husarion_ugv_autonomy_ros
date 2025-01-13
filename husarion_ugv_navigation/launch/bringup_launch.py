@@ -35,7 +35,6 @@ from nav2_common.launch import ReplaceString, RewrittenYaml
 
 
 def generate_launch_description():
-    # Get the launch directory
     husarion_ugv_navigation = FindPackageShare("husarion_ugv_navigation")
     launch_dir = PathJoinSubstitution([husarion_ugv_navigation, "launch"])
 
@@ -46,6 +45,7 @@ def generate_launch_description():
     observation_topic = LaunchConfiguration("observation_topic")
     observation_topic_type = LaunchConfiguration("observation_topic_type")
     params_file = LaunchConfiguration("params_file")
+    pc2ls_params_file = LaunchConfiguration("pc2ls_params_file")
     slam = LaunchConfiguration("slam")
     use_composition = LaunchConfiguration("use_composition")
     use_respawn = LaunchConfiguration("use_respawn")
@@ -63,12 +63,12 @@ def generate_launch_description():
         choices=["debug", "info", "warning", "error"],
     )
     declare_map_arg = DeclareLaunchArgument(
-        "map", default_value="/maps/map.yaml", description="Full path to map yaml file to load."
+        "map", default_value="/maps/map.yaml", description="Path to map yaml file to load."
     )
     declare_namespace_arg = DeclareLaunchArgument(
         "namespace",
         default_value=EnvironmentVariable("ROBOT_NAMESPACE", default_value=""),
-        description="Top-level namespace.",
+        description="Add namespace to all launched nodes.",
     )
     declare_observation_topic_arg = DeclareLaunchArgument(
         "observation_topic",
@@ -86,7 +86,14 @@ def generate_launch_description():
         default_value=PathJoinSubstitution(
             [husarion_ugv_navigation, "config", "nav2_params.yaml"]
         ),
-        description="Full path to the ROS2 parameters file to use for all launched nodes.",
+        description="Path to the parameters file to use for all nav2 related nodes",
+    )
+    declare_pc2ls_params_file_arg = DeclareLaunchArgument(
+        "pc2ls_params_file",
+        default_value=PathJoinSubstitution(
+            [husarion_ugv_navigation, "config", "pc2ls_params.yaml"]
+        ),
+        description="Path to the parameters file to use for pointcloud_to_laserscan node.",
     )
     declare_slam_arg = DeclareLaunchArgument(
         "slam", default_value="False", description="Whether run a SLAM."
@@ -120,7 +127,7 @@ def generate_launch_description():
     params_file = ReplaceString(
         source_file=params_file,
         replacements={
-            "<robot_namespace>/": namespace_ext,
+            "<namespace>/": namespace_ext,
             "<observation_topic>": scan_topic,
             "<scan_topic>": scan_topic,
             "<is_laserscan>": is_laserscan,
@@ -148,18 +155,7 @@ def generate_launch_description():
                 package="pointcloud_to_laserscan",
                 executable="pointcloud_to_laserscan_node",
                 name="pointcloud_to_laserscan",
-                parameters=[
-                    configured_params,
-                    {
-                        "min_height": 0.05,
-                        "max_height": 0.5,
-                        "angle_increment": 0.01,
-                        "scan_time": 0.1,
-                        "range_min": 0.85,
-                        "range_max": 12.0,
-                        "transform_tolerance": 0.02,
-                    },
-                ],
+                parameters=[pc2ls_params_file],
                 remappings=[("cloud_in", observation_topic)],
                 output="screen",
             ),
@@ -237,6 +233,7 @@ def generate_launch_description():
             declare_observation_topic_arg,
             declare_observation_topic_type_arg,
             declare_params_file_arg,
+            declare_pc2ls_params_file_arg,
             declare_slam_arg,
             declare_use_composition_arg,
             declare_use_respawn_arg,

@@ -4,8 +4,8 @@
 bt_navigator:
   ros__parameters:
     use_sim_time: false
-    global_frame: <robot_namespace>/map
-    robot_base_frame: <robot_namespace>/base_link
+    global_frame: <namespace>/map
+    robot_base_frame: <namespace>/base_link
     odom_topic: odometry/filtered
     plugin_lib_names:
       - is_estop
@@ -141,8 +141,8 @@ local_costmap:
     ros__parameters:
       use_sim_time: false
 
-      global_frame: <robot_namespace>/odom
-      robot_base_frame: <robot_namespace>/base_link
+      global_frame: <namespace>/odom
+      robot_base_frame: <namespace>/base_link
       transform_tolerance: 0.1
 
       update_frequency: 5.0
@@ -204,8 +204,8 @@ global_costmap:
     ros__parameters:
       use_sim_time: false
 
-      global_frame: <robot_namespace>/map
-      robot_base_frame: <robot_namespace>/base_link
+      global_frame: <namespace>/map
+      robot_base_frame: <namespace>/base_link
       transform_tolerance: 0.1
 
       update_frequency: 1.0
@@ -244,7 +244,7 @@ global_costmap:
       static_layer:
         plugin: nav2_costmap_2d::StaticLayer
         map_subscribe_transient_local: true
-        map_topic: /<robot_namespace>/map
+        map_topic: /<namespace>/map
       voxel_layer:
         plugin: nav2_costmap_2d::VoxelLayer
         enable: <is_pointcloud>
@@ -293,8 +293,8 @@ recoveries_server:
   ros__parameters:
     use_sim_time: false
 
-    global_frame: <robot_namespace>/odom
-    robot_base_frame: <robot_namespace>/base_link
+    global_frame: <namespace>/odom
+    robot_base_frame: <namespace>/base_link
     transform_tolerance: 0.1
 
     costmap_topic: local_costmap/costmap_raw
@@ -341,7 +341,7 @@ velocity_smoother:
     min_velocity: [-0.5, 0.0, -1.0]
     max_accel: [2.5, 0.0, 3.2]
     max_decel: [-2.5, 0.0, -3.2]
-    odom_topic: <robot_namespace>/odom
+    odom_topic: <namespace>/odom
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
@@ -352,9 +352,9 @@ amcl:
   ros__parameters:
     use_sim_time: false
 
-    global_frame_id: <robot_namespace>/map
-    odom_frame_id: <robot_namespace>/odom
-    base_frame_id: <robot_namespace>/base_link
+    global_frame_id: <namespace>/map
+    odom_frame_id: <namespace>/odom
+    base_frame_id: <namespace>/base_link
 
     scan_topic: <scan_topic>
 
@@ -420,7 +420,7 @@ map_server:
   ros__parameters:
     use_sim_time: false
     yaml_filename: map.yaml
-    frame_id: <robot_namespace>/map
+    frame_id: <namespace>/map
 
 map_autosaver:
   ros__parameters:
@@ -428,26 +428,9 @@ map_autosaver:
     autosave_period: 15.0
     map_directory: /maps/map
 
-# FIXME: Parameters are set in launch file
-# pointcloud_to_laserscan:
-#   ros__parameters:
-#     use_sim_time: false
-#     min_height: 0.05
-#     max_height: 0.5
-#     angle_min: -3.14
-#     angle_max: 3.14
-#     angle_increment: 0.01
-#     scan_time: 0.1
-#     range_min: 0.85
-#     range_max: 12.0
-#     target_frame: ""
-#     transform_tolerance: 0.01
-#     inf_epsilon: 1.0
-#     use_inf: true
-
 ### SLAM ###
 
-<robot_namespace>/slam_toolbox:
+<namespace>/slam_toolbox:
   ros__parameters:
     # Plugin params
     solver_plugin: solver_plugins::CeresSolver
@@ -458,9 +441,9 @@ map_autosaver:
     ceres_loss_function: None #HuberLoss
 
     # ROS Parameters
-    odom_frame: <robot_namespace>/odom
-    map_frame: <robot_namespace>/map
-    base_frame: <robot_namespace>/base_link
+    odom_frame: <namespace>/odom
+    map_frame: <namespace>/map
+    base_frame: <namespace>/base_link
     scan_topic: <scan_topic>
     mode: mapping #localization
 
