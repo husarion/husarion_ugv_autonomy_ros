@@ -2,7 +2,7 @@ repositories:
   wibotic_ros:
     type: git
     url: https://github.com/husarion/wibotic_ros/
-    version: 0.1.0
+    version: 96d6c47fad98e0e91ab0d90baa50ee79a98d1951
   ros_components_description:
     type: git
     url: https://github.com/husarion/ros_components_description.git
