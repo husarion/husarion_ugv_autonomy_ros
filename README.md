@@ -1,6 +1,6 @@
 # husarion-ugv-autonomy
 
-A GitHub template for Husarion UGVs: creating a map using Slam Toolbox and navigation with localization using Nav2.
+A collection of packages containing autonomous functionalities for Husarion UGV vehicles.
 
 ![autonomy-result](https://github-readme-figures.s3.eu-central-1.amazonaws.com/panther/husarion_ugv/husarion_ugv_autonomy.gif)
 

@@ -1,5 +1,5 @@
 ---
-name: Create and Push Navigation Docker
+name: Build Docker
 
 on:
   workflow_dispatch:
@@ -52,8 +52,9 @@ jobs:
         with:
           dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
           dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+          dockerfile: docker/Dockerfile
           main_branch_name: ros2
-          repo_name: husarion-ugv-navigation
+          repo_name: husarion-ugv-autonomy
           build_type: ${{ inputs.build_type }}
           ros_distro: ${{ matrix.ros-distro }}
           platforms: linux/amd64, linux/arm64
