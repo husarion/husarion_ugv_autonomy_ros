@@ -22,13 +22,13 @@ jobs:
       - name: Build and test
         uses: ros-tooling/action-ros-ci@v0.3
         with:
-          vcs-repo-file-url: ${{ github.workspace }}/husarion_ugv_docking/husarion_ugv_docking.repos
+          vcs-repo-file-url: ${{ github.workspace }}/husarion_ugv_autonomy/docking_deps.repos
           target-ros2-distro: humble
           colcon-defaults: |
             {
               "build": {
                 "packages-up-to": [
-                    "husarion_ugv_docking"
+                    "husarion_ugv_autonomy"
                 ],
                 "cmake-args": [
                     "-DCMAKE_BUILD_TYPE=Release",
@@ -37,7 +37,7 @@ jobs:
               },
               "test": {
                 "packages-up-to": [
-                    "husarion_ugv_docking"
+                    "husarion_ugv_autonomy"
                 ]
               }
             }
