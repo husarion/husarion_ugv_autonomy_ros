@@ -4,8 +4,32 @@ x-common-config:
   ipc: host
 
 services:
+  docking:
+    # image: husarion/husarion-ugv-autonomy:humble-0.1.0-20241113
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: docking
+    <<: *common-config
+    volumes:
+      - ../husarion_ugv_docking:/ros2_ws/src/husarion_ugv_docking
+      - ./config:/config
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - CYCLONE_DDS_URI=file:///config/cyclonedds.xml
+    command: >
+      ros2 launch husarion_ugv_docking docking.launch.py
+        namespace:=panther
+        use_wibotic_info:=False
+        camera_image_topic:=${CAMERA_IMAGE_TOPIC:-/panther/camera/color/image_raw}
+        camera_info_topic:=${CAMERA_INFO_TOPIC:-/panther/camera/color/camera_info}
+        docking_server_config_path:=/config/docking_server.yaml
+        apriltag_config_path:=/config/apriltag.yaml
+        apriltag_size:=0.08
+        use_sim:=True
+
   navigation:
-    # image: husarion/husarion-ugv-navigation:humble-0.1.0-20241113
+    # image: husarion/husarion-ugv-autonomy:humble-0.1.0-20241113
     build:
       context: ..
       dockerfile: docker/Dockerfile
