@@ -64,28 +64,22 @@ stop-visualization: check-husarion-webui
     #!/bin/bash
     sudo husarion-webui.stop
 
-# Start Husarion Docking
-start-docking:
-    #!/bin/bash
-    docker compose -f docker/compose.docking.yaml down
-    docker compose -f docker/compose.docking.yaml pull
-    docker compose -f docker/compose.docking.yaml up
 
 # Dock Husarion UGV to the charging dock using navigation stack
-dock:
+dock DOCK_NAME:
     #!/bin/bash
-    docker compose -f docker/compose.docking.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /panther/dock_robot opennav_docking_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: true, dock_id: main }\""
+    docker compose -f docker/compose.simulation.yaml exec docking bash -c \
+     "source install/setup.bash && ros2 action send_goal /panther/dock_robot opennav_docking_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: true, dock_id: {{DOCK_NAME}} }\""
 
 # Dock Husarion UGV to the charging dock without using navigation stack
-dock-direct:
+dock-direct DOCK_NAME:
     #!/bin/bash
-    docker compose -f docker/compose.docking.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /panther/dock_robot opennav_docking_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: false, dock_id: main }\""
+    docker compose -f docker/compose.simulation.yaml exec docking bash -c \
+     "source install/setup.bash && ros2 action send_goal /panther/dock_robot opennav_docking_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: false, dock_id: {{DOCK_NAME}} }\""
 
 
 # Undock Husarion UGV from the charging dock
 undock:
     #!/bin/bash
-    docker compose -f docker/compose.docking.yaml exec docking bash -c \
+    docker compose -f docker/compose.simulation.yaml exec docking bash -c \
      "source install/setup.bash && ros2 action send_goal /panther/undock_robot opennav_docking_msgs/action/UndockRobot \" {  dock_type: charging_dock }\""

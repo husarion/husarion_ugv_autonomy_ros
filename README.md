@@ -123,7 +123,7 @@ just start-docking
 Run Docking sequence:
 
 ```bash
-just dock
+just dock main
 ```
 
 ### 🛩️ Step 3: Undock the robot
