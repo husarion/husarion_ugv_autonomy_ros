@@ -6,7 +6,6 @@ install
 build
 
 behaviortree_ros2
-panther_ros
-panther_msgs
+husarion_ugv_ros
 ros_components_description
 wibotic_ros
