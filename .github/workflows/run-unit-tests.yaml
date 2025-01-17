@@ -28,7 +28,7 @@ jobs:
             {
               "build": {
                 "packages-up-to": [
-                    "husarion_ugv_autonomy"
+                    "husarion_ugv_docking"
                 ],
                 "cmake-args": [
                     "-DCMAKE_BUILD_TYPE=Release",
@@ -37,7 +37,7 @@ jobs:
               },
               "test": {
                 "packages-up-to": [
-                    "husarion_ugv_autonomy"
+                    "husarion_ugv_docking"
                 ]
               }
             }
