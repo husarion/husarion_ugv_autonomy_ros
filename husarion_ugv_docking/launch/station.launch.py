@@ -119,7 +119,7 @@ def generate_launch_description():
 
     declare_apriltag_size = DeclareLaunchArgument(
         "apriltag_size",
-        default_value="0.06",
+        default_value="0.08",
         description="Size in meters of a generated apriltag on the station",
     )
 

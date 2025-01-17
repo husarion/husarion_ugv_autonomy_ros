@@ -71,14 +71,21 @@ start-docking:
     docker compose -f docker/compose.docking.yaml pull
     docker compose -f docker/compose.docking.yaml up
 
-# Dock Husarion UGV to the charging dock
+# Dock Husarion UGV to the charging dock using navigation stack
 dock:
     #!/bin/bash
     docker compose -f docker/compose.docking.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /lynx/dock_robot opennav_docking_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: true, dock_id: main }\""
+     "source install/setup.bash && ros2 action send_goal /panther/dock_robot opennav_docking_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: true, dock_id: main }\""
+
+# Dock Husarion UGV to the charging dock without using navigation stack
+dock-direct:
+    #!/bin/bash
+    docker compose -f docker/compose.docking.yaml exec docking bash -c \
+     "source install/setup.bash && ros2 action send_goal /panther/dock_robot opennav_docking_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: false, dock_id: main }\""
+
 
 # Undock Husarion UGV from the charging dock
 undock:
     #!/bin/bash
     docker compose -f docker/compose.docking.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /lynx/undock_robot opennav_docking_msgs/action/UndockRobot \" {  dock_type: charging_dock }\""
+     "source install/setup.bash && ros2 action send_goal /panther/undock_robot opennav_docking_msgs/action/UndockRobot \" {  dock_type: charging_dock }\""

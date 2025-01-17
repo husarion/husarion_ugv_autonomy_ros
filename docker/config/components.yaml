@@ -1,14 +1,14 @@
 ---
 components:
   - type: LDR20
-    parent_link: cover_link
+    parent_link: mount_link
     xyz: 0.185 0.0 0.0
     rpy: 0.0 0.0 0.0
     device_namespace: None
 
   - type: CAM01
-    parent_link: cover_link
-    xyz: -0.18 0.0 0.1
+    parent_link: mount_link
+    xyz: 0.2 0.0 0.1
     rpy: 0.0 0.0 0.0
     device_namespace: camera
 
