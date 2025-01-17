@@ -32,7 +32,8 @@ jobs:
                 ],
                 "cmake-args": [
                     "-DCMAKE_BUILD_TYPE=Release",
-                    "-DTEST_INTEGRATION=OFF"
+                    "-DTEST_INTEGRATION=OFF",
+                    "-DTEST_ON_SELF_HOSTED_RUNNER=OFF"
                 ]
               },
               "test": {
