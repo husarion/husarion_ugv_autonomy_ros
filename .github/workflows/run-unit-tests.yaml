@@ -28,7 +28,7 @@ jobs:
             {
               "build": {
                 "packages-up-to": [
-                    "wibotic_connector_can"
+                    "husarion_ugv_autonomy"
                 ],
                 "cmake-args": [
                     "-DCMAKE_BUILD_TYPE=Release",
@@ -37,7 +37,7 @@ jobs:
               },
               "test": {
                 "packages-up-to": [
-                    "wibotic_connector_can"
+                    "husarion_ugv_autonomy"
                 ]
               }
             }
