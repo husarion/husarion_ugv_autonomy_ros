@@ -77,7 +77,6 @@ just start-simulation
     - http://{ip_address}:8080/ui (devices in the same LAN)
     - http://{hostname}:8080/ui (devices in the same Husarnet Network)
 
-
 ## Launch Arguments
 
 | Argument                 | Description <br/> ***Type:*** `Default`                                                               |
@@ -98,6 +97,7 @@ just start-simulation
 ## 🏗️ Docking
 
 ### ⚙️ Step 1: Locate docks
+
 Once you have mapped an area, locate your charging docks on map and select their poses in [the configuration file](docker/config/docking_server.yaml). You can use RViz or Foxglove.
 
 In the example below for dock named `main` the position is `pose: [1.0, 1.20, 1.57]`.
