@@ -64,7 +64,6 @@ stop-visualization: check-husarion-webui
     #!/bin/bash
     sudo husarion-webui.stop
 
-
 # Dock Husarion UGV to the charging dock using navigation stack
 dock DOCK_NAME:
     #!/bin/bash
