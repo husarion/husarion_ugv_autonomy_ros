@@ -1,18 +1,17 @@
 repositories:
-  wibotic_ros:
-    type: git
-    url: https://github.com/husarion/wibotic_ros/
-    version: 8e7e064582bf5be14e80db9f7b213ddcec1281e9
-  ros_components_description:
-    type: git
-    url: https://github.com/husarion/ros_components_description.git
-    version: 517350ac672b7383c3377e63244353a104096c39
-  # On unit test branch
-  husarion_ugv_ros:
-    type: git
-    url: https://github.com/husarion/panther_ros
-    version: 112a313ffba7a05a3e8ea86732f2a2c2c97ba591
   behaviortree_ros2:
     type: git
     url: https://github.com/BehaviorTree/BehaviorTree.ROS2
     version: a0de087a2f3af5ec5a19edd622aa85506105afcd
+  husarion_ugv_ros:
+    type: git
+    url: https://github.com/husarion/panther_ros
+    version: 112a313ffba7a05a3e8ea86732f2a2c2c97ba591
+  ros_components_description:
+    type: git
+    url: https://github.com/husarion/ros_components_description.git
+    version: 517350ac672b7383c3377e63244353a104096c39
+  wibotic_ros:
+    type: git
+    url: https://github.com/husarion/wibotic_ros/
+    version: 31a7b12d0dd7a00c3968cb5011c9d9e178349805
