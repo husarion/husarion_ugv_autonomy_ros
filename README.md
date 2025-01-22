@@ -33,13 +33,13 @@ The provided example is configured for the Panther robot and supports any LIDAR 
 Download this repository:
 
 ```bash
-git clone https://github.com/husarion/panther-navigation
+git clone https://github.com/husarion/husarion_ugv_autonomy_ros
 ```
 
 Setup environment:
 
 ```bash
-cd panther-navigation
+cd husarion_ugv_autonomy_ros
 export OBSERVATION_TOPIC={point_cloud_topic} # absolute topic name to match your LIDAR pointcloud2 topic (e.g. /scan)
 export OBSERVATION_TOPIC_TYPE={msg_type} # Specify: `laserscan`, `pointcloud`
 export CAMERA_IMAGE_TOPIC={camera_image_topic} # absolute topic name to match your camera image topic (e. g. /camera/color/image_raw)
