@@ -34,11 +34,11 @@ from launch_ros.substitutions import FindPackageShare
 def generate_apriltag_and_get_path(tag_id):
     from moms_apriltag import TagGenerator2
 
-    tag_generator = TagGenerator2("tag36h11")
-    tag_image = tag_generator.generate(tag_id, scale=1000)
-    with open(f"/config/apriltags/tag_{tag_id}.png", "w") as temp_file:
-        imageio.imwrite(temp_file.name, tag_image)
-        return temp_file.name
+    tag_image = TagGenerator2("tag36h11").generate(tag_id, scale=1000)
+    output_path = f"/config/apriltags/tag_{tag_id}.png"
+    os.makedirs(os.path.dirname(output_path), mode=755, exist_ok=True)
+    imageio.imwrite(output_path, tag_image)
+    return output_path
 
 
 def generate_urdf(name, apriltag_id, apriltag_size):

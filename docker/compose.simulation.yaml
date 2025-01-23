@@ -23,14 +23,11 @@ services:
         namespace:=panther
 
   docking:
-    # image: husarion/husarion-ugv-autonomy:humble-0.1.0-20241113
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
+    image: husarion/husarion-ugv-autonomy:humble-ros2-dock-suggestions
     container_name: docking
     <<: *common-config
     volumes:
-      - ../husarion_ugv_docking:/ros2_ws/src/husarion_ugv_docking
+      - ..:/ros2_ws/src/husarion_ugv_autonomy_ros
       - ./config:/config
     environment:
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
@@ -47,14 +44,11 @@ services:
         use_sim:=True
 
   navigation:
-    # image: husarion/husarion-ugv-autonomy:humble-0.1.0-20241113
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
+    image: husarion/husarion-ugv-autonomy:humble-ros2-dock-suggestions
     container_name: navigation
     <<: *common-config
     volumes:
-      - ../husarion_ugv_navigation:/ros2_ws/src/husarion_ugv_navigation
+      - ..:/ros2_ws/src/husarion_ugv_autonomy_ros
       - ../maps:/maps
     environment:
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
