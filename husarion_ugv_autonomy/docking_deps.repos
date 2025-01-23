@@ -14,4 +14,4 @@ repositories:
   wibotic_ros:
     type: git
     url: https://github.com/husarion/wibotic_ros/
-    version: 31a7b12d0dd7a00c3968cb5011c9d9e178349805
+    version: 0.2.0
