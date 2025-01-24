@@ -36,8 +36,10 @@ jobs:
                 ]
               },
               "test": {
-                "packages-up-to": [
-                    "husarion_ugv_autonomy"
+                "packages-select": [
+                    "husarion_ugv_autonomy",
+                    "husarion_ugv_docking",
+                    "husarion_ugv_navigation"
                 ]
               }
             }
