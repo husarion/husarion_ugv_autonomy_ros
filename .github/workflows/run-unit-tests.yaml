@@ -28,17 +28,16 @@ jobs:
             {
               "build": {
                 "packages-up-to": [
-                    "husarion_ugv_docking"
+                    "husarion_ugv_autonomy"
                 ],
                 "cmake-args": [
                     "-DCMAKE_BUILD_TYPE=Release",
-                    "-DTEST_INTEGRATION=OFF",
-                    "-DTEST_ON_SELF_HOSTED_RUNNER=OFF"
+                    "-DTEST_INTEGRATION=OFF"
                 ]
               },
               "test": {
                 "packages-up-to": [
-                    "husarion_ugv_docking"
+                    "husarion_ugv_autonomy"
                 ]
               }
             }

@@ -6,11 +6,29 @@ components:
     rpy: 0.0 0.0 0.0
     device_namespace: None
 
-  - type: CAM01
+  - type: CAM06
     parent_link: mount_link
     xyz: 0.2 0.0 0.1
     rpy: 0.0 0.0 0.0
-    device_namespace: camera
+    device_namespace: front_camera
+
+  - type: CAM06
+    parent_link: mount_link
+    xyz: -0.2 0.0 0.1
+    rpy: 0.0 0.0 3.14
+    device_namespace: rear_camera
+
+  - type: CAM06
+    parent_link: mount_link
+    xyz: 0.0 0.2 0.1
+    rpy: 0.0 0.0 1.57
+    device_namespace: left_camera
+
+  - type: CAM06
+    parent_link: mount_link
+    xyz: 0.0 -0.2 0.1
+    rpy: 0.0 0.0 -1.57
+    device_namespace: right_camera
 
   - type: WCH01
     parent_link: lights_channel_1_link
