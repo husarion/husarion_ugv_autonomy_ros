@@ -34,8 +34,8 @@
           "url": "",
           "filePath": "",
           "parameter": "",
-          "topic": "{{env "NAMESPACE"}}/robot_description",
-          "framePrefix": "{{env "NS_PREFIX"}}",
+          "topic": "/panther/robot_description",
+          "framePrefix": "panther/",
           "displayMode": "auto",
           "fallbackColor": "#ffffff",
           "order": 2
@@ -67,7 +67,7 @@
         "far": 5000
       },
       "followMode": "follow-pose",
-      "followTf": "{{env "NS_PREFIX"}}map",
+      "followTf": "panther/map",
       "scene": {
         "transforms": {
           "showLabel": true,
@@ -78,125 +78,71 @@
         "meshUpAxis": "z_up"
       },
       "transforms": {
-        "frame:{{env "NS_PREFIX"}}map": {
+        "frame:panther/map": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}body_link": {
+        "frame:panther/body_link": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}base_link": {
+        "frame:panther/base_link": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}cover_link": {
+        "frame:panther/cover_link": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}front_bumper_link": {
+        "frame:panther/front_bumper_link": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}imu_link": {
+        "frame:panther/imu_link": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}rear_bumper_link": {
+        "frame:panther/rear_bumper_link": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}velodyne_puck_link": {
+        "frame:panther/velodyne_puck_link": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}lights_channel_1_link": {
+        "frame:panther/lights_channel_1_link": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}lights_channel_2_link": {
+        "frame:panther/lights_channel_2_link": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}velodyne": {
+        "frame:panther/velodyne": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}odom": {
+        "frame:panther/odom": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}fl_wheel_link": {
+        "frame:panther/fl_wheel_link": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}fr_wheel_link": {
+        "frame:panther/fr_wheel_link": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}rl_wheel_link": {
+        "frame:panther/rl_wheel_link": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}rr_wheel_link": {
+        "frame:panther/rr_wheel_link": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}slamtec_rplidar_link": {
+        "frame:panther/slamtec_rplidar_link": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}laser": {
-          "visible": false
-        },
-        "frame:backup_apriltag_image_link": {
-          "visible": false
-        },
-        "frame:backup_apriltag_link": {
-          "visible": false
-        },
-        "frame:backup_wibotic_station_link": {
-          "visible": false
-        },
-        "frame:backup_wibotic_transmitter_link": {
-          "visible": false
-        },
-        "frame:main_apriltag_image_link": {
-          "visible": false
-        },
-        "frame:main_apriltag_link": {
-          "visible": false
-        },
-        "frame:main_wibotic_station_link": {
-          "visible": false
-        },
-        "frame:main_wibotic_transmitter_link": {
-          "visible": false
-        },
-        "frame:{{env "NS_PREFIX"}}base_footprint": {
-          "visible": false
-        },
-        "frame:{{env "NS_PREFIX"}}camera_color_optical_frame": {
-          "visible": false
-        },
-        "frame:{{env "NS_PREFIX"}}camera_color_frame": {
-          "visible": false
-        },
-        "frame:{{env "NS_PREFIX"}}camera_depth_optical_frame": {
-          "visible": false
-        },
-        "frame:{{env "NS_PREFIX"}}camera_depth_frame": {
-          "visible": false
-        },
-        "frame:{{env "NS_PREFIX"}}mount_link": {
-          "visible": false
-        },
-        "frame:{{env "NS_PREFIX"}}wibotic_receiver_link": {
-          "visible": false
-        },
-        "frame:{{env "NS_PREFIX"}}camera_link": {
-          "visible": false
-        },
-        "frame:{{env "NS_PREFIX"}}camera_orbbec_astra_link": {
-          "visible": false
-        },
-        "frame:{{env "NS_PREFIX"}}base_link/panther/camera_orbbec_astra_depth": {
+        "frame:panther/laser": {
           "visible": false
         }
       },
       "topics": {
-        "{{env "NAMESPACE"}}/map": {
+        "/panther/map": {
           "visible": true,
           "colorMode": "map",
           "alpha": 0.5
         },
-        "{{env "NAMESPACE"}}/cost_cloud": {
+        "/panther/cost_cloud": {
           "visible": false
         },
-        "{{env "NAMESPACE"}}/plan": {
+        "/panther/plan": {
           "visible": true,
           "lineWidth": 0.1,
           "gradient": [
@@ -204,30 +150,30 @@
             "#00b12b80"
           ]
         },
-        "{{env "NAMESPACE"}}/plan_smoothed": {
+        "/panther/plan_smoothed": {
           "visible": false
         },
-        "{{env "NAMESPACE"}}/received_global_plan": {
+        "/panther/received_global_plan": {
           "visible": false
         },
-        "{{env "NAMESPACE"}}/global_costmap/published_footprint": {
+        "/panther/global_costmap/published_footprint": {
           "visible": false
         },
-        "{{env "NAMESPACE"}}/global_costmap/costmap": {
+        "/panther/global_costmap/costmap": {
           "visible": true,
           "colorMode": "costmap",
           "alpha": 0.25
         },
-        "{{env "NAMESPACE"}}/local_costmap/costmap": {
+        "/panther/local_costmap/costmap": {
           "visible": true,
           "colorMode": "costmap",
           "alpha": 0.5
         },
-        "{{env "NAMESPACE"}}/pose": {
+        "/panther/pose": {
           "visible": false,
           "type": "arrow"
         },
-        "{{env "NAMESPACE"}}/scan": {
+        "/panther/scan": {
           "visible": true,
           "colorField": "intensity",
           "colorMode": "colormap",
@@ -235,16 +181,16 @@
           "explicitAlpha": 1,
           "pointSize": 4
         },
-        "{{env "NAMESPACE"}}/marker": {
+        "/panther/marker": {
           "visible": false,
           "showOutlines": true
         },
-        "{{env "NAMESPACE"}}/goal_pose": {
+        "/panther/goal_pose": {
           "visible": true,
           "type": "arrow",
           "color": "#13ff00ff"
         },
-        "{{env "NAMESPACE"}}/local_plan": {
+        "/panther/local_plan": {
           "visible": true,
           "gradient": [
             "#ff0000ff",
@@ -254,7 +200,7 @@
       },
       "publish": {
         "type": "pose",
-        "poseTopic": "{{env "NAMESPACE"}}/goal_pose",
+        "poseTopic": "/panther/goal_pose",
         "pointTopic": "/clicked_point",
         "poseEstimateTopic": "/initialpose",
         "poseEstimateXDeviation": 0.5,
@@ -265,13 +211,13 @@
     },
     "EStop!3mw7boq": {
       "requestPayload": "{}",
-      "goServiceName": "{{env "NAMESPACE"}}/hardware/e_stop_reset",
-      "stopServiceName": "{{env "NAMESPACE"}}/hardware/e_stop_trigger",
-      "statusTopicName": "{{env "NAMESPACE"}}/hardware/e_stop.data",
+      "goServiceName": "/panther/hardware/e_stop_reset",
+      "stopServiceName": "/panther/hardware/e_stop_trigger",
+      "statusTopicName": "/panther/hardware/e_stop.data",
       "foxglovePanelTitle": "E-stop"
     },
     "Joy!454iiby": {
-      "topic": "{{env "NAMESPACE"}}/cmd_vel",
+      "topic": "/panther/cmd_vel",
       "publishRate": 5,
       "stamped": false,
       "advanced": false,
@@ -282,14 +228,13 @@
       "yAxis": {
         "field": "angular-z",
         "limit": 1
-      },
-      "frameId": "{{env "NS_PREFIX"}}body_link"
+      }
     },
     "DiagnosticSummary!3ebmih7": {
       "minLevel": 0,
       "pinnedIds": [],
       "hardwareIdFilter": "",
-      "topicToRender": "{{env "NAMESPACE"}}/diagnostics",
+      "topicToRender": "/panther/diagnostics",
       "sortByLevel": true
     }
   },
