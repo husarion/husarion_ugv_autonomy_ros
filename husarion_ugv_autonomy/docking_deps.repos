@@ -1,0 +1,17 @@
+repositories:
+  behaviortree_ros2:
+    type: git
+    url: https://github.com/BehaviorTree/BehaviorTree.ROS2
+    version: a0de087a2f3af5ec5a19edd622aa85506105afcd
+  husarion_ugv_ros:
+    type: git
+    url: https://github.com/husarion/panther_ros
+    version: bc7950b0860164a3363edb6a290adf22249ca817
+  ros_components_description:
+    type: git
+    url: https://github.com/husarion/ros_components_description.git
+    version: 517350ac672b7383c3377e63244353a104096c39
+  wibotic_ros:
+    type: git
+    url: https://github.com/husarion/wibotic_ros/
+    version: 0.2.0

@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>husarion_ugv_docking</name>
+  <version>0.1.0</version>
+  <description>Integration Panther with Wibotic charger and Opennav Docking framework</description>
+
+  <maintainer email="support@husarion.com">Husarion</maintainer>
+  <license>Apache License 2.0</license>
+
+  <url type="website">https://husarion.com/</url>
+  <url type="repository">https://github.com/husarion/panther-navigation</url>
+  <url type="bugtracker">https://github.com/husarion/panther-navigation/issues</url>
+
+  <author email="jakub.delicat@husarion.com">Jakub Delicat</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>apriltag_ros</depend>
+  <depend>geometry_msgs</depend>
+  <depend>husarion_ugv_manager</depend>
+  <depend>husarion_ugv_msgs</depend>
+  <depend>husarion_ugv_utils</depend>
+  <depend>lifecycle_msgs</depend>
+  <depend>nav2_util</depend>
+  <depend>opennav_docking</depend>
+  <depend>opennav_docking_msgs</depend>
+  <depend>pluginlib</depend>
+  <depend>python3-pip</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>ros_components_description</depend>
+  <depend>ros_gz_sim</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>tf2_ros</depend>
+  <depend>wibotic_msgs</depend>
+
+  <exec_depend>nav2_lifecycle_manager</exec_depend>
+  <exec_depend>python3-imageio</exec_depend>
+  <exec_depend>wibotic_connector_can</exec_depend>
+  <exec_depend>xacro</exec_depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <husarion_ugv_docking plugin="${prefix}/plugin.xml"/>
+  </export>
+</package>

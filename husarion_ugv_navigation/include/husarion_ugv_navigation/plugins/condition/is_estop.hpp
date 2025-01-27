@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef HUSARION_UGV_NAVIGATION__PLUGINS__CONDITION__IS_ESTOP_HPP_
-#define HUSARION_UGV_NAVIGATION__PLUGINS__CONDITION__IS_ESTOP_HPP_
+#ifndef HUSARION_UGV_NAVIGATION_HUSARION_UGV_NAVIGATION_PLUGINS_CONDITION_IS_ESTOP_HPP_
+#define HUSARION_UGV_NAVIGATION_HUSARION_UGV_NAVIGATION_PLUGINS_CONDITION_IS_ESTOP_HPP_
 
 #include <memory>
 #include <string>
 
-#include "behaviortree_cpp_v3/condition_node.h"
-#include "rclcpp/rclcpp.hpp"
+#include <behaviortree_cpp_v3/condition_node.h>
+#include <rclcpp/rclcpp.hpp>
 
-#include "std_msgs/msg/bool.hpp"
+#include <std_msgs/msg/bool.hpp>
 
 namespace husarion_ugv_navigation {
 

@@ -1,6 +1,6 @@
 # husarion_ugv_navigation
 
-The package contains the nav2 package configurations for Husarion UGV.
+The package contains the nav2 package configurations and E-STOP handling during navigation for Husarion UGVs.
 
 ## Launch Files
 
@@ -15,7 +15,7 @@ This package contains:
 
 ### is_estop
 
-BehaviorTree plugin responsible for chancing the e-stop status and cancel navigation action if e-stop is activated.
+A BehaviorTree plugin responsible for chancing the e-stop status and cancel navigation action if e-stop is activated.
 
 #### Subscribers
 
@@ -23,7 +23,7 @@ BehaviorTree plugin responsible for chancing the e-stop status and cancel naviga
 
 ### map_autosaver_node
 
-ROS node responsible for autosave map.
+A ROS node responsible for autosave map.
 
 ### Clients
 

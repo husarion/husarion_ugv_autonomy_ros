@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>husarion_ugv_autonomy</name>
+  <version>0.1.0</version>
+  <description>Metapackage that contains autonomy related packages for Husarion UGV</description>
+  <maintainer email="support@husarion.com">Husarion</maintainer>
+  <license>Apache License 2.0</license>
+
+  <url type="website">https://husarion.com</url>
+  <url type="repository">https://github.com/husarion/panther_ros</url>
+  <url type="bugtracker">https://github.com/husarion/panther_ros/issues</url>
+
+  <author email="jakub.delicat@husarion.com">Jakub Delicat</author>
+  <author email="rafal.gorecki@husarion.com">Rafal Gorecki</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>husarion_ugv_docking</depend>
+  <depend>husarion_ugv_navigation</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

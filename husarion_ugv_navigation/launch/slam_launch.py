@@ -1,3 +1,4 @@
+# Copyright 2024 Husarion sp. z o.o.
 # Copyright (c) 2020 Samsung Research Russia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -61,7 +62,7 @@ def generate_launch_description():
     declare_params_file_cmd = DeclareLaunchArgument(
         "params_file",
         default_value="/params.yaml",
-        description="Full path to the ROS2 parameters file to use for all launched nodes",
+        description="Path to the parameters file to use for all nav2 related nodes",
     )
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(

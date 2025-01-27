@@ -35,7 +35,6 @@ from nav2_common.launch import ReplaceString, RewrittenYaml
 
 
 def generate_launch_description():
-    # Get the launch directory
     husarion_ugv_navigation = FindPackageShare("husarion_ugv_navigation")
     launch_dir = PathJoinSubstitution([husarion_ugv_navigation, "launch"])
 
@@ -46,6 +45,7 @@ def generate_launch_description():
     observation_topic = LaunchConfiguration("observation_topic")
     observation_topic_type = LaunchConfiguration("observation_topic_type")
     params_file = LaunchConfiguration("params_file")
+    pc2ls_params_file = LaunchConfiguration("pc2ls_params_file")
     slam = LaunchConfiguration("slam")
     use_composition = LaunchConfiguration("use_composition")
     use_respawn = LaunchConfiguration("use_respawn")
@@ -54,18 +54,21 @@ def generate_launch_description():
     declare_autostart_arg = DeclareLaunchArgument(
         "autostart",
         default_value="true",
-        description="Automatically startup the nav2 stack",
+        description="Automatically startup the nav2 stack.",
     )
     declare_log_level_arg = DeclareLaunchArgument(
-        "log_level", default_value="info", description="log level"
+        "log_level",
+        default_value="info",
+        description="Logging level.",
+        choices=["debug", "info", "warning", "error"],
     )
     declare_map_arg = DeclareLaunchArgument(
-        "map", default_value="/maps/map.yaml", description="Full path to map yaml file to load"
+        "map", default_value="/maps/map.yaml", description="Path to map yaml file to load."
     )
     declare_namespace_arg = DeclareLaunchArgument(
         "namespace",
         default_value=EnvironmentVariable("ROBOT_NAMESPACE", default_value=""),
-        description="Top-level namespace",
+        description="Add namespace to all launched nodes.",
     )
     declare_observation_topic_arg = DeclareLaunchArgument(
         "observation_topic",
@@ -81,21 +84,24 @@ def generate_launch_description():
     declare_params_file_arg = DeclareLaunchArgument(
         "params_file",
         default_value=PathJoinSubstitution(
-            [
-                husarion_ugv_navigation,
-                "config",
-                PythonExpression(["'nav2_", observation_topic_type, "_params.yaml'"]),
-            ]
+            [husarion_ugv_navigation, "config", "nav2_params.yaml"]
         ),
-        description="Full path to the ROS2 parameters file to use for all launched nodes",
+        description="Path to the parameters file to use for all nav2 related nodes",
+    )
+    declare_pc2ls_params_file_arg = DeclareLaunchArgument(
+        "pc2ls_params_file",
+        default_value=PathJoinSubstitution(
+            [husarion_ugv_navigation, "config", "pc2ls_params.yaml"]
+        ),
+        description="Path to the parameters file to use for pointcloud_to_laserscan node.",
     )
     declare_slam_arg = DeclareLaunchArgument(
-        "slam", default_value="False", description="Whether run a SLAM"
+        "slam", default_value="False", description="Whether run a SLAM."
     )
     declare_use_composition_arg = DeclareLaunchArgument(
         "use_composition",
         default_value="True",
-        description="Whether to use composed bringup",
+        description="Whether to use composed bringup.",
     )
     declare_use_respawn_arg = DeclareLaunchArgument(
         "use_respawn",
@@ -105,19 +111,27 @@ def generate_launch_description():
     declare_use_sim_time_arg = DeclareLaunchArgument(
         "use_sim_time",
         default_value="false",
-        description="Use simulation (Gazebo) clock if true",
+        description="Use simulation (Gazebo) clock if true.",
     )
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {"use_sim_time": use_sim_time, "yaml_filename": map}
 
     namespace_ext = PythonExpression(["'", namespace, "' + '/' if '", namespace, "' else ''"])
+    scan_topic = PythonExpression(
+        ["'scan' if '", observation_topic_type, "' == 'pointcloud' else '", observation_topic, "'"]
+    )
+    is_laserscan = PythonExpression(["'", observation_topic_type, "' == 'laserscan'"])
+    is_pointcloud = PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
 
     params_file = ReplaceString(
         source_file=params_file,
         replacements={
-            "<robot_namespace>/": namespace_ext,
+            "<namespace>/": namespace_ext,
             "<observation_topic>": observation_topic,
+            "<scan_topic>": scan_topic,
+            "<is_laserscan>": is_laserscan,
+            "<is_pointcloud>": is_pointcloud,
         },
     )
 
@@ -131,7 +145,6 @@ def generate_launch_description():
         allow_substs=True,
     )
 
-    # Specify the actions
     bringup_cmd_group = GroupAction(
         [
             PushRosNamespace(namespace),
@@ -142,18 +155,7 @@ def generate_launch_description():
                 package="pointcloud_to_laserscan",
                 executable="pointcloud_to_laserscan_node",
                 name="pointcloud_to_laserscan",
-                parameters=[
-                    configured_params,
-                    {
-                        "min_height": 0.05,
-                        "max_height": 0.5,
-                        "angle_increment": 0.01,
-                        "scan_time": 0.1,
-                        "range_min": 0.85,
-                        "range_max": 12.0,
-                        "transform_tolerance": 0.02,
-                    },
-                ],
+                parameters=[pc2ls_params_file],
                 remappings=[("cloud_in", observation_topic)],
                 output="screen",
             ),
@@ -214,7 +216,7 @@ def generate_launch_description():
                 name="map_autosaver",
                 package="husarion_ugv_navigation",
                 executable="map_autosaver_node",
-                parameters=[{"autosave_period": 10.0}],
+                parameters=[configured_params],
                 arguments=["--ros-args", "--log-level", log_level],
                 output="screen",
             ),
@@ -231,6 +233,7 @@ def generate_launch_description():
             declare_observation_topic_arg,
             declare_observation_topic_type_arg,
             declare_params_file_arg,
+            declare_pc2ls_params_file_arg,
             declare_slam_arg,
             declare_use_composition_arg,
             declare_use_respawn_arg,

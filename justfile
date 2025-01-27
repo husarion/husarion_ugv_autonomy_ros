@@ -9,6 +9,10 @@ check-husarion-webui:
     #!/bin/bash
     if ! command -v snap &> /dev/null; then
         echo "Snap is not installed. Please install Snap first and try again."
+<<<<<<< HEAD
+=======
+        echo "sudo apt install snapd"
+>>>>>>> ros2
         exit 1
     fi
 
@@ -57,3 +61,27 @@ start-visualization: check-husarion-webui
     local_ip=$(hostname -I | awk '{print $1}')
     hostname=$(hostname)
     echo "Open a web browser and go to http://$local_ip:8080/ui or http://$hostname:8080/ui if your device is connected to the same Husarnet network."
+
+# Stop Husarion WebUI
+stop-visualization: check-husarion-webui
+    #!/bin/bash
+    sudo husarion-webui.stop
+
+# Dock Husarion UGV to the charging dock using navigation stack
+dock DOCK_NAME:
+    #!/bin/bash
+    docker compose -f docker/compose.simulation.yaml exec docking bash -c \
+     "source install/setup.bash && ros2 action send_goal /panther/dock_robot opennav_docking_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: true, dock_id: {{DOCK_NAME}} }\""
+
+# Dock Husarion UGV to the charging dock without using navigation stack
+dock-direct DOCK_NAME:
+    #!/bin/bash
+    docker compose -f docker/compose.simulation.yaml exec docking bash -c \
+     "source install/setup.bash && ros2 action send_goal /panther/dock_robot opennav_docking_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: false, dock_id: {{DOCK_NAME}} }\""
+
+
+# Undock Husarion UGV from the charging dock
+undock:
+    #!/bin/bash
+    docker compose -f docker/compose.simulation.yaml exec docking bash -c \
+     "source install/setup.bash && ros2 action send_goal /panther/undock_robot opennav_docking_msgs/action/UndockRobot \" {  dock_type: charging_dock }\""

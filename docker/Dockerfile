@@ -7,13 +7,21 @@ ARG PREFIX
 
 WORKDIR /ros2_ws
 
-COPY ./husarion_ugv_navigation /ros2_ws/src/husarion_ugv_navigation
+COPY . /ros2_ws/src/husarion_ugv_autonomy_ros
 
 RUN MYDISTRO=${PREFIX:-ros}; MYDISTRO=${MYDISTRO//-/} && \
     apt-get update --fix-missing && \
     apt upgrade -y && \
     apt-get install -y \
         ros-dev-tools && \
+    vcs import src < src/husarion_ugv_autonomy_ros/husarion_ugv_autonomy/docking_deps.repos && \
+    # Remove unnecessary packages
+    find src/husarion_ugv_ros/ -maxdepth 1 -mindepth 1 \
+        ! -name 'husarion_ugv_description' \
+        ! -name 'husarion_ugv_manager' \
+        ! -name 'husarion_ugv_msgs' \
+        ! -name 'husarion_ugv_utils' \
+        -exec rm -rf {} + && \
     # Install dependencies
     rm -rf /etc/ros/rosdep/sources.list.d/20-default.list && \
     rosdep init && \
@@ -23,8 +31,8 @@ RUN MYDISTRO=${PREFIX:-ros}; MYDISTRO=${MYDISTRO//-/} && \
     source /opt/ros/$ROS_DISTRO/setup.bash && \
     colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release && \
     # Save version
-    echo $(cat /ros2_ws/src/husarion_ugv_navigation/package.xml | grep '<version>' | sed -r 's/.*<version>([0-9]+.[0-9]+.[0-9]+)<\/version>/\1/g') >> /version.txt && \
-    # Size optimalization
+    echo $(cat /ros2_ws/src/husarion_ugv_autonomy_ros/husarion_ugv_autonomy/package.xml | grep '<version>' | sed -r 's/.*<version>([0-9]+.[0-9]+.[0-9]+)<\/version>/\1/g') >> /version.txt && \
+    # Size optimization
     export SUDO_FORCE_REMOVE=yes && \
     apt-get remove -y \
         ros-dev-tools && \

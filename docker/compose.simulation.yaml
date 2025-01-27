@@ -4,9 +4,9 @@ x-common-config:
   ipc: host
 
 services:
-  husarion_ugv_gazebo:
-    image: husarion/panther-gazebo:humble-2.1.1-20240828
-    container_name: husarion_ugv_gazebo
+  gazebo:
+    image: husarion/panther-gazebo:humble-ros2-devel
+    container_name: gazebo
     <<: *common-config
     runtime: nvidia
     environment:
@@ -18,19 +18,37 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ./config:/config
     command: >
-      ros2 launch panther_gazebo simulation.launch.py
+      ros2 launch husarion_ugv_gazebo simulation.launch.py
         components_config_path:=/config/components.yaml
         namespace:=panther
 
+  docking:
+    image: husarion/husarion-ugv-autonomy:humble-ros2-dock-suggestions
+    container_name: docking
+    <<: *common-config
+    volumes:
+      - ..:/ros2_ws/src/husarion_ugv_autonomy_ros
+      - ./config:/config
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - CYCLONE_DDS_URI=file:///config/cyclonedds.xml
+    command: >
+      ros2 launch husarion_ugv_docking docking.launch.py
+        namespace:=panther
+        use_wibotic_info:=False
+        camera_image_topic:=${CAMERA_IMAGE_TOPIC:-/panther/camera/color/image_raw}
+        camera_info_topic:=${CAMERA_INFO_TOPIC:-/panther/camera/color/camera_info}
+        docking_server_config_path:=/config/docking_server.yaml
+        apriltag_config_path:=/config/apriltag.yaml
+        apriltag_size:=0.08
+        use_sim:=True
+
   navigation:
-    # image: husarion/husarion-ugv-navigation:humble-0.1.0-20241113
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
+    image: husarion/husarion-ugv-autonomy:humble-ros2-dock-suggestions
     container_name: navigation
     <<: *common-config
     volumes:
-      - ../husarion_ugv_navigation:/ros2_ws/src/husarion_ugv_navigation
+      - ..:/ros2_ws/src/husarion_ugv_autonomy_ros
       - ../maps:/maps
     environment:
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
@@ -39,5 +57,5 @@ services:
         namespace:=panther
         observation_topic:=/panther/velodyne_points
         observation_topic_type:=pointcloud
-        slam:=True
+        slam:=${SLAM:-True}
         use_sim_time:=True
