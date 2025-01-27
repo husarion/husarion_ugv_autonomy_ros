@@ -157,7 +157,7 @@ local_costmap:
 
       footprint: '[[0.45, 0.47], [0.45, -0.47], [-0.45, -0.47], [-0.45, 0.47]]'
 
-      plugins: [inflation_layer, obstacle_layer, voxel_layer]
+      plugins: [obstacle_layer, voxel_layer, inflation_layer]
       inflation_layer:
         plugin: nav2_costmap_2d::InflationLayer
         cost_scaling_factor: 1.3
@@ -218,7 +218,7 @@ global_costmap:
 
       footprint: '[[0.45, 0.47], [0.45, -0.47], [-0.45, -0.47], [-0.45, 0.47]]'
 
-      plugins: [inflation_layer, obstacle_layer, static_layer, voxel_layer]
+      plugins: [static_layer, obstacle_layer, voxel_layer, inflation_layer]
       inflation_layer:
         plugin: nav2_costmap_2d::InflationLayer
         cost_scaling_factor: 1.5
