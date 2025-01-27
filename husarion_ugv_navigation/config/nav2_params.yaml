@@ -46,67 +46,65 @@ controller_server:
   ros__parameters:
     use_sim_time: false
 
-    controller_frequency: 5.0
+    controller_frequency: 10.0
     odom_topic: odometry/filtered
+    costmap_update_timeout: 0.5
 
     min_x_velocity_threshold: 0.01
     min_y_velocity_threshold: 0.01
     min_theta_velocity_threshold: 0.05
-    progress_checker_plugin: progress_checker
+    failure_tolerance: 0.4
+    use_realtime_priority: false
 
     # Progress checker parameters
+    progress_checker_plugin: progress_checker
     progress_checker:
+      movement_time_allowance: 10.0
       plugin: nav2_controller::SimpleProgressChecker
       required_movement_radius: 0.5
-      movement_time_allowance: 10.0
 
     # Goal checker parameters
-    goal_checker_plugin: goal_checker
+    goal_checker_plugins: [goal_checker]
     goal_checker:
       plugin: nav2_controller::SimpleGoalChecker
+      stateful: true
       xy_goal_tolerance: 0.1
       yaw_goal_tolerance: 0.15
-      stateful: true
 
     # MPPI controller
     controller_plugins: [FollowPath]
     FollowPath:
       plugin: nav2_mppi_controller::MPPIController
-      time_steps: 25
-      model_dt: 0.2
-      batch_size: 500
-      vx_std: 0.35
+      time_steps: 40
+      model_dt: 0.1
+      batch_size: 800
+      vx_std: 0.4
       vy_std: 0.0
       wz_std: 0.5
-      vx_max: 0.5
-      vx_min: -0.4
+      vx_max: 0.8
+      vx_min: -0.5
       vy_max: 0.0
       wz_max: 0.8
       iteration_count: 1
       prune_distance: 2.5
-      transform_tolerance: 0.25
+      transform_tolerance: 0.1
       temperature: 0.3
       gamma: 0.015
       motion_model: DiffDrive
+      regenerate_noises: true
       visualize: false
-      reset_period: 1.0 # (only in Humble)
-      regenerate_noises: false
-      TrajectoryVisualizer:
-        trajectory_step: 5
-        time_step: 5
-      AckermannConstrains:
+      AckermannConstraints:
         min_turning_r: 0.05
-      critics: [ConstraintCritic, ObstaclesCritic, GoalCritic, GoalAngleCritic, PathAlignCritic, PathFollowCritic,
-        PathAngleCritic, PreferForwardCritic]
+      critics: [ConstraintCritic, CostCritic, GoalCritic, GoalAngleCritic, PathAlignCritic, PathFollowCritic, PathAngleCritic, PreferForwardCritic]
       ConstraintCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 2.0
+        cost_weight: 4.0
       GoalCritic:
         enabled: true
         cost_power: 1
         cost_weight: 25.0
-        threshold_to_consider: 1.0
+        threshold_to_consider: 1.4
       GoalAngleCritic:
         enabled: true
         cost_power: 1
@@ -117,38 +115,37 @@ controller_server:
         cost_power: 1
         cost_weight: 5.0
         threshold_to_consider: 2.0
-      ObstaclesCritic:
+      CostCritic:
         enabled: true
         cost_power: 1
-        repulsion_weight: 1.5
-        critical_weight: 20.0
-        consider_footprint: false
-        collision_cost: 10000.0
-        collision_margin_distance: 0.10
-        near_goal_distance: 0.5
-        inflation_radius: 0.55 # (only in Humble)
-        cost_scaling_factor: 3.0 # (only in Humble)
+        cost_weight: 3.81
+        critical_cost: 300.0
+        consider_footprint: true
+        collision_cost: 1000000.0
+        near_goal_distance: 1.0
       PathAlignCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 2.0
+        cost_weight: 14.0
         max_path_occupancy_ratio: 0.05
-        trajectory_point_step: 3
+        trajectory_point_step: 4
         threshold_to_consider: 0.5
         offset_from_furthest: 20
+        use_path_orientations: false
       PathFollowCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 2.0
+        cost_weight: 5.0
         offset_from_furthest: 5
-        threshold_to_consider: 1.0
+        threshold_to_consider: 1.4
       PathAngleCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 1.0
+        cost_weight: 2.0
         offset_from_furthest: 4
         threshold_to_consider: 0.5
         max_angle_to_furthest: 1.0
+        mode: 0
       # TwirlingCritic:
       #   enabled: true
       #   twirling_cost_power: 1
@@ -160,7 +157,7 @@ local_costmap:
       use_sim_time: false
 
       global_frame: <namespace>/odom
-      robot_base_frame: <namespace>/base_link
+      robot_base_frame: <namespace>/base_footprint
       transform_tolerance: 0.1
 
       update_frequency: 5.0
@@ -168,7 +165,7 @@ local_costmap:
 
       width: 8
       height: 8
-      resolution: 0.05
+      resolution: 0.04
 
       always_send_full_costmap: true
       rolling_window: true
@@ -192,10 +189,10 @@ local_costmap:
           data_type: LaserScan
           min_obstacle_height: 0.1
           max_obstacle_height: 0.5
-          obstacle_max_range: 12.0
-          obstacle_min_range: 0.9
-          raytrace_max_range: 12.0
-          raytrace_min_range: 0.9
+          obstacle_max_range: 15.0
+          obstacle_min_range: 0.5
+          raytrace_max_range: 15.0
+          raytrace_min_range: 0.5
       voxel_layer:
         plugin: nav2_costmap_2d::VoxelLayer
         enable: <is_pointcloud>
@@ -214,10 +211,10 @@ local_costmap:
           data_type: PointCloud2
           min_obstacle_height: 0.1
           max_obstacle_height: 0.5
-          obstacle_max_range: 12.0
-          obstacle_min_range: 0.9
-          raytrace_max_range: 12.0
-          raytrace_min_range: 0.9
+          obstacle_max_range: 15.0
+          obstacle_min_range: 0.5
+          raytrace_max_range: 15.0
+          raytrace_min_range: 0.5
 
 global_costmap:
   global_costmap:
@@ -225,7 +222,7 @@ global_costmap:
       use_sim_time: false
 
       global_frame: <namespace>/map
-      robot_base_frame: <namespace>/base_link
+      robot_base_frame: <namespace>/base_footprint
       transform_tolerance: 0.1
 
       update_frequency: 1.0
@@ -257,10 +254,10 @@ global_costmap:
           data_type: LaserScan
           min_obstacle_height: 0.1
           max_obstacle_height: 0.5
-          obstacle_max_range: 12.0
-          obstacle_min_range: 0.9
-          raytrace_max_range: 12.0
-          raytrace_min_range: 0.9
+          obstacle_max_range: 15.0
+          obstacle_min_range: 0.5
+          raytrace_max_range: 15.0
+          raytrace_min_range: 0.5
       static_layer:
         plugin: nav2_costmap_2d::StaticLayer
         map_subscribe_transient_local: true
@@ -283,10 +280,10 @@ global_costmap:
           data_type: PointCloud2
           min_obstacle_height: 0.1
           max_obstacle_height: 0.5
-          obstacle_max_range: 12.0
-          obstacle_min_range: 0.9
-          raytrace_max_range: 12.0
-          raytrace_min_range: 0.9
+          obstacle_max_range: 15.0
+          obstacle_min_range: 0.5
+          raytrace_max_range: 15.0
+          raytrace_min_range: 0.5
 
 planner_server:
   ros__parameters:
@@ -307,7 +304,7 @@ planner_server:
       use_final_approach_orientation: false # Whether to set the final path pose at the goal's orientation to the requested orientation (false) or in line with the approach angle so the robot doesn't rotate to heading (true)
       smoother:
         max_iterations: 500
-        w_smooth: 0.3
+        w_smooth: 0.2
         w_data: 0.2
         tolerance: 1.0e-6
 
@@ -473,7 +470,7 @@ map_autosaver:
     throttle_scans: 1
     transform_publish_period: 0.04
     map_update_interval: 1.0
-    resolution: 0.1
+    resolution: 0.05
     max_laser_range: 12.0 #for rastering images
     minimum_time_interval: 0.05
     transform_timeout: 0.5
