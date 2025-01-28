@@ -121,8 +121,8 @@ def generate_launch_description():
     scan_topic = PythonExpression(
         ["'scan' if '", observation_topic_type, "' == 'pointcloud' else '", observation_topic, "'"]
     )
-    is_laserscan = PythonExpression(["'", observation_topic_type, "' == 'laserscan'"])
-    is_pointcloud = PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+    add_obstacle_layer = PythonExpression(["'obstacle_layer,' if '", observation_topic_type, "' == 'laserscan' else ''"])
+    add_voxel_layer = PythonExpression(["'voxel_layer,' if '", observation_topic_type, "' == 'pointcloud' else ''"])
 
     params_file = ReplaceString(
         source_file=params_file,
@@ -130,8 +130,8 @@ def generate_launch_description():
             "<namespace>/": namespace_ext,
             "<observation_topic>": observation_topic,
             "<scan_topic>": scan_topic,
-            "<is_laserscan>": is_laserscan,
-            "<is_pointcloud>": is_pointcloud,
+            "<obstacle_layer>,": add_obstacle_layer,
+            "<voxel_layer>,": add_voxel_layer,
         },
     )
 
