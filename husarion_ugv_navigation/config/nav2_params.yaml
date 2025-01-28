@@ -189,10 +189,10 @@ local_costmap:
           data_type: LaserScan
           min_obstacle_height: 0.1
           max_obstacle_height: 0.5
-          obstacle_max_range: 15.0
-          obstacle_min_range: 0.5
-          raytrace_max_range: 15.0
-          raytrace_min_range: 0.5
+          obstacle_max_range: 20.0
+          obstacle_min_range: 0.7
+          raytrace_max_range: 20.0
+          raytrace_min_range: 0.7
       voxel_layer:
         plugin: nav2_costmap_2d::VoxelLayer
         enable: <is_pointcloud>
@@ -211,10 +211,10 @@ local_costmap:
           data_type: PointCloud2
           min_obstacle_height: 0.1
           max_obstacle_height: 0.5
-          obstacle_max_range: 15.0
-          obstacle_min_range: 0.5
-          raytrace_max_range: 15.0
-          raytrace_min_range: 0.5
+          obstacle_max_range: 20.0
+          obstacle_min_range: 0.7
+          raytrace_max_range: 20.0
+          raytrace_min_range: 0.7
 
 global_costmap:
   global_costmap:
@@ -254,10 +254,10 @@ global_costmap:
           data_type: LaserScan
           min_obstacle_height: 0.1
           max_obstacle_height: 0.5
-          obstacle_max_range: 15.0
-          obstacle_min_range: 0.5
-          raytrace_max_range: 15.0
-          raytrace_min_range: 0.5
+          obstacle_max_range: 20.0
+          obstacle_min_range: 0.7
+          raytrace_max_range: 20.0
+          raytrace_min_range: 0.7
       static_layer:
         plugin: nav2_costmap_2d::StaticLayer
         map_subscribe_transient_local: true
@@ -280,10 +280,10 @@ global_costmap:
           data_type: PointCloud2
           min_obstacle_height: 0.1
           max_obstacle_height: 0.5
-          obstacle_max_range: 15.0
-          obstacle_min_range: 0.5
-          raytrace_max_range: 15.0
-          raytrace_min_range: 0.5
+          obstacle_max_range: 20.0
+          obstacle_min_range: 0.7
+          raytrace_max_range: 20.0
+          raytrace_min_range: 0.7
 
 planner_server:
   ros__parameters:
@@ -297,7 +297,7 @@ planner_server:
       downsample_costmap: false # whether or not to downsample the map
       downsampling_factor: 1 # multiplier for the resolution of the costmap layer (e.g. 2 on a 5cm costmap would be 10cm)
       allow_unknown: true # allow traveling in unknown space
-      max_iterations: 500000 # maximum total iterations to search for before failing (in case unreachable), set to -1 to disable
+      max_iterations: 600000 # maximum total iterations to search for before failing (in case unreachable), set to -1 to disable
       max_on_approach_iterations: 500 # maximum number of iterations to attempt to reach goal once in tolerance
       max_planning_time: 3.0 # max time in s for planner to plan, smooth
       cost_travel_multiplier: 2.5 # Cost multiplier to apply to search to steer away from high cost areas. Larger values will place in the center of aisles more exactly (if non-`FREE` cost potential field exists) but take slightly longer to compute. To optimize for speed, a value of 1.0 is reasonable. A reasonable tradeoff value is 2.0. A value of 0.0 effective disables steering away from obstacles and acts like a naive binary search A*.
