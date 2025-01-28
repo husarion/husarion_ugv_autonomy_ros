@@ -118,7 +118,7 @@ def generate_launch_description():
     # Remapping
     group_actions.append(SetRemap("/map", "map"))
     group_actions.append(SetRemap("/map_metadata", "map_metadata"))
-    group_actions.append(SetRemap("/scan", "scan"))
+    # group_actions.append(SetRemap("/scan", "scan"))
 
     # Running Map Saver Server
     group_actions.append(start_map_saver_server_cmd)
