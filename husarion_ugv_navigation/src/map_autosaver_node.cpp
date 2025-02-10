@@ -55,7 +55,7 @@ void AutosaveMapNode::SaveMapCB() {
 }
 
 SaveMapReq::SharedPtr AutosaveMapNode::CreateSaveMapRequest() {
-  std::string ns = node->get_namespace();
+  std::string ns = this->get_namespace();
   if (ns.back() != '/')
   {
     ns = ns + "/";
