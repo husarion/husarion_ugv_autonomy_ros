@@ -58,7 +58,7 @@ SaveMapReq::SharedPtr AutosaveMapNode::CreateSaveMapRequest() {
   auto request = std::make_shared<SaveMapReq>();
   request->free_thresh = 0.25;
   request->occupied_thresh = 0.65;
-  request->map_topic = this->get_namespace() + std::string("/map");
+  request->map_topic = this->get_namespace() + std::string("map");
   // Allow dynamically override parameter
   this->get_parameter("map_directory", request->map_url);
   request->map_mode = "trinary";
