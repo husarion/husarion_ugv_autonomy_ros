@@ -23,7 +23,7 @@ services:
         namespace:=panther
 
   docking:
-    image: husarion/husarion-ugv-autonomy:humble-ros2-dock-suggestions
+    image: husarion/husarion-ugv-autonomy:humble-0.1.0-20250210-stable
     container_name: docking
     <<: *common-config
     volumes:
@@ -44,7 +44,7 @@ services:
         use_sim:=True
 
   navigation:
-    image: husarion/husarion-ugv-autonomy:humble-ros2-dock-suggestions
+    image: husarion/husarion-ugv-autonomy:humble-0.1.0-20250210-stable
     container_name: navigation
     <<: *common-config
     volumes:

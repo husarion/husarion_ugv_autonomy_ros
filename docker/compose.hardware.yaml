@@ -5,7 +5,7 @@ x-common-config:
 
 services:
   docking:
-    image: husarion/husarion-ugv-autonomy:humble-ros2-dock-suggestions
+    image: husarion/husarion-ugv-autonomy:humble-0.1.0-20250210-stable
     container_name: docking
     <<: *common-config
     volumes:
@@ -23,10 +23,10 @@ services:
         docking_server_config_path:=/config/docking_server.yaml
         apriltag_config_path:=/config/apriltag.yaml
         apriltag_size:=0.08
-        use_sim:=True
+        use_sim:=False
 
   navigation:
-    image: husarion/husarion-ugv-autonomy:humble-ros2-dock-suggestions
+    image: husarion/husarion-ugv-autonomy:humble-0.1.0-20250210-stable
     container_name: navigation
     <<: *common-config
     volumes:
