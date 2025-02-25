@@ -34,7 +34,9 @@
 #include <sensor_msgs/msg/battery_state.hpp>
 #include <std_srvs/srv/set_bool.hpp>
 
+#include "husarion_ugv_msgs/msg/io_state.hpp"
 #include "wibotic_msgs/msg/wibotic_info.hpp"
+
 
 namespace husarion_ugv_docking {
 
@@ -50,6 +52,8 @@ public:
   using UniquePtr = std::unique_ptr<ChargingDock>;
   using PoseStampedMsg = geometry_msgs::msg::PoseStamped;
   using WiboticInfoMsg = wibotic_msgs::msg::WiboticInfo;
+  using IOStateMsg = husarion_ugv_msgs::msg::IOState;
+  using SetBoolSrv = std_srvs::srv::SetBool;
 
   /**
    * @brief Configure the dock with the necessary information.
@@ -172,6 +176,13 @@ protected:
   void setWiboticInfo(const WiboticInfoMsg::SharedPtr msg);
 
   /**
+   * @brief Husarion UGV IO state callback.
+   *
+   * @param msg The Husarion UGV IO state message.
+   */
+  void setHusarionUgvIOState(const IOStateMsg::SharedPtr msg);
+
+  /**
    * @brief Method to set the state of the dock pose publisher lifecycle node.
    *
    * Calls async service to change the state of the dock pose publisher
@@ -182,6 +193,10 @@ protected:
   void setDockPosePublisherState(std::uint8_t state);
 
   bool IsWiboticInfoTimeout();
+
+  bool enableCharging();
+  bool callSetWiboticState(bool state);
+
 
   std::string base_frame_name_;
   std::string fixed_frame_name_;
@@ -195,13 +210,16 @@ protected:
 
   rclcpp::Publisher<PoseStampedMsg>::SharedPtr staging_pose_pub_;
   rclcpp::Subscription<PoseStampedMsg>::SharedPtr dock_pose_sub_;
+  rclcpp::Subscription<IOStateMsg>::SharedPtr husarion_ugv_io_state_sub_;
   rclcpp::Subscription<WiboticInfoMsg>::SharedPtr wibotic_info_sub_;
   rclcpp::Client<lifecycle_msgs::srv::ChangeState>::SharedPtr
       dock_pose_publisher_change_state_client_;
+  rclcpp::Client<SetBoolSrv>::SharedPtr wibotic_charger_enable_client_;
 
   PoseStampedMsg dock_pose_;
   PoseStampedMsg staging_pose_;
   WiboticInfoMsg::SharedPtr wibotic_info_;
+  IOStateMsg::SharedPtr husarion_ugv_io_state_;
 
   std::uint8_t dock_pose_publisher_state_;
 

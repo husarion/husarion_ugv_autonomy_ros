@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, LogInfo
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
@@ -91,12 +91,21 @@ def generate_launch_description():
         source_file=docking_server_config_path,
         replacements={
             "<robot_namespace>": namespace,
-            "//": "/",
+            "//": "",
             "<use_wibotic_info_param>": PythonExpression(
-                ["'false' if '", use_sim, "' else '", use_wibotic_info, "'"]
+                ["'false' if ", use_sim, " else '", use_wibotic_info, "'"]
             ),
         },
     )
+
+    # Add LogMessage about namespaced
+    logger_message = LogInfo(
+        msg=[
+            "Using docking server configuration file: ",
+            namespaced_docking_server_config,
+        ]
+    )
+
 
     docking_server_node = Node(
         package="opennav_docking",
@@ -171,6 +180,9 @@ def generate_launch_description():
         executable="wibotic_connector_can",
         namespace=namespace,
         emulate_tty=True,
+        parameters=[
+            {"max_service_call_retries": 20}
+        ],
         arguments=["--ros-args", "--log-level", log_level, "--log-level", "rcl:=INFO"],
         condition=IfCondition(PythonExpression(["not ", use_sim, " and ", use_wibotic_info])),
     )
@@ -221,5 +233,7 @@ def generate_launch_description():
             docking_manager_node,
             wibotic_connector_can,
             spawn_charging_docs,
+            logger_message,
+
         ]
     )

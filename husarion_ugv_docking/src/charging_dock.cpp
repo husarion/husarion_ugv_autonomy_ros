@@ -73,6 +73,14 @@ void ChargingDock::activate() {
     wibotic_info_sub_ = node->create_subscription<WiboticInfoMsg>(
         "wibotic_info", 1,
         std::bind(&ChargingDock::setWiboticInfo, this, std::placeholders::_1));
+
+    husarion_ugv_io_state_sub_ = node->create_subscription<IOStateMsg>(
+        "hardware/io_state", 1,
+        std::bind(&ChargingDock::setHusarionUgvIOState, this,
+                  std::placeholders::_1));
+
+    wibotic_charger_enable_client_ =
+        node->create_client<SetBoolSrv>("wibotic_charger_enable");
   }
 
   setDockPosePublisherState(
@@ -193,9 +201,13 @@ bool ChargingDock::isDocked() {
   robot_pose = husarion_ugv_docking::tf2_utils::TransformPose(
       tf2_buffer_, robot_pose, fixed_frame_name_);
 
-  return husarion_ugv_docking::tf2_utils::ArePosesNear(
-      robot_pose, dock_pose_, docking_distance_threshold_,
-      docking_yaw_threshold_);
+  if (!husarion_ugv_docking::tf2_utils::ArePosesNear(
+          robot_pose, dock_pose_, docking_distance_threshold_,
+          docking_yaw_threshold_)) {
+    return false;
+  }
+
+  return true;
 }
 
 bool ChargingDock::isCharging() {
@@ -218,7 +230,12 @@ bool ChargingDock::isCharging() {
       setDockPosePublisherState(
           lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE);
       return true;
+    } else {
+      if (isDocked()) {
+        enableCharging();
+      }
     }
+
   } catch (const opennav_docking_core::FailedToDetectDock &e) {
     RCLCPP_ERROR_STREAM(
         logger_, "An occurred error while checking if charging: " << e.what());
@@ -229,9 +246,53 @@ bool ChargingDock::isCharging() {
   return false;
 }
 
-bool ChargingDock::disableCharging() { return true; }
+bool ChargingDock::disableCharging() {
+  callSetWiboticState(false);
 
-bool ChargingDock::hasStoppedCharging() { return !isCharging(); }
+  return !isCharging();
+}
+
+bool ChargingDock::enableCharging() {
+  if (!husarion_ugv_io_state_) {
+    RCLCPP_FATAL_STREAM(logger_,
+                        "Cannot enable wireless charging. No    information "
+                        "about wired charger state in the IO state message.");
+    return false;
+  }
+
+  if (husarion_ugv_io_state_->charger_connected) {
+    RCLCPP_FATAL_STREAM(logger_, "Cannot enable wireless charging. Wired "
+                                 "charger is connected. Please disconnect it.");
+    return false;
+  }
+
+  return callSetWiboticState(true);
+}
+
+bool ChargingDock::callSetWiboticState(bool state) {
+  if (!wibotic_charger_enable_client_) {
+    RCLCPP_ERROR_STREAM(logger_,
+                        "Wibotic charger enable client is not initialized.");
+    return false;
+  }
+
+  RCLCPP_DEBUG_STREAM(
+      logger_,
+      "Calling SetWiboticState service to change state charging to: " << state);
+
+  auto request = std::make_shared<SetBoolSrv::Request>();
+  request->data = state;
+
+  wibotic_charger_enable_client_->async_send_request(request);
+
+  return true;
+}
+
+bool ChargingDock::hasStoppedCharging() {
+  RCLCPP_DEBUG(logger_, "Checking if stopped charging");
+
+  return !isCharging();
+}
 
 void ChargingDock::setDockPose(const PoseStampedMsg::SharedPtr pose) {
   auto filtered_pose = pose_filter_->update(*pose);
@@ -261,6 +322,10 @@ void ChargingDock::updateAndPublishStagingPose(const std::string &frame) {
 
 void ChargingDock::setWiboticInfo(const WiboticInfoMsg::SharedPtr msg) {
   wibotic_info_ = std::make_shared<WiboticInfoMsg>(*msg);
+}
+
+void ChargingDock::setHusarionUgvIOState(const IOStateMsg::SharedPtr msg) {
+  husarion_ugv_io_state_ = std::make_shared<IOStateMsg>(*msg);
 }
 
 void ChargingDock::setDockPosePublisherState(std::uint8_t state) {
