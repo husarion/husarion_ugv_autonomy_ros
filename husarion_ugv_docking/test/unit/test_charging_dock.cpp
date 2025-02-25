@@ -22,7 +22,9 @@
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 
-#include <husarion_ugv_docking/charging_dock.hpp>
+#include "husarion_ugv_msgs/msg/io_state.hpp"
+
+#include "husarion_ugv_docking/charging_dock.hpp"
 
 static constexpr char kBaseFrame[] = "base_link";
 static constexpr char kOdomFrame[] = "odom";
@@ -35,6 +37,10 @@ public:
 
   void setWiboticInfo(wibotic_msgs::msg::WiboticInfo::SharedPtr msg) {
     husarion_ugv_docking::ChargingDock::setWiboticInfo(msg);
+  }
+
+  void setHusarionUgvIOState(IOStateMsg::SharedPtr msg) {
+    husarion_ugv_docking::ChargingDock::setHusarionUgvIOState(msg);
   }
 };
 
@@ -91,14 +97,14 @@ void TestChargingDock::ActivateWiboticInfo() {
 
 TEST_F(TestChargingDock, FailConfigureNoNode) {
   node_.reset();
-  ASSERT_THROW(
-      { dock_->configure(node_, "dock", tf_buffer_); }, std::runtime_error);
+  ASSERT_THROW({ dock_->configure(node_, "dock", tf_buffer_); },
+               std::runtime_error);
 }
 
 TEST_F(TestChargingDock, FailConfigureNoTfBuffer) {
   tf_buffer_.reset();
-  ASSERT_THROW(
-      { dock_->configure(node_, "dock", tf_buffer_); }, std::runtime_error);
+  ASSERT_THROW({ dock_->configure(node_, "dock", tf_buffer_); },
+               std::runtime_error);
 }
 
 TEST_F(TestChargingDock, GetStagingPoseLocal) {
@@ -234,6 +240,51 @@ TEST_F(TestChargingDock, IsChargingGoodCurrentWithoutTimeout) {
   wibotic_info->header.stamp = node_->now();
 
   dock_->setWiboticInfo(wibotic_info);
+  ASSERT_TRUE(dock_->isCharging());
+}
+
+TEST_F(TestChargingDock, IsChargingWithoutIOState) {
+  ActivateWiboticInfo();
+  ASSERT_FALSE(dock_->isCharging());
+}
+
+TEST_F(TestChargingDock, IsChargingWithIOStateChargerConnectedTrue) {
+  ActivateWiboticInfo();
+
+  auto state = std::make_shared<husarion_ugv_msgs::msg::IOState>();
+  state->charger_enabled = true;
+  dock_->setHusarionUgvIOState(state);
+
+  ASSERT_FALSE(dock_->isCharging());
+}
+
+TEST_F(TestChargingDock, IsChargingWithIOStateChargerConnectedFalse) {
+  ActivateWiboticInfo();
+
+  auto state = std::make_shared<husarion_ugv_msgs::msg::IOState>();
+  state->charger_enabled = true;
+  dock_->setHusarionUgvIOState(state);
+
+  ASSERT_FALSE(dock_->isCharging());
+}
+
+TEST_F(TestChargingDock,
+       IsChargingWithIOStateChargerConnectedFalseWithWiboticCurrent) {
+  ActivateWiboticInfo();
+
+  auto state = std::make_shared<husarion_ugv_msgs::msg::IOState>();
+  state->charger_enabled = true;
+  dock_->setHusarionUgvIOState(state);
+
+  ASSERT_FALSE(dock_->isCharging());
+
+  wibotic_msgs::msg::WiboticInfo::SharedPtr wibotic_info =
+      std::make_shared<wibotic_msgs::msg::WiboticInfo>();
+  wibotic_info->i_charger = 0.1;
+  wibotic_info->header.stamp = node_->now();
+
+  dock_->setWiboticInfo(wibotic_info);
+
   ASSERT_TRUE(dock_->isCharging());
 }
 

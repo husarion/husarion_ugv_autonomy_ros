@@ -231,9 +231,7 @@ bool ChargingDock::isCharging() {
           lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE);
       return true;
     } else {
-      if (isDocked()) {
-        enableCharging();
-      }
+      enableCharging();
     }
 
   } catch (const opennav_docking_core::FailedToDetectDock &e) {
