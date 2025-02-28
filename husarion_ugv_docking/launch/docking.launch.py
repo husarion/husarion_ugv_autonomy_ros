@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, LogInfo
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
@@ -97,15 +97,6 @@ def generate_launch_description():
             ),
         },
     )
-
-    # Add LogMessage about namespaced
-    logger_message = LogInfo(
-        msg=[
-            "Using docking server configuration file: ",
-            namespaced_docking_server_config,
-        ]
-    )
-
 
     docking_server_node = Node(
         package="opennav_docking",
@@ -233,7 +224,5 @@ def generate_launch_description():
             docking_manager_node,
             wibotic_connector_can,
             spawn_charging_docs,
-            logger_message,
-
         ]
     )
