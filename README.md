@@ -4,31 +4,52 @@ A collection of packages containing autonomous functionalities for Husarion UGV 
 
 ![autonomy-result](https://github-readme-figures.s3.eu-central-1.amazonaws.com/panther/husarion_ugv/husarion_ugv_autonomy.gif)
 
-## 📋 Requirement
+## 🛠️ Setup Repository
 
-### Justfile
-
-To simplify the execution of this project, we are utilizing [just](https://github.com/casey/just). Install it with:
+### Create Workspace
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | sudo bash -s -- --to /usr/bin
+mkdir ~/husarion_ws
+cd ~/husarion_ws
+git clone https://github.com/husarion/husarion_ugv_autonomy_ros.git src/husarion_ugv_autonomy_ros
 ```
 
-### Robot Configuration
+### Build
 
-The provided example is configured for the Panther robot and supports any LIDAR that publishes `PointCloud2` or `LaserScan` and any camera that publishes `Image` and `CameraInfo` data types by setting the appropriate environment variable.
+```bash
+vcs import src < src/husarion_ugv_autonomy_ros/husarion_ugv_autonomy/docking_deps.repos
+
+sudo rosdep init
+rosdep update --rosdistro $ROS_DISTRO
+rosdep install --from-paths src -y -i
+
+source /opt/ros/$ROS_DISTRO/setup.bash
+colcon build --symlink-install --packages-up-to husarion_ugv_autonomy --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+```
+
+## 🚀 Demo
+
+### 📋 Requirements
+
+1. **Just** To simplify the execution of this project, we are utilizing [just](https://github.com/casey/just). Install it with:
+
+    ```bash
+    curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | sudo bash -s -- --to /usr/bin
+    ```
+
+2. **Robot Configuration**
 
 > [!IMPORTANT]
-> Before running the navigation demo, ensure the following:
+> The provided example is configured for the Husarion UGV platforms and supports any LIDAR that publishes `PointCloud2` or `LaserScan` and any camera that publishes `Image` and `CameraInfo` data types by setting the appropriate environment variable. Before running the navigation demo, ensure the following:
 >
 > - This demo should be run on **User Computer** with IP address: **`10.15.20.3/24`**.
 > - A LIDAR publishes messages of type: **`PointCloud2`** or **`LaserScan`**.
 > - A camera publishes messages of type: **`Image`** and **`CameraInfo`**.
 > - A static transformation between a LIDAR, a Camera and a robot frame is provided. The value of the **`frame_id`** field inside the published messages must connect to the robot's `base_link`.
 
-## 🚀 Navigation Quick Start
+### 🧭 Navigation
 
-### 🔧 Step 1: Environment configuration
+#### Step 1: Environment configuration
 
 Download this repository:
 
@@ -50,21 +71,21 @@ export SLAM=True # if you have a map you can run navigation without SLAM
 > [!NOTE]
 > Additional arguments are detailed in the [Launch Arguments](#launch-arguments) section.
 
-### 🧭 Step 2: Run navigation
+#### Step 2: Run navigation
 
-🤖 Run Navigation on the Physical Robot:
+Run navigation on the **physical robot**:
 
 ```bash
 just start-hardware
 ```
 
-🖥️ Run Navigation in Simulation:
+Run navigation in **Gazebo simulation**:
 
 ```bash
 just start-simulation
 ```
 
-### 🕹️ Step 3: Control the robot from a Web Browser
+#### Step 3: Control the robot from a Web Browser
 
 1. Install and run husarion-webui
 
@@ -77,7 +98,43 @@ just start-simulation
     - http://{ip_address}:8080/ui (devices in the same LAN)
     - http://{hostname}:8080/ui (devices in the same Husarnet Network)
 
-## Launch Arguments
+### ⚓ Docking
+
+#### Step 1: Locate docks
+
+Once you have mapped an area, locate your charging docks on map and select their poses in [the configuration file](docker/config/docking_server.yaml). You can use RViz or Foxglove.
+
+In the example below for dock named `main` the position is `pose: [1.0, 1.20, 1.57]`.
+
+```yaml
+[...]
+    main:
+        [...]
+        pose: [1.0, 1.20, 1.57] # [x, y, yaw] of the dock on the map. Used also for spawning dock in the simulation.
+[...]
+```
+
+#### Step 2: Run Docking
+
+```bash
+just start-docking
+```
+
+#### Step 3: Dock the robot
+
+```bash
+just dock main
+```
+
+#### Step 4: Undock the robot
+
+```bash
+just undock
+```
+
+## Documentation
+
+### Launch Arguments
 
 | Argument                 | Description <br/> ***Type:*** `Default`                                                               |
 | ------------------------ | ----------------------------------------------------------------------------------------------------- |
@@ -93,43 +150,3 @@ just start-simulation
 | `use_composition`        | Whether to use composed bringup. <br/> ***bool:*** `True`                                             |
 | `use_respawn`            | Whether to respawn if a node crashes. Applied when composition is disabled. <br/> ***bool:*** `False` |
 | `use_sim_time`           | Use simulation (Gazebo) clock if true. <br/> ***bool:*** `False`                                      |
-
-## 🏗️ Docking
-
-### ⚙️ Step 1: Locate docks
-
-Once you have mapped an area, locate your charging docks on map and select their poses in [the configuration file](docker/config/docking_server.yaml). You can use RViz or Foxglove.
-
-In the example below for dock named `main` the position is `pose: [1.0, 1.20, 1.57]`.
-
-```yaml
-[...]
-    main:
-        [...]
-        pose: [1.0, 1.20, 1.57] # [x, y, yaw] of the dock on the map. Used also for spawning dock in the simulation.
-[...]
-```
-
-### 🚀 Step 2: Run Docking
-
-Run Docking nodes:
-
-```bash
-just start-docking
-```
-
-### ⚓ Step 2: Dock the robot
-
-Run Docking sequence:
-
-```bash
-just dock main
-```
-
-### 🛩️ Step 3: Undock the robot
-
-Run Undocking sequence:
-
-```bash
-just undock
-```
