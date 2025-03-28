@@ -42,7 +42,7 @@ def spawn_stations(context, *args, **kwargs):
     ros_parameters = docking_server_config["/**"]["ros__parameters"]
     docks_names = ros_parameters["docks"]
     for dock_name in docks_names:
-        pose = ros_parameters[dock_name]["pose"]
+        gazebo_spawn_pose = ros_parameters[dock_name]["gazebo_spawn_pose"]
 
         spawn_station = Node(
             package="ros_gz_sim",
@@ -53,9 +53,9 @@ def spawn_stations(context, *args, **kwargs):
                 "-topic",
                 [dock_name, "_station_description"],
                 "-x",
-                str(pose[0]),
+                str(gazebo_spawn_pose[0]),
                 "-y",
-                str(pose[1] - 2.0),  # -2.0 is the offset between world and map
+                str(gazebo_spawn_pose[1]),  # -2.0 is the offset between world and map
                 "-z",
                 "0.5",  # station z is not in 0.0
                 "-R",
@@ -63,7 +63,7 @@ def spawn_stations(context, *args, **kwargs):
                 "-P",
                 "0.0",
                 "-Y",
-                str(pose[2] - 1.57),
+                str(gazebo_spawn_pose[2]),
             ],
             emulate_tty=True,
         )

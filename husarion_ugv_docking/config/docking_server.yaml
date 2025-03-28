@@ -29,7 +29,9 @@
       type: charging_dock
       frame: <robot_namespace>/map
       dock_frame: main_wibotic_transmitter_link
-      pose: [1.0, 1.20, 1.57] # [x, y, yaw] of the dock on the map. Used also for spawning dock in the simulation.
+      pose: [1.0, 1.20, 1.57] # [x, y, yaw] of the dock on the map.
+      gazebo_spawn_pose:  [1.0, 1.20, 1.57] # [x, y, yaw] of the dock on the gazebo world. Used for spawning dock in the simulation.
+
       apriltag_id: 0
 
 
