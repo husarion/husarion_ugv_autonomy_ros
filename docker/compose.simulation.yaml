@@ -5,7 +5,7 @@ x-common-config:
 
 services:
   gazebo:
-    image: husarion/panther-gazebo:humble-ros2-devel
+    image: husarion/husarion-ugv-gazebo:humble-2.2.1-20250331
     container_name: gazebo
     <<: *common-config
     runtime: nvidia

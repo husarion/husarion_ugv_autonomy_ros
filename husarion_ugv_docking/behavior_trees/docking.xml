@@ -6,7 +6,7 @@
         <Sequence name="Docking">
           <CheckJoyMsg name="Check Joy Docking Request"
                        topic_name="joy"
-                       timeout="1.0"
+                       timeout="0.8"
                        axes=""
                        buttons="0;0;0;1;1;1;0;0;0;0;0"/>
           <DockRobot name="Dock Action"
@@ -20,7 +20,7 @@
         <Sequence name="Undocking">
           <CheckJoyMsg name="Check Joy Undocking Request"
                        topic_name="joy"
-                       timeout="1.0"
+                       timeout="0.8"
                        axes=""
                        buttons="0;0;1;0;1;1;0;0;0;0;0"/>
           <UndockRobot name="Undock Action"
