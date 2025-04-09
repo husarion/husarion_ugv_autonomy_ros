@@ -126,11 +126,15 @@ just start-docking
 just dock main
 ```
 
+or press LB + RB + Y on the gamepad.
+
 #### Step 4: Undock the robot
 
 ```bash
 just undock
 ```
+
+or press LB + RB + X on the gamepad.
 
 ## Documentation
 

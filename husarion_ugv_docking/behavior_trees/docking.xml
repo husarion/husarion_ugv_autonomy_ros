@@ -6,9 +6,9 @@
         <Sequence name="Docking">
           <CheckJoyMsg name="Check Joy Docking Request"
                        topic_name="joy"
-                       timeout="2.0"
+                       timeout="1.0"
                        axes=""
-                       buttons="0;0;0;1;1;1;0;0;0;0;0;0"/>
+                       buttons="0;0;0;1;1;1;0;0;0;0;0"/>
           <DockRobot name="Dock Action"
                      use_dock_id="true"
                      dock_id="main"
@@ -20,9 +20,9 @@
         <Sequence name="Undocking">
           <CheckJoyMsg name="Check Joy Undocking Request"
                        topic_name="joy"
-                       timeout="2.0"
+                       timeout="1.0"
                        axes=""
-                       buttons="1;0;0;0;1;1;0;0;0;0;0;0"/>
+                       buttons="0;0;1;0;1;1;0;0;0;0;0"/>
           <UndockRobot name="Undock Action"
                        dock_type="charging_dock"
                        max_undocking_time="100"
