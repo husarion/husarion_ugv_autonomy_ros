@@ -39,8 +39,8 @@ DockingManagerNode::DockingManagerNode(const std::string &node_name,
 
   DeclareParameters();
   const std::map<std::string, std::any> docking_bb = {
-    {"GAMEPAD_F710_LB_RB_Y", std::vector<float>{0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0}},
-    {"GAMEPAD_F710_LB_RB_X", std::vector<float>{0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0}},
+    {"GAMEPAD_F710_LB_RB_Y", "0;0;0;1;1;1;0;0;0;0;0"},
+    {"GAMEPAD_F710_LB_RB_X", "0;0;1;0;1;1;0;0;0;0;0"},
   };
   const int bt_server_port = this->get_parameter("bt_server_port").as_int();
 
