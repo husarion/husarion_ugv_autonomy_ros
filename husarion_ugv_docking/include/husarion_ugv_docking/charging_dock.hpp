@@ -37,7 +37,6 @@
 #include "husarion_ugv_msgs/msg/io_state.hpp"
 #include "wibotic_msgs/msg/wibotic_info.hpp"
 
-
 namespace husarion_ugv_docking {
 
 constexpr double kWiboticChargingCurrentThreshold = 0.0;
@@ -196,7 +195,6 @@ protected:
 
   bool enableCharging();
   bool callSetWiboticState(bool state);
-
 
   std::string base_frame_name_;
   std::string fixed_frame_name_;

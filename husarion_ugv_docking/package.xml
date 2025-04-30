@@ -17,6 +17,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>apriltag_ros</depend>
+  <depend>generate_parameter_library</depend>
   <depend>geometry_msgs</depend>
   <depend>husarion_ugv_manager</depend>
   <depend>husarion_ugv_msgs</depend>

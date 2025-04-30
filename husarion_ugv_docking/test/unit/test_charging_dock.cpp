@@ -97,14 +97,14 @@ void TestChargingDock::ActivateWiboticInfo() {
 
 TEST_F(TestChargingDock, FailConfigureNoNode) {
   node_.reset();
-  ASSERT_THROW({ dock_->configure(node_, "dock", tf_buffer_); },
-               std::runtime_error);
+  ASSERT_THROW(
+      { dock_->configure(node_, "dock", tf_buffer_); }, std::runtime_error);
 }
 
 TEST_F(TestChargingDock, FailConfigureNoTfBuffer) {
   tf_buffer_.reset();
-  ASSERT_THROW({ dock_->configure(node_, "dock", tf_buffer_); },
-               std::runtime_error);
+  ASSERT_THROW(
+      { dock_->configure(node_, "dock", tf_buffer_); }, std::runtime_error);
 }
 
 TEST_F(TestChargingDock, GetStagingPoseLocal) {

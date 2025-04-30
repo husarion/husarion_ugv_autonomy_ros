@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "husarion_ugv_docking/docking_manager_node.hpp"
+#include "husarion_ugv_docking/docking_manager_parameters.hpp"
 
 #include <any>
 #include <chrono>
@@ -37,12 +38,15 @@ DockingManagerNode::DockingManagerNode(const std::string &node_name,
     : Node(node_name, options) {
   RCLCPP_INFO(this->get_logger(), "Constructing node.");
 
-  DeclareParameters();
+  this->param_listener_ = std::make_shared<docking_manager::ParamListener>(
+      this->get_node_parameters_interface());
+  this->params_ = this->param_listener_->get_params();
+
   const std::map<std::string, std::any> docking_bb = {
-    {"GAMEPAD_F710_LB_RB_Y", "0;0;0;1;1;1;0;0;0;0;0"},
-    {"GAMEPAD_F710_LB_RB_X", "0;0;1;0;1;1;0;0;0;0;0"},
+      {"GAMEPAD_DOCKING_SEQUENCE", this->params_.gamepad_docking_sequence},
+      {"GAMEPAD_UNDOCKING_SEQUENCE", this->params_.gamepad_undocking_sequence},
   };
-  const int bt_server_port = this->get_parameter("bt_server_port").as_int();
+  const int bt_server_port = this->params_.bt_server_port;
 
   docking_tree_manager_ =
       std::make_unique<husarion_ugv_manager::BehaviorTreeManager>(
@@ -59,46 +63,21 @@ void DockingManagerNode::Initialize() {
 
   using namespace std::placeholders;
 
-  const auto timer_freq = this->get_parameter("timer_frequency").as_double();
+  const auto timer_freq = this->params_.timer_frequency;
   const auto timer_period = std::chrono::duration<double>(1.0 / timer_freq);
 
   docking_tree_timer_ = this->create_wall_timer(
       timer_period, std::bind(&DockingManagerNode::TimerCB, this));
 }
 
-void DockingManagerNode::DeclareParameters() {
-  const auto husarion_ugv_docking_pkg_path =
-      ament_index_cpp::get_package_share_directory("husarion_ugv_docking");
-  const auto default_bt_project_path =
-      husarion_ugv_docking_pkg_path + "/behavior_trees/DockingBT.btproj";
-  const std::vector<std::string> default_plugin_libs = {};
-
-  this->declare_parameter<std::string>("bt_project_path",
-                                       default_bt_project_path);
-  this->declare_parameter<std::vector<std::string>>("plugin_libs",
-                                                    default_plugin_libs);
-  this->declare_parameter<std::vector<std::string>>("ros_plugin_libs",
-                                                    default_plugin_libs);
-  this->declare_parameter<double>("ros_communication_timeout.availability",
-                                  1.0);
-  this->declare_parameter<double>("ros_communication_timeout.response", 1.0);
-
-  this->declare_parameter<float>("timer_frequency", 20.0);
-  this->declare_parameter<int>("bt_server_port", 4444);
-}
-
 void DockingManagerNode::RegisterBehaviorTree() {
-  const auto bt_project_path =
-      this->get_parameter("bt_project_path").as_string();
-
-  const auto plugin_libs = this->get_parameter("plugin_libs").as_string_array();
-  const auto ros_plugin_libs =
-      this->get_parameter("ros_plugin_libs").as_string_array();
-
+  const auto bt_project_path = this->params_.bt_project_path;
+  const auto plugin_libs = this->params_.plugin_libs;
+  const auto ros_plugin_libs = this->params_.ros_plugin_libs;
   const auto service_availability_timeout =
-      this->get_parameter("ros_communication_timeout.availability").as_double();
+      this->params_.ros_communication_timeout.availability;
   const auto service_response_timeout =
-      this->get_parameter("ros_communication_timeout.response").as_double();
+      this->params_.ros_communication_timeout.response;
 
   BT::RosNodeParams params;
   params.nh = this->shared_from_this();

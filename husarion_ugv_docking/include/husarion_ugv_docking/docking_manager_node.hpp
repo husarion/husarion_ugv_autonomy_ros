@@ -21,6 +21,7 @@
 #include <behaviortree_cpp/bt_factory.h>
 #include <rclcpp/rclcpp.hpp>
 
+#include "husarion_ugv_docking/docking_manager_parameters.hpp"
 #include "husarion_ugv_manager/behavior_tree_manager.hpp"
 #include "husarion_ugv_utils/moving_average.hpp"
 
@@ -46,7 +47,6 @@ public:
   void Initialize();
 
 protected:
-  void DeclareParameters();
   void RegisterBehaviorTree();
 
   std::unique_ptr<husarion_ugv_manager::BehaviorTreeManager>
@@ -58,6 +58,8 @@ private:
   rclcpp::TimerBase::SharedPtr docking_tree_timer_;
 
   BT::BehaviorTreeFactory factory_;
+  std::shared_ptr<docking_manager::ParamListener> param_listener_;
+  docking_manager::Params params_;
 };
 
 } // namespace husarion_ugv_docking

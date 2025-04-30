@@ -8,7 +8,7 @@
                        topic_name="joy"
                        timeout="0.8"
                        axes=""
-                       buttons="{GAMEPAD_F710_LB_RB_Y}"/>
+                       buttons="{GAMEPAD_DOCKING_SEQUENCE}"/>
           <DockRobot name="Dock Action"
                      use_dock_id="true"
                      dock_id="main"
@@ -22,7 +22,7 @@
                        topic_name="joy"
                        timeout="0.8"
                        axes=""
-                       buttons="{GAMEPAD_F710_LB_RB_X}"/>
+                       buttons="{GAMEPAD_UNDOCKING_SEQUENCE}"/>
           <UndockRobot name="Undock Action"
                        dock_type="charging_dock"
                        max_undocking_time="100"

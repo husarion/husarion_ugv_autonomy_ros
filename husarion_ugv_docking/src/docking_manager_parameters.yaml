@@ -1,0 +1,51 @@
+docking_manager:
+
+  bt_project_path:
+    type: string
+    default_value: ""
+    description: Path to a BehaviorTree project.
+
+  bt_server_port:
+    type: int
+    default_value: 4444
+    description: Port number for the BehaviorTree server.
+    validation: { gt<>: 0 }
+
+  gamepad_docking_sequence:
+    type: string
+    default_value: "0;0;0;1;1;1;0;0;0;0;0"
+    description: Sequence of gamepad buttons to be pressed for docking.
+
+  gamepad_undocking_sequence:
+    type: string
+    default_value: "0;0;1;0;1;1;0;0;0;0;0"
+    description: Sequence of gamepad buttons to be pressed for undocking.
+
+  plugin_libs:
+    type: string_array
+    default_value: []
+    description: A list with names of plugins that are used in the BehaviorTree project.
+
+  ros_communication_timeout:
+    availability:
+      type: double
+      default_value: 1.0
+      description: Timeout in seconds to wait for a service/action while initializing a BehaviorTree node.
+      validation: { gt<>: 0.0 }
+
+    response:
+      type: double
+      default_value: 1.0
+      description: Timeout in seconds to receive a service/action response after call.
+      validation: { gt<>: 0.0 }
+
+  ros_plugin_libs:
+    type: string_array
+    default_value: []
+    description: A list with names of ROS plugins that are used in a BehaviorTree project.
+
+  timer_frequency:
+    type: double
+    default_value: 20.0
+    description: Frequency in Hz at which lights tree will be ticked.
+    validation: { gt<>: 0.0 }

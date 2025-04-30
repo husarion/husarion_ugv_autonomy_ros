@@ -56,11 +56,10 @@ void AutosaveMapNode::SaveMapCB() {
 
 SaveMapReq::SharedPtr AutosaveMapNode::CreateSaveMapRequest() {
   std::string ns = this->get_namespace();
-  if (ns.back() != '/')
-  {
+  if (ns.back() != '/') {
     ns = ns + "/";
   }
-  
+
   auto request = std::make_shared<SaveMapReq>();
   request->free_thresh = 0.25;
   request->occupied_thresh = 0.65;

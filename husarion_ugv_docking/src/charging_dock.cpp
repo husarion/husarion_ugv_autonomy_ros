@@ -202,8 +202,8 @@ bool ChargingDock::isDocked() {
       tf2_buffer_, robot_pose, fixed_frame_name_);
 
   return husarion_ugv_docking::tf2_utils::ArePosesNear(
-    robot_pose, dock_pose_, docking_distance_threshold_,
-    docking_yaw_threshold_);
+      robot_pose, dock_pose_, docking_distance_threshold_,
+      docking_yaw_threshold_);
 }
 
 bool ChargingDock::isCharging() {

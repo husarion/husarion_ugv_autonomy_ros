@@ -33,6 +33,7 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_apriltag_and_get_path(tag_id, apriltag_config_path):
     from moms_apriltag import TagGenerator2
+
     directory = os.path.dirname(apriltag_config_path)
 
     tag_image = TagGenerator2("tag36h11").generate(tag_id, scale=1000)
@@ -91,7 +92,9 @@ def launch_stations_descriptions(context, *args, **kwargs):
     docks_names = ros_parameters["docks"]
     for dock_name in docks_names:
         apriltag_id = ros_parameters[dock_name]["apriltag_id"]
-        station_description_content = generate_urdf(dock_name, apriltag_id, apriltag_size, apriltag_config_path)
+        station_description_content = generate_urdf(
+            dock_name, apriltag_id, apriltag_size, apriltag_config_path
+        )
         station_description = {
             "robot_description": ParameterValue(station_description_content, value_type=str)
         }

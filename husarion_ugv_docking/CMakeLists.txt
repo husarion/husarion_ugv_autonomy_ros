@@ -8,14 +8,15 @@ endif()
 set(PACKAGE_DEPENDENCIES
     ament_cmake
     behaviortree_ros2
+    generate_parameter_library
     geometry_msgs
+    husarion_ugv_manager
+    husarion_ugv_msgs
+    husarion_ugv_utils
     lifecycle_msgs
     opennav_docking
     opennav_docking_core
     opennav_docking_msgs
-    husarion_ugv_manager
-    husarion_ugv_msgs
-    husarion_ugv_utils
     pluginlib
     rclcpp
     rclcpp_lifecycle
@@ -52,10 +53,12 @@ target_include_directories(
 
 add_executable(docking_manager_node src/docking_manager_node_main.cpp
                                     src/docking_manager_node.cpp)
-
+generate_parameter_library(docking_manager_parameters
+                           src/docking_manager_parameters.yaml)
 target_include_directories(
   docking_manager_node PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                               $<INSTALL_INTERFACE:include>)
+target_link_libraries(docking_manager_node docking_manager_parameters)
 
 ament_target_dependencies(docking_manager_node ${PACKAGE_DEPENDENCIES})
 
