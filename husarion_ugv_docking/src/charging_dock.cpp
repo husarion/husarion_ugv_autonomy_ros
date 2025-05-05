@@ -75,7 +75,7 @@ void ChargingDock::activate() {
         std::bind(&ChargingDock::setWiboticInfo, this, std::placeholders::_1));
 
     husarion_ugv_io_state_sub_ = node->create_subscription<IOStateMsg>(
-        "hardware/io_state", 1,
+        "hardware/io_state", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
         std::bind(&ChargingDock::setHusarionUgvIOState, this,
                   std::placeholders::_1));
 
@@ -226,8 +226,6 @@ bool ChargingDock::isCharging() {
       setDockPosePublisherState(
           lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE);
       return true;
-    } else {
-      enableCharging();
     }
 
   } catch (const opennav_docking_core::FailedToDetectDock &e) {
@@ -241,9 +239,7 @@ bool ChargingDock::isCharging() {
 }
 
 bool ChargingDock::disableCharging() {
-  callSetWiboticState(false);
-
-  return !isCharging();
+  return true;
 }
 
 bool ChargingDock::enableCharging() {

@@ -2,7 +2,8 @@
 <root BTCPP_format="4">
   <BehaviorTree ID="Docking">
     <ForceSuccess>
-      <Fallback name="Docking Selector">
+      <Fallback name="Docking Selector"
+                _skipIf="e_stop_state">
         <Sequence name="Docking">
           <CheckJoyMsg name="Check Joy Docking Request"
                        topic_name="joy"

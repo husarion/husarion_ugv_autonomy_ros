@@ -38,12 +38,14 @@ DockingManagerNode::DockingManagerNode(const std::string &node_name,
   RCLCPP_INFO(this->get_logger(), "Constructing node.");
 
   DeclareParameters();
-  const std::map<std::string, std::any> empty_bb = {};
+  const std::map<std::string, std::any> initial_bb = {
+    {"e_stop_state", true},
+  };
   const int bt_server_port = this->get_parameter("bt_server_port").as_int();
 
   docking_tree_manager_ =
       std::make_unique<husarion_ugv_manager::BehaviorTreeManager>(
-          "Docking", empty_bb, bt_server_port);
+          "Docking", initial_bb, bt_server_port);
 
   RCLCPP_INFO(this->get_logger(), "Node constructed successfully.");
 }
@@ -58,6 +60,10 @@ void DockingManagerNode::Initialize() {
 
   const auto timer_freq = this->get_parameter("timer_frequency").as_double();
   const auto timer_period = std::chrono::duration<double>(1.0 / timer_freq);
+
+  e_stop_sub_ = this->create_subscription<BoolMsg>(
+    "hardware/e_stop", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+    std::bind(&DockingManagerNode::EStopCB, this, _1));
 
   docking_tree_timer_ = this->create_wall_timer(
       timer_period, std::bind(&DockingManagerNode::TimerCB, this));
@@ -114,6 +120,10 @@ void DockingManagerNode::RegisterBehaviorTree() {
 
   RCLCPP_INFO_STREAM(this->get_logger(), "BehaviorTree registered from path '"
                                              << bt_project_path << "'");
+}
+
+void DockingManagerNode::EStopCB(const BoolMsg::SharedPtr msg) {
+  docking_tree_manager_->GetBlackboard()->set<bool>("e_stop_state", msg->data);
 }
 
 void DockingManagerNode::TimerCB() {

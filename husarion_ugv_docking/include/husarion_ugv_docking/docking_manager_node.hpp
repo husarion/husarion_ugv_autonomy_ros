@@ -21,10 +21,14 @@
 #include <behaviortree_cpp/bt_factory.h>
 #include <rclcpp/rclcpp.hpp>
 
+#include <std_msgs/msg/bool.hpp>
+
 #include "husarion_ugv_manager/behavior_tree_manager.hpp"
 #include "husarion_ugv_utils/moving_average.hpp"
 
 namespace husarion_ugv_docking {
+
+using BoolMsg = std_msgs::msg::Bool;
 
 /**
  * @brief This class is responsible for creating a BehaviorTree responsible for
@@ -54,6 +58,11 @@ protected:
 
 private:
   void TimerCB();
+  void EStopCB(const BoolMsg::SharedPtr msg);
+
+  bool e_stop_state_ = true;
+
+  rclcpp::Subscription<BoolMsg>::SharedPtr e_stop_sub_;
 
   rclcpp::TimerBase::SharedPtr docking_tree_timer_;
 
