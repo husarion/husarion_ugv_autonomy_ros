@@ -47,5 +47,5 @@ docking_manager:
   timer_frequency:
     type: double
     default_value: 20.0
-    description: Frequency in Hz at which lights tree will be ticked.
+    description: Frequency in Hz at which docking tree will be ticked.
     validation: { gt<>: 0.0 }
