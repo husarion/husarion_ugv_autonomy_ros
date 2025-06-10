@@ -7,6 +7,6 @@ install
 build
 
 behaviortree_ros2
+husarion_components_description
 husarion_ugv_ros
-ros_components_description
 wibotic_ros

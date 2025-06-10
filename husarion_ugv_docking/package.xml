@@ -19,6 +19,7 @@
   <depend>apriltag_ros</depend>
   <depend>generate_parameter_library</depend>
   <depend>geometry_msgs</depend>
+  <depend>husarion_components_description</depend>
   <depend>husarion_ugv_manager</depend>
   <depend>husarion_ugv_msgs</depend>
   <depend>husarion_ugv_utils</depend>
@@ -30,7 +31,6 @@
   <depend>python3-pip</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
-  <depend>ros_components_description</depend>
   <depend>ros_gz_sim</depend>
   <depend>sensor_msgs</depend>
   <depend>std_srvs</depend>

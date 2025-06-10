@@ -52,7 +52,7 @@ def generate_urdf(name, apriltag_id, apriltag_size, apriltag_config_path):
             " ",
             PathJoinSubstitution(
                 [
-                    FindPackageShare("ros_components_description"),
+                    FindPackageShare("husarion_components_description"),
                     "urdf",
                     "wibotic_station.urdf.xacro",
                 ]
