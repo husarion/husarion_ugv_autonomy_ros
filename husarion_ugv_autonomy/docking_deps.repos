@@ -5,12 +5,12 @@ repositories:
     version: a0de087a2f3af5ec5a19edd622aa85506105afcd
   husarion_ugv_ros:
     type: git
-    url: https://github.com/husarion/panther_ros
-    version: 6711cabdc13690562e56d6ada5bfae4df0b2cef1
+    url: https://github.com/husarion/husarion_ugv_ros
+    version: 6942915d378c5658b9cfeb3435f71bf24710de7d
   husarion_components_description:
     type: git
     url: https://github.com/husarion/husarion_components_description.git
-    version: 0a828de00e2ab59cfd7bc397b8af021c60d52ba5
+    version: a46871980289a845c0b6defaba5161e3b505daa8
   wibotic_ros:
     type: git
     url: https://github.com/husarion/wibotic_ros/
