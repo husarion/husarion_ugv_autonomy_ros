@@ -6,7 +6,7 @@ repositories:
   husarion_ugv_ros:
     type: git
     url: https://github.com/husarion/husarion_ugv_ros
-    version: 6942915d378c5658b9cfeb3435f71bf24710de7d
+    version: 8be7cab2ebfccdda2aab78985338a77e50f5f3d0
   husarion_components_description:
     type: git
     url: https://github.com/husarion/husarion_components_description.git
