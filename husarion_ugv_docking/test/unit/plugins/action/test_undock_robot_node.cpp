@@ -20,7 +20,7 @@
 #include <gtest/gtest.h>
 #include <rclcpp/rclcpp.hpp>
 
-#include <opennav_docking_msgs/action/undock_robot.hpp>
+#include <nav2_msgs/action/undock_robot.hpp>
 
 #include "husarion_ugv_manager/test/utils/plugin_test_utils.hpp"
 
@@ -29,8 +29,8 @@
 class TestUndockRobot
     : public husarion_ugv_manager::plugin_test_utils::PluginTestUtils {
 public:
-  using Action = opennav_docking_msgs::action::UndockRobot;
-  using ActionResult = opennav_docking_msgs::action::UndockRobot::Result;
+  using Action = nav2_msgs::action::UndockRobot;
+  using ActionResult = nav2_msgs::action::UndockRobot::Result;
   using GoalHandleAction = rclcpp_action::ServerGoalHandle<Action>;
   using GoalResponse = rclcpp_action::GoalResponse;
   using CancelResponse = rclcpp_action::CancelResponse;
@@ -153,7 +153,7 @@ TEST_F(TestUndockRobot, CallUndockRobotServerSuccess) {
   CreateTree("UndockRobot", params);
 
   auto &tree = GetTree();
-  auto status = tree.tickWhileRunning(std::chrono::milliseconds(1000));
+  auto status = tree.tickWhileRunning(std::chrono::milliseconds(2000));
   EXPECT_EQ(status, BT::NodeStatus::SUCCESS);
 }
 

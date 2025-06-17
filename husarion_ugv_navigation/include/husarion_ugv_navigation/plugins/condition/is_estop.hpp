@@ -18,7 +18,7 @@
 #include <memory>
 #include <string>
 
-#include <behaviortree_cpp_v3/condition_node.h>
+#include <behaviortree_cpp/condition_node.h>
 #include <rclcpp/rclcpp.hpp>
 
 #include <std_msgs/msg/bool.hpp>
@@ -38,7 +38,7 @@ public:
    * @param condition_name Name for the XML tag for this node
    * @param conf BT node configuration
    */
-  IsEStop(const std::string &condition_name, const BT::NodeConfiguration &conf);
+  IsEStop(const std::string &condition_name, const BT::NodeConfig &conf);
 
   IsEStop() = delete;
 

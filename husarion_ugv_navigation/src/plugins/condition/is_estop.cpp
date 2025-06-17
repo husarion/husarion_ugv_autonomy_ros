@@ -23,7 +23,7 @@
 namespace husarion_ugv_navigation {
 
 IsEStop::IsEStop(const std::string &condition_name,
-                 const BT::NodeConfiguration &conf)
+                 const BT::NodeConfig &conf)
     : BT::ConditionNode(condition_name, conf), estop_(true),
       topic_("hardware/e_stop") {
   getInput("topic", topic_);
@@ -56,7 +56,7 @@ void IsEStop::eStopCb(const BoolMsg::SharedPtr msg) { estop_ = msg->data; }
 
 } // namespace husarion_ugv_navigation
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory) {
   factory.registerNodeType<husarion_ugv_navigation::IsEStop>("IsEStop");
 }

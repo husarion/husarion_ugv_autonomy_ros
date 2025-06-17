@@ -1,4 +1,4 @@
-ARG ROS_DISTRO=humble
+ARG ROS_DISTRO=jazzy
 ARG PREFIX=
 
 FROM husarnet/ros:${PREFIX}${ROS_DISTRO}-ros-core

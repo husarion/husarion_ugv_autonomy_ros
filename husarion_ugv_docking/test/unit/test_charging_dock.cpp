@@ -149,15 +149,15 @@ TEST_F(TestChargingDock, GetRefinedPose) {
 
   geometry_msgs::msg::PoseStamped pose;
 
-  ASSERT_FALSE(dock_->getRefinedPose(pose));
+  ASSERT_FALSE(dock_->getRefinedPose(pose, ""));
 
   dock_pose->header.frame_id = kOdomFrame;
   dock_->setDockPose(dock_pose);
-  ASSERT_FALSE(dock_->getRefinedPose(pose));
+  ASSERT_FALSE(dock_->getRefinedPose(pose, ""));
 
   dock_pose->header.stamp = node_->now();
   dock_->setDockPose(dock_pose);
-  ASSERT_TRUE(dock_->getRefinedPose(pose));
+  ASSERT_TRUE(dock_->getRefinedPose(pose, ""));
 
   ASSERT_FLOAT_EQ(pose.pose.position.x, 1.0);
   ASSERT_FLOAT_EQ(pose.pose.position.y, 1.0);

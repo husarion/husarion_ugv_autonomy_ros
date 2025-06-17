@@ -22,13 +22,13 @@
 #include <behaviortree_ros2/bt_action_node.hpp>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
-#include <opennav_docking_msgs/action/undock_robot.hpp>
+#include <nav2_msgs/action/undock_robot.hpp>
 
 namespace husarion_ugv_docking {
 
 class UndockRobot
-    : public BT::RosActionNode<opennav_docking_msgs::action::UndockRobot> {
-  using UndockRobotAction = opennav_docking_msgs::action::UndockRobot;
+    : public BT::RosActionNode<nav2_msgs::action::UndockRobot> {
+  using UndockRobotAction = nav2_msgs::action::UndockRobot;
   using UndockRobotActionResult = UndockRobotAction::Result;
 
 public:

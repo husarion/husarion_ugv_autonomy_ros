@@ -158,7 +158,7 @@ ChargingDock::getStagingPose(const geometry_msgs::msg::Pose &pose,
   return staging_pose_;
 }
 
-bool ChargingDock::getRefinedPose(PoseStampedMsg &pose) {
+bool ChargingDock::getRefinedPose(PoseStampedMsg &pose, std::string /* id */) {
   RCLCPP_DEBUG(logger_, "Getting refined pose");
   setDockPosePublisherState(
       lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);

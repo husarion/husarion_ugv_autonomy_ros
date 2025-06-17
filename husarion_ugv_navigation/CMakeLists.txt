@@ -10,7 +10,7 @@ include_directories(include)
 # Find packages
 set(DEPENDENCIES
     ament_cmake
-    behaviortree_cpp_v3
+    behaviortree_cpp
     lifecycle_msgs
     nav_msgs
     nav2_msgs

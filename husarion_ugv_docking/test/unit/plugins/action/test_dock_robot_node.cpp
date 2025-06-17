@@ -20,7 +20,7 @@
 #include <gtest/gtest.h>
 #include <rclcpp/rclcpp.hpp>
 
-#include <opennav_docking_msgs/action/dock_robot.hpp>
+#include <nav2_msgs/action/dock_robot.hpp>
 
 #include "husarion_ugv_manager/test/utils/plugin_test_utils.hpp"
 
@@ -29,8 +29,8 @@
 class TestDockRobot
     : public husarion_ugv_manager::plugin_test_utils::PluginTestUtils {
 public:
-  using Action = opennav_docking_msgs::action::DockRobot;
-  using ActionResult = opennav_docking_msgs::action::DockRobot::Result;
+  using Action = nav2_msgs::action::DockRobot;
+  using ActionResult = nav2_msgs::action::DockRobot::Result;
   using GoalHandle = rclcpp_action::ServerGoalHandle<Action>;
   using GoalResponse = rclcpp_action::GoalResponse;
   using CancelResponse = rclcpp_action::CancelResponse;

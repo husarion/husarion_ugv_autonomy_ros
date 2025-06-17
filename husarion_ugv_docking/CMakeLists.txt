@@ -14,9 +14,9 @@ set(PACKAGE_DEPENDENCIES
     husarion_ugv_msgs
     husarion_ugv_utils
     lifecycle_msgs
+    nav2_msgs
     opennav_docking
     opennav_docking_core
-    opennav_docking_msgs
     pluginlib
     rclcpp
     rclcpp_lifecycle
@@ -45,7 +45,7 @@ add_library(charging_dock SHARED src/charging_dock.cpp)
 ament_target_dependencies(charging_dock ${PACKAGE_DEPENDENCIES})
 
 # TODO @delihus how to link the library what is not a name of a package
-target_link_libraries(charging_dock /opt/ros/humble/lib/libpose_filter.so)
+target_link_libraries(charging_dock /opt/ros/jazzy/lib/libpose_filter.so)
 
 target_include_directories(
   charging_dock PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>

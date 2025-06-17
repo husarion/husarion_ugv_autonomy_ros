@@ -18,7 +18,7 @@ check-husarion-webui:
         read -p "Do you want to install husarion-webui? (y/n): " choice
         case "$choice" in
             y|Y )
-                sudo snap install husarion-webui --channel=humble
+                sudo snap install husarion-webui --channel=jazzy
                 ;;
             n|N )
                 echo "Installation aborted."
@@ -68,17 +68,17 @@ stop-visualization: check-husarion-webui
 dock DOCK_NAME="main":
     #!/bin/bash
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /panther/dock_robot opennav_docking_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: true, dock_id: {{DOCK_NAME}} }\""
+     "source install/setup.bash && ros2 action send_goal /panther/dock_robot nav2_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: true, dock_id: {{DOCK_NAME}} }\""
 
 # Dock Husarion UGV to the charging dock without using navigation stack
 dock-direct DOCK_NAME="main":
     #!/bin/bash
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /panther/dock_robot opennav_docking_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: false, dock_id: {{DOCK_NAME}} }\""
+     "source install/setup.bash && ros2 action send_goal /panther/dock_robot nav2_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: false, dock_id: {{DOCK_NAME}} }\""
 
 
 # Undock Husarion UGV from the charging dock
 undock:
     #!/bin/bash
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /panther/undock_robot opennav_docking_msgs/action/UndockRobot \" {  dock_type: charging_dock }\""
+     "source install/setup.bash && ros2 action send_goal /panther/undock_robot nav2_msgs/action/UndockRobot \" {  dock_type: charging_dock }\""
