@@ -8,7 +8,7 @@ on:
 jobs:
   build-and-test:
     name: Run unit tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repository
@@ -16,8 +16,6 @@ jobs:
 
       - name: Setup ROS
         uses: ros-tooling/setup-ros@v0.7
-        with:
-          use-ros2-testing: true
 
       - name: Build and test
         uses: ros-tooling/action-ros-ci@v0.3
@@ -27,13 +25,8 @@ jobs:
           colcon-defaults: |
             {
               "build": {
-                "packages-up-to": [
-                    "husarion_ugv_autonomy"
-                ],
-                "cmake-args": [
-                    "-DCMAKE_BUILD_TYPE=Release",
-                    "-DTEST_INTEGRATION=OFF"
-                ]
+                "packages-up-to": ["husarion_ugv_autonomy"],
+                "cmake-args": ["-DCMAKE_BUILD_TYPE=Release"]
               },
               "test": {
                 "packages-select": [
