@@ -95,9 +95,9 @@ public:
    * @brief Method to obtain the refined pose of the dock, usually based on
    * sensors
    * @param pose The initial estimate of the dock pose.
-   * @param id The frame of the initial estimate.
+   * @param frame The frame of the initial estimate.
    */
-  bool getRefinedPose(PoseStampedMsg &pose, std::string /* id */) override final;
+  bool getRefinedPose(PoseStampedMsg &pose, std::string frame) override final;
 
   /**
    * @brief Have we made contact with dock? This can be implemented in a variety

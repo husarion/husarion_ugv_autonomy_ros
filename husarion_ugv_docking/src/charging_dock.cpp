@@ -158,7 +158,8 @@ ChargingDock::getStagingPose(const geometry_msgs::msg::Pose &pose,
   return staging_pose_;
 }
 
-bool ChargingDock::getRefinedPose(PoseStampedMsg &pose, std::string /* id */) {
+bool ChargingDock::getRefinedPose(PoseStampedMsg &pose,
+                                  std::string /* frame */) {
   RCLCPP_DEBUG(logger_, "Getting refined pose");
   setDockPosePublisherState(
       lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
@@ -194,6 +195,11 @@ bool ChargingDock::getRefinedPose(PoseStampedMsg &pose, std::string /* id */) {
 }
 
 bool ChargingDock::isDocked() {
+  if (dock_pose_.header.frame_id.empty()) {
+    // Dock pose is not yet valid
+    return false;
+  }
+
   RCLCPP_DEBUG(logger_, "Checking if docked");
   geometry_msgs::msg::PoseStamped robot_pose;
   robot_pose.header.frame_id = base_frame_name_;
@@ -241,6 +247,10 @@ bool ChargingDock::isCharging() {
 }
 
 bool ChargingDock::disableCharging() {
+  if (!use_wibotic_info_) {
+    return true;
+  }
+  
   callSetWiboticState(false);
 
   return !isCharging();
@@ -249,7 +259,7 @@ bool ChargingDock::disableCharging() {
 bool ChargingDock::enableCharging() {
   if (!husarion_ugv_io_state_) {
     RCLCPP_FATAL_STREAM(logger_,
-                        "Cannot enable wireless charging. No    information "
+                        "Cannot enable wireless charging. No information "
                         "about wired charger state in the IO state message.");
     return false;
   }
@@ -258,6 +268,10 @@ bool ChargingDock::enableCharging() {
     RCLCPP_FATAL_STREAM(logger_, "Cannot enable wireless charging. Wired "
                                  "charger is connected. Please disconnect it.");
     return false;
+  }
+
+  if (!use_wibotic_info_) {
+    return true;
   }
 
   return callSetWiboticState(true);

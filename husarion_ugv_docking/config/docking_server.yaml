@@ -1,6 +1,9 @@
 /**:
   ros__parameters:
-    controller_frequency: 20.0
+    use_sim_time: false
+    enable_stamped_cmd_vel: true
+
+    controller_frequency: 10.0
     initial_perception_timeout: 5.0
     wait_charge_timeout: 10.0
     dock_approach_timeout: 20.0
@@ -11,7 +14,6 @@
     fixed_frame: <robot_namespace>/odom
     dock_backwards: false
     dock_prestaging_tolerance: 0.5
-
 
     dock_plugins: ["charging_dock"]
     charging_dock:
@@ -32,10 +34,11 @@
       pose: [1.0, 1.20, 1.57] # [x, y, yaw] of the dock on the map. Used also for spawning dock in the simulation.
       apriltag_id: 0
 
-
     controller:
       k_phi: 1.0
       k_delta: 2.0
       v_linear_min: 0.0
       v_linear_max: 0.2
       v_angular_max: 0.15
+      use_collision_detection: true
+      dock_collision_threshold: 0.4
