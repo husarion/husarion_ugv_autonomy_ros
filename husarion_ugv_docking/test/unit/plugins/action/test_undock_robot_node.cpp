@@ -117,7 +117,7 @@ TEST_F(TestUndockRobot, WrongCallUndockRobotServerWithNoDockType) {
   CreateTree("UndockRobot", params);
 
   auto &tree = GetTree();
-  auto status = tree.tickWhileRunning(std::chrono::milliseconds(1000));
+  auto status = tree.tickWhileRunning(std::chrono::milliseconds(100));
   EXPECT_EQ(status, BT::NodeStatus::FAILURE);
 }
 
@@ -135,7 +135,7 @@ TEST_F(TestUndockRobot, CallUndockRobotServerFailure) {
   CreateTree("UndockRobot", params);
 
   auto &tree = GetTree();
-  auto status = tree.tickWhileRunning(std::chrono::milliseconds(1000));
+  auto status = tree.tickWhileRunning(std::chrono::milliseconds(100));
   EXPECT_EQ(status, BT::NodeStatus::FAILURE);
 }
 
@@ -153,7 +153,7 @@ TEST_F(TestUndockRobot, CallUndockRobotServerSuccess) {
   CreateTree("UndockRobot", params);
 
   auto &tree = GetTree();
-  auto status = tree.tickWhileRunning(std::chrono::milliseconds(2000));
+  auto status = tree.tickWhileRunning(std::chrono::milliseconds(100));
   EXPECT_EQ(status, BT::NodeStatus::SUCCESS);
 }
 
