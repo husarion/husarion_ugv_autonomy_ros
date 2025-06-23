@@ -114,13 +114,7 @@ In the example below for dock named `main` the position is `pose: [1.0, 1.20, 1.
 [...]
 ```
 
-#### Step 2: Run Docking
-
-```bash
-just start-docking
-```
-
-#### Step 3: Dock the robot
+#### Step 2: Dock the robot
 
 ```bash
 just dock main
@@ -128,7 +122,7 @@ just dock main
 
 or press LB + RB + Y on the gamepad.
 
-#### Step 4: Undock the robot
+#### Step 3: Undock the robot
 
 ```bash
 just undock
