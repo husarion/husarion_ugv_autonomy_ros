@@ -280,7 +280,7 @@ planner_server:
         w_data: 0.2
         tolerance: 1.0e-6
 
-recoveries_server:
+behavior_server:
   ros__parameters:
     use_sim_time: false
     enable_stamped_cmd_vel: true
@@ -296,11 +296,11 @@ recoveries_server:
 
     recovery_plugins: [spin, backup, wait]
     spin:
-      plugin: nav2_recoveries/Spin
+      plugin: nav2_behaviors::Spin
     backup:
-      plugin: nav2_recoveries/BackUp
+      plugin: nav2_behaviors::BackUp
     wait:
-      plugin: nav2_recoveries/Wait
+      plugin: nav2_behaviors::Wait
 
     # spin & backup
     simulate_ahead_time: 2.0
@@ -309,11 +309,6 @@ recoveries_server:
     max_rotational_vel: 1.0
     min_rotational_vel: 0.4
     rotational_acc_lim: 3.2
-
-behavior_server:
-  ros__parameters:
-    use_sim_time: false
-    enable_stamped_cmd_vel: true
 
 waypoint_follower:
   ros__parameters:
