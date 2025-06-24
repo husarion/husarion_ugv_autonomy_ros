@@ -5,11 +5,10 @@ x-common-config:
 
 services:
   docking:
-    image: husarion/husarion-ugv-autonomy:humble-0.1.0-20250210-stable
+    image: husarion/husarion-ugv-autonomy:jazzy-jazzy-devel
     container_name: docking
     <<: *common-config
     volumes:
-      - ..:/ros2_ws/src/husarion_ugv_autonomy_ros
       - ./config:/config
     environment:
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
@@ -26,11 +25,10 @@ services:
         use_sim:=False
 
   navigation:
-    image: husarion/husarion-ugv-autonomy:humble-0.1.0-20250210-stable
+    image: husarion/husarion-ugv-autonomy:jazzy-jazzy-devel
     container_name: navigation
     <<: *common-config
     volumes:
-      - ..:/ros2_ws/src/husarion_ugv_autonomy_ros
       - ../maps:/maps
     environment:
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
