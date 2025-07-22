@@ -46,6 +46,7 @@ def generate_launch_description():
     observation_topic_type = LaunchConfiguration("observation_topic_type")
     params_file = LaunchConfiguration("params_file")
     pc2ls_params_file = LaunchConfiguration("pc2ls_params_file")
+    robot_model = LaunchConfiguration("robot_model")
     slam = LaunchConfiguration("slam")
     use_composition = LaunchConfiguration("use_composition")
     use_respawn = LaunchConfiguration("use_respawn")
@@ -63,7 +64,9 @@ def generate_launch_description():
         choices=["debug", "info", "warning", "error"],
     )
     declare_map_arg = DeclareLaunchArgument(
-        "map", default_value="/maps/map.yaml", description="Path to map yaml file to load."
+        "map",
+        default_value="/maps/map.yaml",
+        description="Path to map yaml file to load.",
     )
     declare_namespace_arg = DeclareLaunchArgument(
         "namespace",
@@ -95,6 +98,12 @@ def generate_launch_description():
         ),
         description="Path to the parameters file to use for pointcloud_to_laserscan node.",
     )
+    declare_robot_model_arg = DeclareLaunchArgument(
+        "robot_model",
+        default_value=EnvironmentVariable(name="ROBOT_MODEL_NAME", default_value="panther"),
+        description="Specify robot model",
+        choices=["lynx", "panther"],
+    )
     declare_slam_arg = DeclareLaunchArgument(
         "slam", default_value="False", description="Whether run a SLAM."
     )
@@ -119,13 +128,26 @@ def generate_launch_description():
 
     namespace_ext = PythonExpression(["'", namespace, "' + '/' if '", namespace, "' else ''"])
     scan_topic = PythonExpression(
-        ["'scan' if '", observation_topic_type, "' == 'pointcloud' else '", observation_topic, "'"]
+        [
+            "'scan' if '",
+            observation_topic_type,
+            "' == 'pointcloud' else '",
+            observation_topic,
+            "'",
+        ]
     )
     add_obstacle_layer = PythonExpression(
         ["'obstacle_layer,' if '", observation_topic_type, "' == 'laserscan' else ''"]
     )
     add_voxel_layer = PythonExpression(
         ["'voxel_layer,' if '", observation_topic_type, "' == 'pointcloud' else ''"]
+    )
+    robot_footprint = PythonExpression(
+        [
+            "'[[0.45, 0.47], [0.45, -0.47], [-0.45, -0.47], [-0.45, 0.47]]' if '",
+            robot_model,
+            "' == 'panther' else '[[0.38, 0.33], [0.38, -0.33], [-0.38, -0.33], [-0.38, 0.33]]'",
+        ]
     )
 
     params_file = ReplaceString(
@@ -136,6 +158,7 @@ def generate_launch_description():
             "<scan_topic>": scan_topic,
             "<obstacle_layer>,": add_obstacle_layer,
             "<voxel_layer>,": add_voxel_layer,
+            "<robot_footprint>": robot_footprint,
         },
     )
 
@@ -238,6 +261,7 @@ def generate_launch_description():
             declare_observation_topic_type_arg,
             declare_params_file_arg,
             declare_pc2ls_params_file_arg,
+            declare_robot_model_arg,
             declare_slam_arg,
             declare_use_composition_arg,
             declare_use_respawn_arg,
