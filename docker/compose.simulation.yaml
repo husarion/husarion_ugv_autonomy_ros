@@ -21,6 +21,7 @@ services:
       ros2 launch husarion_ugv_gazebo simulation.launch.py
         components_config_path:=/config/components.yaml
         namespace:=panther
+        robot_model:=${ROBOT_MODEL:-panther}
 
   docking:
     image: husarion/husarion-ugv-autonomy:humble-0.1.0-20250210-stable
@@ -59,3 +60,4 @@ services:
         observation_topic_type:=pointcloud
         slam:=${SLAM:-True}
         use_sim_time:=True
+        robot_model:=${ROBOT_MODEL:-panther}
