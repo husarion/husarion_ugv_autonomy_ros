@@ -76,7 +76,7 @@ export SLAM=True # if you have a map you can run navigation without SLAM
 Run navigation on the **physical robot**:
 
 ```bash
-just start-hardware
+just start-hardware-navigation
 ```
 
 Run navigation in **Gazebo simulation**:

@@ -32,7 +32,7 @@ check-husarion-webui:
     fi
 
 # Start navigation on User Computer inside Husarion UGV
-start-hardware:
+start-hardware-navigation:
     #!/bin/bash
     docker compose -f docker/compose.hardware.yaml down
     docker compose -f docker/compose.hardware.yaml pull
