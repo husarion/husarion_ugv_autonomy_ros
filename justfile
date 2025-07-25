@@ -36,7 +36,12 @@ start-hardware:
     #!/bin/bash
     docker compose -f docker/compose.hardware.yaml down
     docker compose -f docker/compose.hardware.yaml pull
-    docker compose -f docker/compose.hardware.yaml up
+    docker compose -f docker/compose.hardware.yaml up navigation
+
+# Start docking for hardware
+start-hardware-docking:
+    #!/bin/bash
+    docker compose -f docker/compose.hardware.yaml up docking
 
 # Start Gazebo simulator with navigation stack
 start-simulation:
@@ -44,7 +49,12 @@ start-simulation:
     xhost +local:docker
     docker compose -f docker/compose.simulation.yaml down
     docker compose -f docker/compose.simulation.yaml pull
-    docker compose -f docker/compose.simulation.yaml up
+    docker compose -f docker/compose.simulation.yaml up gazebo navigation
+
+# Start docking for simulation
+start-simulation-docking:
+    #!/bin/bash
+    docker compose -f docker/compose.simulation.yaml up docking
 
 # Configure and run Husarion WebUI
 start-visualization: check-husarion-webui
@@ -65,20 +75,23 @@ stop-visualization: check-husarion-webui
     sudo husarion-webui.stop
 
 # Dock Husarion UGV to the charging dock using navigation stack
-dock DOCK_NAME="main":
+dock DOCK_NAME:
     #!/bin/bash
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /panther/dock_robot nav2_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: true, dock_id: {{DOCK_NAME}} }\""
+     "source install/setup.bash && ros2 action send_goal /panther/dock_robot opennav_docking_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: true, dock_id: {{DOCK_NAME}} }\""
 
 # Dock Husarion UGV to the charging dock without using navigation stack
-dock-direct DOCK_NAME="main":
+dock-direct DOCK_NAME:
     #!/bin/bash
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /panther/dock_robot nav2_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: false, dock_id: {{DOCK_NAME}} }\""
+     "source install/setup.bash && ros2 action send_goal /panther/dock_robot opennav_docking_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: false, dock_id: {{DOCK_NAME}} }\""
 
 
 # Undock Husarion UGV from the charging dock
 undock:
     #!/bin/bash
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /panther/undock_robot nav2_msgs/action/UndockRobot \" {  dock_type: charging_dock }\""
+     "source install/setup.bash && ros2 action send_goal /panther/undock_robot opennav_docking_msgs/action/UndockRobot \" {  dock_type: charging_dock }\""
+
+setup-os:
+    bash docker/setup_os.sh
