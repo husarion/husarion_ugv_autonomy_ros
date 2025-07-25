@@ -147,7 +147,7 @@ local_costmap:
       always_send_full_costmap: true
       rolling_window: true
 
-      footprint: '[[0.45, 0.47], [0.45, -0.47], [-0.45, -0.47], [-0.45, 0.47]]'
+      footprint: '<robot_footprint>'
 
       plugins: [<obstacle_layer>, <voxel_layer>, inflation_layer]
       inflation_layer:
@@ -208,7 +208,7 @@ global_costmap:
       always_send_full_costmap: true
       track_unknown_space: true # if false, treats unknown space as free space, else as unknown space
 
-      footprint: '[[0.45, 0.47], [0.45, -0.47], [-0.45, -0.47], [-0.45, 0.47]]'
+      footprint: '<robot_footprint>'
 
       plugins: [static_layer, <obstacle_layer>, <voxel_layer>, inflation_layer]
       inflation_layer:

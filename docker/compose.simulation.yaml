@@ -24,6 +24,7 @@ services:
         components_config_path:=/config/components.yaml
         rviz_config:=/config/nav_config.rviz
         namespace:=panther
+        robot_model:=${ROBOT_MODEL:-panther}
 
   docking:
     image: husarion/husarion-ugv-autonomy:jazzy-jazzy-devel
@@ -60,3 +61,4 @@ services:
         observation_topic_type:=pointcloud
         slam:=${SLAM:-True}
         use_sim_time:=True
+        robot_model:=${ROBOT_MODEL:-panther}

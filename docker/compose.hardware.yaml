@@ -39,3 +39,4 @@ services:
         observation_topic_type:=${OBSERVATION_TOPIC_TYPE:-err}
         slam:=${SLAM:-True}
         use_sim_time:=False
+        robot_model:=${ROBOT_MODEL:-panther}

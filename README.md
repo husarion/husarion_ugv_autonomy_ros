@@ -66,6 +66,7 @@ export OBSERVATION_TOPIC_TYPE={msg_type} # Specify: `laserscan`, `pointcloud`
 export CAMERA_IMAGE_TOPIC={camera_image_topic} # absolute topic name to match your camera image topic (e. g. /camera/color/image_raw)
 export CAMERA_INFO_TOPIC={camera_info_topic} # absolute topic name to match your camera info topic (e. g. /camera/camera_info)
 export SLAM=True # if you have a map you can run navigation without SLAM
+export ROBOT_MODEL=panther # if you want to use Husarion UGV Lynx change to 'lynx'
 ```
 
 > [!NOTE]
