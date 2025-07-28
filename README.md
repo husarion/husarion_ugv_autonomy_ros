@@ -77,7 +77,7 @@ export ROBOT_MODEL=panther # if you want to use Husarion UGV Lynx change to 'lyn
 Run navigation on the **physical robot**:
 
 ```bash
-just start-hardware
+just start-hardware-navigation
 ```
 
 Run navigation in **Gazebo simulation**:
@@ -115,13 +115,29 @@ In the example below for dock named `main` the position is `pose: [1.0, 1.20, 1.
 [...]
 ```
 
-#### Step 2: Run Docking
+#### Step 2: Configure OS
+
+Setup OS:
 
 ```bash
-just start-docking
+just setup-os
 ```
 
-#### Step 3: Dock the robot
+#### Step 3: Run Docking
+
+🤖 Run Navigation on the Physical Robot:
+
+```bash
+just start-hardware-docking
+```
+
+🖥️ Run Navigation in Simulation:
+
+```bash
+just start-simulation-docking
+```
+
+#### Step 4: Dock the robot
 
 ```bash
 just dock main
@@ -129,7 +145,7 @@ just dock main
 
 or press LB + RB + Y on the gamepad.
 
-#### Step 4: Undock the robot
+#### Step 5: Undock the robot
 
 ```bash
 just undock
