@@ -2,8 +2,15 @@
 components:
   - type: LDR20
     parent_link: mount_link
-    xyz: 0.185 0.0 0.0
+    xyz: 0.0 0.0 0.2
     rpy: 0.0 0.0 0.0
+
+  - type: LDR06
+    parent_link: mount_link
+    xyz: 0.0 0.0 0.0
+    rpy: 0.0 0.0 0.0
+    device_namespace: rplidar
+
 
   - type: CAM01
     parent_link: mount_link
