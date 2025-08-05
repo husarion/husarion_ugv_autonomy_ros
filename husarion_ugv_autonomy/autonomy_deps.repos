@@ -1,0 +1,5 @@
+repositories:
+  pointcloud_crop_box:
+    type: git
+    url: https://github.com/husarion/pointcloud_crop_box
+    version: df97a803eb0244cd5da407512fe4c38d538677d8

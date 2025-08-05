@@ -46,6 +46,7 @@ def generate_launch_description():
     observation_topic_type = LaunchConfiguration("observation_topic_type")
     params_file = LaunchConfiguration("params_file")
     pc2ls_params_file = LaunchConfiguration("pc2ls_params_file")
+    pointcloud_crop_box_params_file = LaunchConfiguration("pointcloud_crop_box_params_file")
     robot_model = LaunchConfiguration("robot_model")
     slam = LaunchConfiguration("slam")
     use_composition = LaunchConfiguration("use_composition")
@@ -98,6 +99,14 @@ def generate_launch_description():
         ),
         description="Path to the parameters file to use for pointcloud_to_laserscan node.",
     )
+    declare_pointcloud_crop_box_params_file_arg = DeclareLaunchArgument(
+        "pointcloud_crop_box_params_file",
+        default_value=PathJoinSubstitution(
+            [husarion_ugv_navigation, "config", "pointcloud_crop_box_params.yaml"]
+        ),
+        description="Path to the parameters file to use for pointcloud_crop_box node.",
+    )
+
     declare_robot_model_arg = DeclareLaunchArgument(
         "robot_model",
         default_value=EnvironmentVariable(name="ROBOT_MODEL_NAME", default_value="panther"),
@@ -136,31 +145,122 @@ def generate_launch_description():
             "'",
         ]
     )
-    add_obstacle_layer = PythonExpression(
-        ["'obstacle_layer,' if '", observation_topic_type, "' == 'laserscan' else ''"]
-    )
-    add_voxel_layer = PythonExpression(
-        ["'voxel_layer,' if '", observation_topic_type, "' == 'pointcloud' else ''"]
-    )
-    robot_footprint = PythonExpression(
+
+    stvl_layer = PythonExpression(
         [
-            "'[[0.45, 0.47], [0.45, -0.47], [-0.45, -0.47], [-0.45, 0.47]]' if '",
-            robot_model,
-            "' == 'panther' else '[[0.38, 0.33], [0.38, -0.33], [-0.38, -0.33], [-0.38, 0.33]]'",
+            "'stvl_pointcloud_layer' if '",
+            observation_topic_type,
+            "' == 'pointcloud' else 'stvl_laserscan_layer'",
         ]
     )
 
-    params_file = ReplaceString(
-        source_file=params_file,
-        replacements={
-            "<namespace>/": namespace_ext,
-            "<observation_topic>": observation_topic,
-            "<scan_topic>": scan_topic,
-            "<obstacle_layer>,": add_obstacle_layer,
-            "<voxel_layer>,": add_voxel_layer,
-            "<robot_footprint>": robot_footprint,
-        },
+    panther_footprint = {
+        "min_x": -0.45,
+        "min_y": -0.47,
+        "min_z": 0.05,
+        "max_x": 0.45,
+        "max_y": 0.47,
+        "max_z": 0.5,
+    }
+
+    lynx_footprint = {
+        "min_x": -0.38,
+        "min_y": -0.33,
+        "min_z": 0.05,
+        "max_x": 0.38,
+        "max_y": 0.33,
+        "max_z": 0.5,
+    }
+
+    def override_pointcloud_crop_box_params_file(bounding_box, robot_model_name):
+        return ReplaceString(
+            source_file=pointcloud_crop_box_params_file,
+            replacements={
+                "<namespace>/": namespace_ext,
+                "<observation_topic>": observation_topic,
+                "<min_x>": str(bounding_box["min_x"]),
+                "<max_x>": str(bounding_box["max_x"]),
+                "<min_y>": str(bounding_box["min_y"]),
+                "<max_y>": str(bounding_box["max_y"]),
+                "<min_z>": str(bounding_box["min_z"]),
+                "<max_z>": str(bounding_box["max_z"]),
+            },
+            condition=IfCondition(
+                PythonExpression(["'", robot_model, f"' == '{robot_model_name}'"])
+            ),
+        )
+
+    pointcloud_crop_box_params_file = override_pointcloud_crop_box_params_file(
+        panther_footprint, "panther"
     )
+    pointcloud_crop_box_params_file = override_pointcloud_crop_box_params_file(
+        lynx_footprint, "lynx"
+    )
+
+    def override_pc2ls_params_file(bounding_box, robot_model_name):
+        return ReplaceString(
+            source_file=pc2ls_params_file,
+            replacements={
+                "<namespace>/": namespace_ext,
+                "<min_z>": str(bounding_box["min_z"]),
+                "<max_z>": str(bounding_box["max_z"]),
+            },
+            condition=IfCondition(
+                PythonExpression(["'", robot_model, f"' == '{robot_model_name}'"])
+            ),
+        )
+
+    pc2ls_params_file = override_pc2ls_params_file(panther_footprint, "panther")
+    pc2ls_params_file = override_pc2ls_params_file(lynx_footprint, "lynx")
+
+    observation_topic_filtered = PythonExpression(
+        ["'", observation_topic, "_filtered'"],
+    )
+
+    def override_params_file(bounding_box, robot_model_name):
+        robot_footprint_sub = (
+            f'[[{bounding_box["min_x"]},{bounding_box["min_y"]}], '
+            f'[{bounding_box["min_x"]}, {bounding_box["max_y"]}], '
+            f'[{bounding_box["max_x"]}, {bounding_box["max_y"]}], '
+            f'[{bounding_box["max_x"]}, {bounding_box["min_y"]}]]'
+        )
+
+        params = ReplaceString(
+            source_file=params_file,
+            replacements={
+                "<namespace>/": namespace_ext,
+                "<scan_topic>": scan_topic,
+                "<stvl_layer>": stvl_layer,
+                "<robot_footprint>": robot_footprint_sub,
+            },
+            condition=IfCondition(
+                PythonExpression(["'", robot_model, f"' == '{robot_model_name}'"])
+            ),
+        )
+
+        params = ReplaceString(
+            source_file=params,
+            replacements={
+                "<observation_topic>": observation_topic_filtered,
+            },
+            condition=IfCondition(
+                PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+            ),
+        )
+
+        params = ReplaceString(
+            source_file=params,
+            replacements={
+                "<observation_topic>": observation_topic,
+            },
+            condition=IfCondition(
+                PythonExpression(["'", observation_topic_type, "' == 'laserscan'"])
+            ),
+        )
+        return params
+
+    params_file = override_params_file(panther_footprint, "panther")
+    params_file = override_params_file(lynx_footprint, "lynx")
 
     configured_params = ParameterFile(
         RewrittenYaml(
@@ -183,7 +283,17 @@ def generate_launch_description():
                 executable="pointcloud_to_laserscan_node",
                 name="pointcloud_to_laserscan",
                 parameters=[pc2ls_params_file],
-                remappings=[("cloud_in", observation_topic)],
+                remappings=[("cloud_in", observation_topic_filtered)],
+                output="screen",
+            ),
+            Node(
+                condition=IfCondition(
+                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
+                ),
+                package="pointcloud_crop_box",
+                executable="pointcloud_crop_box_node",
+                name="pointcloud_crop_box",
+                parameters=[pointcloud_crop_box_params_file],
                 output="screen",
             ),
             Node(
@@ -261,6 +371,7 @@ def generate_launch_description():
             declare_observation_topic_type_arg,
             declare_params_file_arg,
             declare_pc2ls_params_file_arg,
+            declare_pointcloud_crop_box_params_file_arg,
             declare_robot_model_arg,
             declare_slam_arg,
             declare_use_composition_arg,
