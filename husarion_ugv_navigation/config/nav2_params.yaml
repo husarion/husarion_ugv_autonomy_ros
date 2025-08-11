@@ -1,7 +1,6 @@
 ---
 /**:
-### NAVIGATION ###
-
+  ### NAVIGATION ###
   bt_navigator:
     ros__parameters:
       use_sim_time: false
