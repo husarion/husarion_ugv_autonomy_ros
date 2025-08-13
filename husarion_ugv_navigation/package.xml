@@ -19,7 +19,9 @@
   <depend>lifecycle_msgs</depend>
   <depend>nav2_msgs</depend>
   <depend>nav_msgs</depend>
+  <depend>pointcloud_crop_box</depend>
   <depend>rclcpp</depend>
+  <depend>spatio_temporal_voxel_layer</depend>
   <depend>std_msgs</depend>
 
   <exec_depend>nav2_bringup</exec_depend>
