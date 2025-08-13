@@ -26,7 +26,7 @@ from launch.substitutions import (
 )
 from launch_ros.actions import LoadComposableNodes, Node
 from launch_ros.descriptions import ComposableNode, ParameterFile
-from nav2_common.launch import RewrittenYaml
+from nav2_common.launch import ReplaceString, RewrittenYaml
 
 
 def generate_launch_description():
@@ -117,6 +117,19 @@ def generate_launch_description():
             husarion_dir, "behaviour_tree", "navigate_through_poses_w_replanning_and_recovery.xml"
         )
     }
+
+    # Fix RemovePassedGoals frames issue in humble
+    # Question: https://github.com/ros-navigation/navigation2/issues/5454
+    ros_distro = EnvironmentVariable("ROS_DISTRO", default_value="humble")
+    namespace_ext = PythonExpression(["'", namespace, "' + '/' if '", namespace, "' else ''"])
+    nav_throught_poses_bt["default_nav_through_poses_bt_xml"] = ReplaceString(
+        source_file=nav_throught_poses_bt["default_nav_through_poses_bt_xml"],
+        replacements={
+            # Used [namespace] because <namespace> brakes the XML parsing
+            "[namespace]/": namespace_ext,
+        },
+        condition=IfCondition(PythonExpression(["'", ros_distro, "' == 'humble'"])),
+    )
 
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(["not ", use_composition])),
