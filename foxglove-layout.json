@@ -183,7 +183,22 @@
         "frame:{{env "NS_PREFIX"}}camera_orbbec_astra_link": {
           "visible": false
         },
-        "frame:{{env "NS_PREFIX"}}base_link/panther/camera_orbbec_astra_depth": {
+        "frame:{{env "NS_PREFIX"}}fl_wheel_base_link": {
+          "visible": false
+        },
+        "frame:{{env "NS_PREFIX"}}fr_wheel_base_link": {
+          "visible": false
+        },
+        "frame:{{env "NS_PREFIX"}}rl_wheel_base_link": {
+          "visible": false
+        },
+        "frame:{{env "NS_PREFIX"}}rr_wheel_base_link": {
+          "visible": false
+        },
+        "frame:{{env "NS_PREFIX"}}rplidar_slamtec_rplidar_link": {
+          "visible": false
+        },
+        "frame:{{env "NS_PREFIX"}}rplidar_laser": {
           "visible": false
         }
       },

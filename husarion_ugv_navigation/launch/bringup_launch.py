@@ -138,21 +138,22 @@ def generate_launch_description():
         ]
     )
 
+    bb_padding = 0.02 # increase slighte footprint
     robot_bounding_box = {
         "panther": {
-            "min_x": -0.45,
-            "min_y": -0.47,
+            "min_x": -0.41 - bb_padding,
+            "min_y": -0.43 - bb_padding,
             "min_z": 0.05,
-            "max_x": 0.45,
-            "max_y": 0.47,
+            "max_x": 0.41 + bb_padding,
+            "max_y": 0.43 + bb_padding,
             "max_z": 0.5,
         },
         "lynx": {
-            "min_x": -0.38,
-            "min_y": -0.33,
+            "min_x": -0.32 - bb_padding,
+            "min_y": -0.27 - bb_padding,
             "min_z": 0.05,
-            "max_x": 0.38,
-            "max_y": 0.33,
+            "max_x": 0.32 + bb_padding,
+            "max_y": 0.27 + bb_padding,
             "max_z": 0.5,
         }
     }

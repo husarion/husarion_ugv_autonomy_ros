@@ -142,7 +142,7 @@
 
         width: 8
         height: 8
-        resolution: 0.04
+        resolution: 0.02
 
         always_send_full_costmap: true
         rolling_window: true
