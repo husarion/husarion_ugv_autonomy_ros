@@ -138,7 +138,7 @@ def generate_launch_description():
         ]
     )
 
-    bb_padding = 0.02 # increase slighte footprint
+    bb_padding = 0.02 # increase slighte footprint for safety
     robot_bounding_box = {
         "panther": {
             "min_x": -0.41 - bb_padding,
