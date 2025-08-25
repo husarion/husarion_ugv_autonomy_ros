@@ -273,7 +273,7 @@
     "Joy!454iiby": {
       "topic": "{{env "NAMESPACE"}}/cmd_vel",
       "publishRate": 5,
-      "stamped": false,
+      "stamped": true,
       "advanced": false,
       "xAxis": {
         "field": "linear-x",

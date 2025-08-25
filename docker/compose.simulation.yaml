@@ -6,7 +6,7 @@ x-common-config:
 
 services:
   gazebo:
-    image: husarion/husarion-ugv-gazebo:jazzy-ros2-devel
+    image: husarion/husarion-ugv-gazebo:jazzy-2.3.1-20250701
     container_name: gazebo
     <<: *common-config
     runtime: nvidia

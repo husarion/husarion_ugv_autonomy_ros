@@ -2,6 +2,8 @@
 
 A collection of packages containing autonomous functionalities for Husarion UGV vehicles.
 
+This version has been tested with the [**Husarion UGV Jazzy 2.3.1**](https://github.com/husarion/husarion_ugv_ros/tree/2.3.1) ROS drivers.
+
 ![autonomy-result](https://github-readme-figures.s3.eu-central-1.amazonaws.com/panther/husarion_ugv/husarion_ugv_autonomy.gif)
 
 ## 🛠️ Setup Repository
