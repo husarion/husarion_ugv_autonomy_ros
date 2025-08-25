@@ -37,6 +37,7 @@ jobs:
           github_token: ${{ secrets.GH_PAT }}
           git_user: action-bot
           git_email: action-bot@action-bot.com
+          prefix: jazzy-
 
   build-docker:
     name: Build Docker Image
