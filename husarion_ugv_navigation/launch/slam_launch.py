@@ -27,7 +27,6 @@ from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     # Input parameters declaration
-    namespace = LaunchConfiguration("namespace")
     params_file = LaunchConfiguration("params_file")
     use_sim_time = LaunchConfiguration("use_sim_time")
     autostart = LaunchConfiguration("autostart")
@@ -54,10 +53,6 @@ def generate_launch_description():
     )
 
     # Declare the launch arguments
-    declare_namespace_cmd = DeclareLaunchArgument(
-        "namespace", default_value="robot", description="Top-level namespace"
-    )
-
     declare_params_file_cmd = DeclareLaunchArgument(
         "params_file",
         default_value="/params.yaml",
@@ -131,7 +126,6 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     # Declare the launch options
-    ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_autostart_cmd)

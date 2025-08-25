@@ -1,11 +1,17 @@
 ---
-name: Run unit tests
+name: CI
 
 on:
   push:
   workflow_dispatch:
 
 jobs:
+  pre-commit:
+    name: Pre-commit
+    uses: ros-controls/ros2_control_ci/.github/workflows/reusable-pre-commit.yml@master
+    with:
+      ros_distro: jazzy
+
   build-and-test:
     name: Run unit tests
     runs-on: ubuntu-24.04

@@ -2,10 +2,14 @@ x-common-config:
   &common-config
   network_mode: host
   ipc: host
+  env_file: .env
 
 services:
   docking:
-    image: husarion/husarion-ugv-autonomy:jazzy-jazzy-devel
+    # image: husarion/husarion-ugv-autonomy:jazzy-jazzy-devel
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: docking
     <<: *common-config
     volumes:
@@ -25,10 +29,14 @@ services:
         use_sim:=False
 
   navigation:
-    image: husarion/husarion-ugv-autonomy:jazzy-jazzy-devel
+    # image: husarion/husarion-ugv-autonomy:jazzy-jazzy-devel
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: navigation
     <<: *common-config
     volumes:
+      - ./config:/config
       - ../maps:/maps
     environment:
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp

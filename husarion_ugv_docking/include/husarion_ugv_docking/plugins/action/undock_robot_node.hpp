@@ -26,8 +26,7 @@
 
 namespace husarion_ugv_docking {
 
-class UndockRobot
-    : public BT::RosActionNode<nav2_msgs::action::UndockRobot> {
+class UndockRobot : public BT::RosActionNode<nav2_msgs::action::UndockRobot> {
   using UndockRobotAction = nav2_msgs::action::UndockRobot;
   using UndockRobotActionResult = UndockRobotAction::Result;
 

@@ -26,8 +26,7 @@
 
 namespace husarion_ugv_docking {
 
-class DockRobot
-    : public BT::RosActionNode<nav2_msgs::action::DockRobot> {
+class DockRobot : public BT::RosActionNode<nav2_msgs::action::DockRobot> {
   using DockRobotAction = nav2_msgs::action::DockRobot;
   using DockRobotActionResult = DockRobotAction::Result;
 

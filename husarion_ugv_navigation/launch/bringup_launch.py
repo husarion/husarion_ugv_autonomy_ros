@@ -154,11 +154,12 @@ def generate_launch_description():
             "max_x": 0.38,
             "max_y": 0.33,
             "max_z": 0.5,
-        }
+        },
     }
     observation_topic_filtered = PythonExpression(
         ["'", observation_topic, "_filtered'"],
     )
+
     def override_params_file(robot_model_name):
         bounding_box = robot_bounding_box[robot_model_name]
         params = ReplaceString(

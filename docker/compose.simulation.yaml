@@ -2,6 +2,7 @@ x-common-config:
   &common-config
   network_mode: host
   ipc: host
+  env_file: .env
 
 services:
   gazebo:
@@ -10,7 +11,6 @@ services:
     <<: *common-config
     runtime: nvidia
     environment:
-      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
       - DISPLAY
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility,display
@@ -27,14 +27,14 @@ services:
         robot_model:=${ROBOT_MODEL:-panther}
 
   docking:
-    image: husarion/husarion-ugv-autonomy:jazzy-jazzy-devel
+    # image: husarion/husarion-ugv-autonomy:jazzy-jazzy-devel
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: docking
     <<: *common-config
     volumes:
       - ./config:/config
-    environment:
-      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-      - CYCLONE_DDS_URI=file:///config/cyclonedds.xml
     command: >
       ros2 launch husarion_ugv_docking docking.launch.py
         namespace:=panther
@@ -47,13 +47,15 @@ services:
         use_sim:=True
 
   navigation:
-    image: husarion/husarion-ugv-autonomy:jazzy-jazzy-devel
+    # image: husarion/husarion-ugv-autonomy:jazzy-jazzy-devel
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: navigation
     <<: *common-config
     volumes:
+      - ./config:/config
       - ../maps:/maps
-    environment:
-      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
     command: >
       ros2 launch husarion_ugv_navigation bringup_launch.py
         namespace:=panther

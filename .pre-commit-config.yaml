@@ -6,7 +6,7 @@ repos:
         args: ["--maxkb=3000"]
       - id: check-ast
       - id: check-json
-        exclude: ^.vscode/
+        exclude: ^.vscode/|^foxglove.*
       - id: check-merge-conflict
       - id: check-symlinks
       - id: check-xml
@@ -35,6 +35,7 @@ repos:
     rev: v19.1.7
     hooks:
       - id: clang-format
+        exclude: ^foxglove.*
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0

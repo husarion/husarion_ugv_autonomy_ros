@@ -250,7 +250,7 @@ bool ChargingDock::disableCharging() {
   if (!use_wibotic_info_) {
     return true;
   }
-  
+
   callSetWiboticState(false);
 
   return !isCharging();

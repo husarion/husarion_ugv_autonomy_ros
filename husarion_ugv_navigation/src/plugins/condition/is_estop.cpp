@@ -22,8 +22,7 @@
 
 namespace husarion_ugv_navigation {
 
-IsEStop::IsEStop(const std::string &condition_name,
-                 const BT::NodeConfig &conf)
+IsEStop::IsEStop(const std::string &condition_name, const BT::NodeConfig &conf)
     : BT::ConditionNode(condition_name, conf), estop_(true),
       topic_("hardware/e_stop") {
   getInput("topic", topic_);
