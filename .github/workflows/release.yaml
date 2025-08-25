@@ -15,6 +15,7 @@ jobs:
   catkin-release:
     name: Bump version
     if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
     steps:
       - name: Set bump type
         id: bump
