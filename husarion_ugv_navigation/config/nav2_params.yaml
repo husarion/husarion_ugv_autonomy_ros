@@ -233,11 +233,11 @@
 
         footprint: '[[<min_x>, <min_y>], [<min_x>, <max_y>], [<max_x>, <max_y>], [<max_x>, <min_y>]]'
 
-        plugins: [static_layer,  stvl_layer, inflation_layer]
+        plugins: [static_layer, stvl_layer, inflation_layer]
         inflation_layer:
           plugin: nav2_costmap_2d::InflationLayer
-          cost_scaling_factor: 1.5
-          inflation_radius: 5.0
+          cost_scaling_factor: 1.2
+          inflation_radius: 3.0
           inflate_around_unknown: false
           inflate_unknown: false
         static_layer:
