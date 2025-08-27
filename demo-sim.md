@@ -35,7 +35,7 @@ just start-simulation
 
 2. Open the your browser on your laptop and navigate to:
 
-    - http://localhost:8080/ui
+    - <http://localhost:8080/ui>
     - http://{ip_address}:8080/ui (devices in the same LAN)
 
 ### Step 3: Docking

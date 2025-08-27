@@ -12,7 +12,7 @@ This guide walks you through the most important steps needed to run the autonomy
 
     - Run the demo from the **User Computer** with IP address: **`10.15.20.3/24`**.
     - A LIDAR publishing either a `PointCloud2` or a `LaserScan` topic.
-    - A camera that publish RGB `Image` and coresponding `CameraInfo` topic. (Not required if docking is not used.)
+    - A camera that publish RGB `Image` and corresponding `CameraInfo` topic. (Not required if docking is not used.)
     - A static transform between the LIDAR, Camera, and robot frame. Ensure the **`frame_id`** in the published messages is connected to the robot’s `base_link`.
 
 3. **Just**
