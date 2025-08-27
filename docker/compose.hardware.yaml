@@ -23,8 +23,6 @@ services:
         use_wibotic_info:=True
         camera_image_topic:=${CAMERA_IMAGE_TOPIC:-/panther/camera/color/image_raw}
         camera_info_topic:=${CAMERA_INFO_TOPIC:-/panther/camera/color/camera_info}
-        docking_server_config_path:=/config/docking_server.yaml
-        apriltag_config_path:=/config/apriltag.yaml
         apriltag_size:=0.08
         use_sim:=False
 

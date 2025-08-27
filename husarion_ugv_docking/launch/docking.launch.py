@@ -189,7 +189,7 @@ def generate_launch_description():
         emulate_tty=True,
     )
 
-    spawn_charging_docs = IncludeLaunchDescription(
+    spawn_charging_docks = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution(
                 [
@@ -221,6 +221,6 @@ def generate_launch_description():
             apriltag_node,
             docking_manager_node,
             wibotic_connector_can,
-            spawn_charging_docs,
+            spawn_charging_docks,
         ]
     )

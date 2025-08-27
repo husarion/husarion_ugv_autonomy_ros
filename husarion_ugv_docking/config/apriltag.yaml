@@ -3,10 +3,10 @@
   ros__parameters:
     image_transport: raw
     family: 36h11
-    size: 0.06
+    size: 0.08
     profile: false
-
     max_hamming: 0
+
     detector:
       threads: 1
       decimate: 2.0
@@ -18,4 +18,4 @@
     tag:
       ids: [0, 1]
       frames: [main_apriltag_link, backup_apriltag_link]
-      sizes: [0.06, 0.06]
+      sizes: [0.08, 0.08]

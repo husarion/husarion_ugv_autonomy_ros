@@ -31,20 +31,18 @@ from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 
 
-def generate_apriltag_and_get_path(tag_id, apriltag_config_path):
+def generate_apriltag_and_get_path(tag_id, apriltag_output_dir):
     from moms_apriltag import TagGenerator2
 
-    directory = os.path.dirname(apriltag_config_path)
-
     tag_image = TagGenerator2("tag36h11").generate(tag_id, scale=1000)
-    output_path = f"{directory}/config/apriltags/tag_{tag_id}.png"
-    os.makedirs(os.path.dirname(output_path), mode=755, exist_ok=True)
+    output_path = f"{apriltag_output_dir}/tag_{tag_id}.png"
+    os.makedirs(os.path.dirname(output_path), mode=0o755, exist_ok=True)
     imageio.imwrite(output_path, tag_image)
     return output_path
 
 
-def generate_urdf(name, apriltag_id, apriltag_size, apriltag_config_path):
-    apriltag_image_path = generate_apriltag_and_get_path(apriltag_id, apriltag_config_path)
+def generate_urdf(name, apriltag_id, apriltag_size, apriltag_output_dir):
+    apriltag_image_path = generate_apriltag_and_get_path(apriltag_id, apriltag_output_dir)
 
     station_description_content = Command(
         [
@@ -71,7 +69,7 @@ def generate_urdf(name, apriltag_id, apriltag_size, apriltag_config_path):
 def launch_stations_descriptions(context, *args, **kwargs):
     apriltag_id = int(LaunchConfiguration("apriltag_id").perform(context))
     apriltag_size = LaunchConfiguration("apriltag_size").perform(context)
-    apriltag_config_path = LaunchConfiguration("apriltag_config_path").perform(context)
+    apriltag_output_dir = LaunchConfiguration("apriltag_output_dir").perform(context)
 
     docking_server_config_path = LaunchConfiguration("docking_server_config_path").perform(context)
     apriltag_size = LaunchConfiguration("apriltag_size").perform(context)
@@ -93,7 +91,7 @@ def launch_stations_descriptions(context, *args, **kwargs):
     for dock_name in docks_names:
         apriltag_id = ros_parameters[dock_name]["apriltag_id"]
         station_description_content = generate_urdf(
-            dock_name, apriltag_id, apriltag_size, apriltag_config_path
+            dock_name, apriltag_id, apriltag_size, apriltag_output_dir
         )
         station_description = {
             "robot_description": ParameterValue(station_description_content, value_type=str)
