@@ -36,7 +36,7 @@ start-hardware service="navigation docking":
     #!/bin/bash
     docker compose -f docker/compose.hardware.yaml down
     docker compose -f docker/compose.hardware.yaml pull
-    docker compose -f docker/compose.hardware.yaml up {service}
+    docker compose -f docker/compose.hardware.yaml up {{service}}
 
 
 # Start Gazebo simulator with full autonomy stack
