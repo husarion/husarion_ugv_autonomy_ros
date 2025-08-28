@@ -10,8 +10,8 @@
     undock_linear_tolerance: 0.19
     undock_angular_tolerance: 0.08
     max_retries: 3
-    base_frame: "<robot_namespace>/wibotic_receiver_link" # Distance to the dock is calculated from this frame
-    fixed_frame: "<robot_namespace>/odom"
+    base_frame: <robot_namespace>/wibotic_receiver_link # Distance to the dock is calculated from this frame
+    fixed_frame: <robot_namespace>/odom
     dock_backwards: false
     dock_prestaging_tolerance: 0.15
 
