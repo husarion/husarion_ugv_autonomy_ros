@@ -152,8 +152,8 @@
         plugins: [stvl_layer, inflation_layer]
         inflation_layer:
           plugin: nav2_costmap_2d::InflationLayer
-          cost_scaling_factor: 1.3
-          inflation_radius: 1.5
+          cost_scaling_factor: 2.0
+          inflation_radius: 2.0
 
         stvl_layer:
           plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
@@ -236,8 +236,8 @@
         plugins: [static_layer, stvl_layer, inflation_layer]
         inflation_layer:
           plugin: nav2_costmap_2d::InflationLayer
-          cost_scaling_factor: 1.0
-          inflation_radius: 3.0
+          cost_scaling_factor: 1.5
+          inflation_radius: 5.0
           inflate_around_unknown: false
           inflate_unknown: false
         static_layer:

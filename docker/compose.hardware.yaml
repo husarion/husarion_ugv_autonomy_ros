@@ -14,9 +14,7 @@ services:
     <<: *common-config
     volumes:
       - ./config:/config
-    environment:
-      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-      - CYCLONE_DDS_URI=file:///config/cyclonedds.xml
+      - ../husarion_ugv_docking:/ros2_ws/src/husarion_ugv_autonomy_ros/husarion_ugv_docking
     command: >
       ros2 launch husarion_ugv_docking docking.launch.py
         namespace:=panther
@@ -36,8 +34,7 @@ services:
     volumes:
       - ./config:/config
       - ../maps:/maps
-    environment:
-      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - ../husarion_ugv_navigation:/ros2_ws/src/husarion_ugv_autonomy_ros/husarion_ugv_navigation
     command: >
       ros2 launch husarion_ugv_navigation bringup_launch.py
         namespace:=panther
