@@ -40,7 +40,7 @@ start-hardware service="navigation docking":
 
 
 # Start Gazebo simulator with full autonomy stack
-start-simulation service="navigation docking":
+start-simulation:
     #!/bin/bash
     xhost +local:docker
     docker compose -f docker/compose.simulation.yaml down

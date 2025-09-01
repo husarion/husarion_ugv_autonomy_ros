@@ -236,7 +236,7 @@
         plugins: [static_layer, stvl_layer, inflation_layer]
         inflation_layer:
           plugin: nav2_costmap_2d::InflationLayer
-          cost_scaling_factor: 1.2
+          cost_scaling_factor: 1.0
           inflation_radius: 3.0
           inflate_around_unknown: false
           inflate_unknown: false
