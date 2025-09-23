@@ -19,7 +19,7 @@ sudo snap install just
 
 ### Step 1: Run navigation
 
-Run navigation on your laptop in `~/husarion_ugv_autonomy_ros` directory:
+Run navigation on your laptop in `husarion_ugv_autonomy_ros` directory:
 
 ```bash
 just start-simulation
