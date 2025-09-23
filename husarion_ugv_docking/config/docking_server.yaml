@@ -47,4 +47,4 @@
       v_linear_min: 0.0
       v_linear_max: 0.2
       v_angular_max: 0.15
-      use_collision_detection: true
+      use_collision_detection: false
