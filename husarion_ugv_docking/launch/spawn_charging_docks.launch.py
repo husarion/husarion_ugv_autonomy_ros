@@ -47,6 +47,7 @@ def spawn_stations(context, *args, **kwargs):
         spawn_station = Node(
             package="ros_gz_sim",
             executable="create",
+            name=[dock_name, "_station_spawner"],
             arguments=[
                 "-name",
                 [dock_name, "_station"],

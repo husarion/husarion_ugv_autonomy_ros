@@ -101,6 +101,7 @@ def generate_launch_description():
     docking_server_node = Node(
         package="opennav_docking",
         executable="opennav_docking",
+        name="docking_server",
         namespace=namespace,
         parameters=[
             namespaced_docking_server_config,
@@ -151,6 +152,19 @@ def generate_launch_description():
             "image_rect": camera_color_topic,
             "detections": "docking/april_tags",
         }.items(),
+    )
+
+    dock_database_updater = Node(
+        package="husarion_ugv_docking",
+        executable="dock_database_updater",
+        name="dock_database_updater",
+        namespace=namespace,
+        parameters=[
+            namespaced_docking_server_config,
+            {"use_sim_time": use_sim},
+        ],
+        emulate_tty=True,
+        arguments=["--ros-args", "--log-level", log_level, "--log-level", "rcl:=INFO"],
     )
 
     station_launch = IncludeLaunchDescription(
@@ -219,6 +233,7 @@ def generate_launch_description():
             docking_server_activate_node,
             dock_pose_publisher,
             apriltag_node,
+            dock_database_updater,
             docking_manager_node,
             wibotic_connector_can,
             spawn_charging_docks,

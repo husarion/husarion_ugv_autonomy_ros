@@ -26,6 +26,7 @@
       use_wibotic_info: <use_wibotic_info_param>
       wibotic_info_timeout: 1.0
 
+    dock_database_filepath: dock_database.yaml
     docks: ["main", "backup"]
     main:
       type: charging_dock

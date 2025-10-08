@@ -22,9 +22,11 @@ set(PACKAGE_DEPENDENCIES
     rclcpp_lifecycle
     sensor_msgs
     std_srvs
+    tf2
     tf2_geometry_msgs
     tf2_ros
-    wibotic_msgs)
+    wibotic_msgs
+    yaml-cpp)
 
 foreach(PACKAGE IN ITEMS ${PACKAGE_DEPENDENCIES})
   find_package(${PACKAGE} REQUIRED)
@@ -73,6 +75,12 @@ ament_target_dependencies(dock_pose_publisher ${PACKAGE_DEPENDENCIES})
 
 install(TARGETS dock_pose_publisher docking_manager_node
         DESTINATION lib/${PROJECT_NAME})
+
+add_executable(dock_database_updater src/dock_database_updater_main.cpp
+                                   src/dock_database_updater_node.cpp)
+ament_target_dependencies(dock_database_updater ${PACKAGE_DEPENDENCIES})
+target_link_libraries(dock_database_updater yaml-cpp)
+install(TARGETS dock_database_updater DESTINATION lib/${PROJECT_NAME})
 
 add_library(dock_robot_bt_node SHARED src/plugins/action/dock_robot_node.cpp)
 list(APPEND plugin_libs dock_robot_bt_node)
