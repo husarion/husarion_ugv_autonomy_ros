@@ -44,6 +44,8 @@ DockDatabaseUpdaterNode::DockDatabaseUpdaterNode(
   dock_names_ = this->get_parameter("docks").as_string_array();
   filepath_ = this->get_parameter("dock_database_filepath").as_string();
 
+  ClearDatabaseFile();
+
   for (const auto &dock_name : dock_names_) {
     std::string new_dock_pose_topic_name = dock_name + "/new_dock_pose";
 
@@ -141,6 +143,17 @@ YAML::Node DockDatabaseUpdaterNode::UpdateDockDatabase(
   yaml_dock["frame"] = pose->header.frame_id;
 
   return yaml_file;
+}
+
+void DockDatabaseUpdaterNode::ClearDatabaseFile() {
+  std::ofstream fout(filepath_, std::ofstream::out | std::ofstream::trunc);
+  if (!fout.is_open()) {
+    RCLCPP_ERROR(this->get_logger(),
+                 "Failed to open or create the dock database file: '%s'",
+                 filepath_.c_str());
+    throw std::runtime_error("Failed to open or create the dock database file");
+  }
+  fout.close();
 }
 
 bool DockDatabaseUpdaterNode::UpdateDatabaseFile(

@@ -38,9 +38,12 @@ public:
       const std::string &node_name,
       const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
 
-private:
+protected:
   void PoseCallback(const std::string &dock_name, const std::string &dock_type,
                     const PoseStampedMsg::SharedPtr msg);
+
+  void ClearDatabaseFile();
+
   bool UpdateDatabaseFile(const std::string &dock_name,
                           const std::string &dock_type,
                           const PoseStampedMsg::SharedPtr pose);
