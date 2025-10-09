@@ -15,6 +15,7 @@ The package contains a `ChargingDock` plugin for the [opennav_docking](https://g
 
 - `DockPosePublisherNode`: A lifecycle node listens to `tf` and republishes position of `dock_pose` in the fixed frame when it is activated.
 - `ChargingDock`:  A plugin for a Panther robot what is responsible for a charger service.
+- `DockDatabaseUpdater`: Listens to new poses for docking stations and reloads the database of `docking_server`.
 
 ### DockPosePublisherNode
 
@@ -56,6 +57,24 @@ The package contains a `ChargingDock` plugin for the [opennav_docking](https://g
 - `<dock_name>.apriltag_id` [*int*, default: **0**]: AprilTag ID of a dock.
 - `<dock_name>.dock_frame` [*string*, default: **main_wibotic_transmitter_link**]: A frame id to compare with fixed frame if docked.
 - `<dock_name>.pose` [*list*, default: **[0.0, 0.0, 0.0]**]: A pose of a dock on the map. If the simulation is used a dock is spawned in this pose.
+
+### DockDatabaseUpdater
+
+#### Subscribers
+
+- `<dock_name>/new_dock_pose` [*geometry_msgs/PoseStamped*]: A new pose for a dock with name `dock_name`.
+
+#### Service clients
+
+- `docking_server/reload_database` [*nav2_msgs/ReloadDockDatabase]: A service from `docking_server` to reload a database from yaml file.
+
+#### Parameters
+
+- `docks` [*list of strings*, default: **["main"]**]: List of dock names to be managed.
+- `dock_database_filepath` [*string*, default: **"dock_database.yaml"**]: Path to the new YAML file containing dock database information.
+- `<dock_name>.type` [*string*, default: **charging_dock**]: Type of the dock with the given name.
+- `<dock_name>.pose` [*list of doubles*, default: **[0.0, 0.0, 0.0]**]: Pose of the dock with the given name.
+- `<dock_name>.frame` [*string*, default: **main_wibotic_transmitter_link**]: Frame ID associated with the dock.
 
 <!-- Override description
 ros2 launch panther_description overwrite_robot_description.launch.py controller_config_path:=$(pwd)/panther_ros/panther_description/config/components.yaml namespace:=panther
