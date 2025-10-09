@@ -24,160 +24,162 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <rclcpp/rclcpp.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/utils.h>
-#include <rclcpp/rclcpp.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav2_msgs/srv/reload_dock_database.hpp>
 
-namespace husarion_ugv_docking
-{
+namespace husarion_ugv_docking {
 
-  DockDatabaseUpdaterNode::DockDatabaseUpdaterNode(
-      const std::string &node_name, const rclcpp::NodeOptions &options)
-      : Node(node_name, options)
-  {
-    this->declare_parameter<std::vector<std::string>>("docks", {"main"});
-    this->declare_parameter<std::string>("dock_database_filepath", "dock_database.yaml");
+DockDatabaseUpdaterNode::DockDatabaseUpdaterNode(
+    const std::string &node_name, const rclcpp::NodeOptions &options)
+    : Node(node_name, options) {
+  this->declare_parameter<std::vector<std::string>>("docks", {"main"});
+  this->declare_parameter<std::string>("dock_database_filepath",
+                                       "dock_database.yaml");
 
-    dock_names_ = this->get_parameter("docks").as_string_array();
-    filepath_ = this->get_parameter("dock_database_filepath").as_string();
+  dock_names_ = this->get_parameter("docks").as_string_array();
+  filepath_ = this->get_parameter("dock_database_filepath").as_string();
 
-    for (const auto &dock_name : dock_names_)
-    {
-      std::string new_dock_pose_topic_name = dock_name + "/new_dock_pose";
+  for (const auto &dock_name : dock_names_) {
+    std::string new_dock_pose_topic_name = dock_name + "/new_dock_pose";
 
-      this->declare_parameter<std::string>(dock_name + ".type", "charging_dock");
-      this->declare_parameter<std::vector<double>>(dock_name + ".pose", {0.0, 0.0, 0.0});
-      this->declare_parameter<std::string>(dock_name + ".frame", "map");
+    this->declare_parameter<std::string>(dock_name + ".type", "charging_dock");
+    this->declare_parameter<std::vector<double>>(dock_name + ".pose",
+                                                 {0.0, 0.0, 0.0});
+    this->declare_parameter<std::string>(dock_name + ".frame", "map");
 
-      std::string dock_type = this->get_parameter(dock_name + ".type").as_string();
-      std::vector<double> dock_pose = this->get_parameter(dock_name + ".pose").as_double_array();
-      std::string frame = this->get_parameter(dock_name + ".frame").as_string();
-      if (dock_pose.size() != 3)
-      {
-        RCLCPP_ERROR(this->get_logger(), "Invalid pose parameter for dock '%s'", dock_name.c_str());
-        throw std::runtime_error("Invalid pose parameter");
-      }
-
-      PoseStampedMsg::SharedPtr initial_pose = CreateInitialPose(frame, dock_pose);
-
-      if (!UpdateDatabaseFile(dock_name, dock_type, initial_pose))
-      {
-        RCLCPP_ERROR(this->get_logger(), "Failed to set initial pose in the dock database file.");
-        continue;
-      }
-
-      auto sub = this->create_subscription<PoseStampedMsg>(
-          new_dock_pose_topic_name, 10,
-          [this, dock_name, dock_type](const PoseStampedMsg::SharedPtr msg)
-          {
-            PoseCallback(dock_name, dock_type, msg);
-          });
-
-      subscriptions_.push_back(sub);
-      RCLCPP_INFO(this->get_logger(), "Subscribed to pose topic: '%s' for dock type '%s'", new_dock_pose_topic_name.c_str(), dock_type.c_str());
+    std::string dock_type =
+        this->get_parameter(dock_name + ".type").as_string();
+    std::vector<double> dock_pose =
+        this->get_parameter(dock_name + ".pose").as_double_array();
+    std::string frame = this->get_parameter(dock_name + ".frame").as_string();
+    if (dock_pose.size() != 3) {
+      RCLCPP_ERROR(this->get_logger(), "Invalid pose parameter for dock '%s'",
+                   dock_name.c_str());
+      throw std::runtime_error("Invalid pose parameter");
     }
 
-    auto qos = rclcpp::QoS(rclcpp::ServicesQoS());
+    PoseStampedMsg::SharedPtr initial_pose =
+        CreateInitialPose(frame, dock_pose);
 
-    reload_dock_database_client_ =
-        this->create_client<RealodDockDatabaseSrv>("docking_server/reload_database", qos, client_cb_group_);
+    if (!UpdateDatabaseFile(dock_name, dock_type, initial_pose)) {
+      RCLCPP_ERROR(this->get_logger(),
+                   "Failed to set initial pose in the dock database file.");
+      continue;
+    }
 
-    RCLCPP_INFO(this->get_logger(), "Node started.");
+    auto sub = this->create_subscription<PoseStampedMsg>(
+        new_dock_pose_topic_name, 10,
+        [this, dock_name, dock_type](const PoseStampedMsg::SharedPtr msg) {
+          PoseCallback(dock_name, dock_type, msg);
+        });
+
+    subscriptions_.push_back(sub);
+    RCLCPP_INFO(this->get_logger(),
+                "Subscribed to pose topic: '%s' for dock type '%s'",
+                new_dock_pose_topic_name.c_str(), dock_type.c_str());
   }
 
-  void DockDatabaseUpdaterNode::PoseCallback(const std::string &dock_name, const std::string &dock_type, const PoseStampedMsg::SharedPtr msg)
-  {
-    RCLCPP_INFO(this->get_logger(), "Received pose.");
+  auto qos = rclcpp::QoS(rclcpp::ServicesQoS());
 
-    using namespace std::chrono_literals;
-    if (!reload_dock_database_client_->wait_for_service(1s))
-    {
-      RCLCPP_WARN(this->get_logger(), "Service not available, updating canceled.");
-      return;
-    }
+  reload_dock_database_client_ = this->create_client<RealodDockDatabaseSrv>(
+      "docking_server/reload_database", qos, client_cb_group_);
 
-    if (!UpdateDatabaseFile(dock_name, dock_type, msg))
-    {
-      RCLCPP_ERROR(this->get_logger(), "Failed to update dock database file.");
-      return;
-    }
+  RCLCPP_INFO(this->get_logger(), "Node started.");
+}
 
-    auto request = std::make_shared<RealodDockDatabaseSrv::Request>();
-    request->filepath = filepath_;
+void DockDatabaseUpdaterNode::PoseCallback(
+    const std::string &dock_name, const std::string &dock_type,
+    const PoseStampedMsg::SharedPtr msg) {
+  RCLCPP_INFO(this->get_logger(), "Received pose.");
 
-    reload_dock_database_client_->async_send_request(request);
-
-    RCLCPP_INFO(this->get_logger(), "Sent request to reload dock database.");
+  using namespace std::chrono_literals;
+  if (!reload_dock_database_client_->wait_for_service(1s)) {
+    RCLCPP_WARN(this->get_logger(),
+                "Service not available, updating canceled.");
+    return;
   }
 
-  YAML::Node DockDatabaseUpdaterNode::UpdateDockDatabase(const std::string &dock_name, const std::string &dock_type, const PoseStampedMsg::SharedPtr pose)
-  {
-    auto yaml_docks = yaml_file["docks"];
-    auto yaml_dock = yaml_docks[dock_name];
-
-    yaml_dock["type"] = dock_type;
-
-    tf2::Quaternion q(
-        pose->pose.orientation.x, pose->pose.orientation.y, pose->pose.orientation.z,
-        pose->pose.orientation.w);
-
-    double yaw = tf2::getYaw(q);
-    std::array<double, 3> pose_yaml = {pose->pose.position.x, pose->pose.position.y, yaw};
-    yaml_dock["pose"] = pose_yaml;
-
-    std::string ns = this->get_namespace();
-    if (ns != "/")
-    {
-      ns = ns.substr(1);
-    }
-
-    yaml_dock["frame"] = pose->header.frame_id;
-
-    return yaml_file;
+  if (!UpdateDatabaseFile(dock_name, dock_type, msg)) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to update dock database file.");
+    return;
   }
 
-  bool DockDatabaseUpdaterNode::UpdateDatabaseFile(const std::string &dock_name, const std::string &dock_type, const PoseStampedMsg::SharedPtr pose)
-  {
-    try
-    {
-      yaml_file = UpdateDockDatabase(dock_name, dock_type, pose);
+  auto request = std::make_shared<RealodDockDatabaseSrv::Request>();
+  request->filepath = filepath_;
 
-      std::ofstream fout(filepath_);
-      fout << yaml_file;
-      fout.close();
+  reload_dock_database_client_->async_send_request(request);
 
-      RCLCPP_INFO(this->get_logger(), "Dock database file updated: '%s'", filepath_.c_str());
-      return true;
-    }
-    catch (const std::exception &e)
-    {
-      RCLCPP_ERROR(this->get_logger(), "Exception while updating dock database file: %s", e.what());
-      return false;
-    }
+  RCLCPP_INFO(this->get_logger(), "Sent request to reload dock database.");
+}
+
+YAML::Node DockDatabaseUpdaterNode::UpdateDockDatabase(
+    const std::string &dock_name, const std::string &dock_type,
+    const PoseStampedMsg::SharedPtr pose) {
+  auto yaml_docks = yaml_file["docks"];
+  auto yaml_dock = yaml_docks[dock_name];
+
+  yaml_dock["type"] = dock_type;
+
+  tf2::Quaternion q(pose->pose.orientation.x, pose->pose.orientation.y,
+                    pose->pose.orientation.z, pose->pose.orientation.w);
+
+  double yaw = tf2::getYaw(q);
+  std::array<double, 3> pose_yaml = {pose->pose.position.x,
+                                     pose->pose.position.y, yaw};
+  yaml_dock["pose"] = pose_yaml;
+
+  std::string ns = this->get_namespace();
+  if (ns != "/") {
+    ns = ns.substr(1);
   }
 
-  PoseStampedMsg::SharedPtr DockDatabaseUpdaterNode::CreateInitialPose(
-      const std::string &frame, const std::vector<double> &pose_vec)
-  {
-    auto pose_msg = std::make_shared<PoseStampedMsg>();
-    pose_msg->header.frame_id = frame;
-    pose_msg->header.stamp = this->now();
+  yaml_dock["frame"] = pose->header.frame_id;
 
-    pose_msg->pose.position.x = pose_vec[0];
-    pose_msg->pose.position.y = pose_vec[1];
-    pose_msg->pose.position.z = 0.0;
+  return yaml_file;
+}
 
-    tf2::Quaternion q;
-    q.setRPY(0, 0, pose_vec[2]);
-    pose_msg->pose.orientation.x = q.x();
-    pose_msg->pose.orientation.y = q.y();
-    pose_msg->pose.orientation.z = q.z();
-    pose_msg->pose.orientation.w = q.w();
+bool DockDatabaseUpdaterNode::UpdateDatabaseFile(
+    const std::string &dock_name, const std::string &dock_type,
+    const PoseStampedMsg::SharedPtr pose) {
+  try {
+    yaml_file = UpdateDockDatabase(dock_name, dock_type, pose);
 
-    return pose_msg;
+    std::ofstream fout(filepath_);
+    fout << yaml_file;
+    fout.close();
+
+    RCLCPP_INFO(this->get_logger(), "Dock database file updated: '%s'",
+                filepath_.c_str());
+    return true;
+  } catch (const std::exception &e) {
+    RCLCPP_ERROR(this->get_logger(),
+                 "Exception while updating dock database file: %s", e.what());
+    return false;
   }
+}
+
+PoseStampedMsg::SharedPtr DockDatabaseUpdaterNode::CreateInitialPose(
+    const std::string &frame, const std::vector<double> &pose_vec) {
+  auto pose_msg = std::make_shared<PoseStampedMsg>();
+  pose_msg->header.frame_id = frame;
+  pose_msg->header.stamp = this->now();
+
+  pose_msg->pose.position.x = pose_vec[0];
+  pose_msg->pose.position.y = pose_vec[1];
+  pose_msg->pose.position.z = 0.0;
+
+  tf2::Quaternion q;
+  q.setRPY(0, 0, pose_vec[2]);
+  pose_msg->pose.orientation.x = q.x();
+  pose_msg->pose.orientation.y = q.y();
+  pose_msg->pose.orientation.z = q.z();
+  pose_msg->pose.orientation.w = q.w();
+
+  return pose_msg;
+}
 } // namespace husarion_ugv_docking

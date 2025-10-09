@@ -77,7 +77,7 @@ install(TARGETS dock_pose_publisher docking_manager_node
         DESTINATION lib/${PROJECT_NAME})
 
 add_executable(dock_database_updater src/dock_database_updater_main.cpp
-                                   src/dock_database_updater_node.cpp)
+                                     src/dock_database_updater_node.cpp)
 ament_target_dependencies(dock_database_updater ${PACKAGE_DEPENDENCIES})
 target_link_libraries(dock_database_updater yaml-cpp)
 install(TARGETS dock_database_updater DESTINATION lib/${PROJECT_NAME})

@@ -27,32 +27,37 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav2_msgs/srv/reload_dock_database.hpp>
 
-namespace husarion_ugv_docking
-{
+namespace husarion_ugv_docking {
 
-  using PoseStampedMsg = geometry_msgs::msg::PoseStamped;
-  using RealodDockDatabaseSrv = nav2_msgs::srv::ReloadDockDatabase;
+using PoseStampedMsg = geometry_msgs::msg::PoseStamped;
+using RealodDockDatabaseSrv = nav2_msgs::srv::ReloadDockDatabase;
 
-  class DockDatabaseUpdaterNode : public rclcpp::Node
-  {
-  public:
-    DockDatabaseUpdaterNode(
-        const std::string &node_name, const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
+class DockDatabaseUpdaterNode : public rclcpp::Node {
+public:
+  DockDatabaseUpdaterNode(
+      const std::string &node_name,
+      const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
 
-  private:
-    void PoseCallback(const std::string &dock_name, const std::string &dock_type, const PoseStampedMsg::SharedPtr msg);
-    bool UpdateDatabaseFile(const std::string &dock_name, const std::string &dock_type, const PoseStampedMsg::SharedPtr pose);
-    YAML::Node UpdateDockDatabase(const std::string &dock_name, const std::string &dock_type, const PoseStampedMsg::SharedPtr pose);
-    PoseStampedMsg::SharedPtr CreateInitialPose(
-        const std::string &frame, const std::vector<double> &pose_vec);
-    std::vector<rclcpp::Subscription<PoseStampedMsg>::SharedPtr> subscriptions_;
-    rclcpp::CallbackGroup::SharedPtr client_cb_group_;
-    rclcpp::Client<RealodDockDatabaseSrv>::SharedPtr reload_dock_database_client_;
+private:
+  void PoseCallback(const std::string &dock_name, const std::string &dock_type,
+                    const PoseStampedMsg::SharedPtr msg);
+  bool UpdateDatabaseFile(const std::string &dock_name,
+                          const std::string &dock_type,
+                          const PoseStampedMsg::SharedPtr pose);
+  YAML::Node UpdateDockDatabase(const std::string &dock_name,
+                                const std::string &dock_type,
+                                const PoseStampedMsg::SharedPtr pose);
+  PoseStampedMsg::SharedPtr
+  CreateInitialPose(const std::string &frame,
+                    const std::vector<double> &pose_vec);
+  std::vector<rclcpp::Subscription<PoseStampedMsg>::SharedPtr> subscriptions_;
+  rclcpp::CallbackGroup::SharedPtr client_cb_group_;
+  rclcpp::Client<RealodDockDatabaseSrv>::SharedPtr reload_dock_database_client_;
 
-    YAML::Node yaml_file;
-    std::vector<std::string> dock_names_;
-    std::string filepath_;
-  };
+  YAML::Node yaml_file;
+  std::vector<std::string> dock_names_;
+  std::string filepath_;
+};
 
 } // namespace husarion_ugv_docking
 
