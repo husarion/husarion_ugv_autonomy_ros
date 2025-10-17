@@ -10,11 +10,13 @@ The package contains a `ChargingDock` plugin for the [opennav_docking](https://g
 ## Configuration Files
 
 - [`husarion_ugv_docking_server.yaml`](./config/docking_server.yaml): Defines parameters for a `docking_server` and a `ChargingDock` plugin. Defines poses where charging docks are spawned in the Gazebo.
+- `send_to_dock.yaml`: Defines parameters used by `send_to_dock_node` for docking action. 
 
 ## ROS Nodes
 
 - `DockPosePublisherNode`: A lifecycle node listens to `tf` and republishes position of `dock_pose` in the fixed frame when it is activated.
 - `ChargingDock`:  A plugin for a Panther robot what is responsible for a charger service.
+- `SendToDockNode`: A node which creates service server SetBool `send_robot_to_dock` and based on a request value sent (true/false) it either sends a robot to a dock or stops the docking action.
 
 ### DockPosePublisherNode
 
@@ -56,6 +58,25 @@ The package contains a `ChargingDock` plugin for the [opennav_docking](https://g
 - `<dock_name>.apriltag_id` [*int*, default: **0**]: AprilTag ID of a dock.
 - `<dock_name>.dock_frame` [*string*, default: **main_wibotic_transmitter_link**]: A frame id to compare with fixed frame if docked.
 - `<dock_name>.pose` [*list*, default: **[0.0, 0.0, 0.0]**]: A pose of a dock on the map. If the simulation is used a dock is spawned in this pose.
+
+
+### SendToDockNode
+
+#### Service server
+
+- `send_robot_to_dock` [*std_srvs/SetBool*]: Receives requests for docking or stopping the docking action.
+  - If *std_srvs/SetBool: true* then the node sends request of docking with specified parameters to the action client.
+  - If *std_srvs/SetBool: false* then the node sends request of cancelling current docking action.
+
+#### Action client
+
+- `dock_robot` [*nav2_msgs/DockRobot*]: Docks robot or stops docking depending on the request sent by the service server `send_robot_to_dock`.
+
+#### Parameters
+
+- `dock_type` [*string*, default: "charging_dock"]: Type of the dock the robot navigates to.
+- `navigate_to_staging_pose` [*bool*, default: true]: Whether the robot has to use navigation stack to dock or not.
+- `dock_id` [*string*, default: "main"]: Name of the docking station.
 
 <!-- Override description
 ros2 launch panther_description overwrite_robot_description.launch.py controller_config_path:=$(pwd)/panther_ros/panther_description/config/components.yaml namespace:=panther

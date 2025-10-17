@@ -30,6 +30,7 @@
   <depend>pluginlib</depend>
   <depend>python3-pip</depend>
   <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>ros_gz_sim</depend>
   <depend>sensor_msgs</depend>
