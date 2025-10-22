@@ -27,22 +27,23 @@ using ClientGoalHandleDockRobot = rclcpp_action::ClientGoalHandle<DockRobot>;
 using ServerGoalHandleDockRobot = rclcpp_action::ServerGoalHandle<DockRobot>;
 using SetBoolSrv = std_srvs::srv::SetBool;
 
-class SendToDockNodeWrapper : public send_to_dock::SendToDockNode {
+class SendToDockNodeWrapper : public husarion_ugv_docking::SendToDockNode {
 public:
   SendToDockNodeWrapper()
-      : send_to_dock::SendToDockNode("test_send_to_dock") {};
+      : husarion_ugv_docking::SendToDockNode("test_send_to_dock") {};
 
   void HandleService(const SetBoolSrv::Request::SharedPtr request,
                      SetBoolSrv::Response::SharedPtr response) {
-    return send_to_dock::SendToDockNode::HandleService(request, response);
+    return husarion_ugv_docking::SendToDockNode::HandleService(request,
+                                                               response);
   }
 
   ClientGoalHandleDockRobot::SharedPtr GetActiveGoal() {
-    return send_to_dock::SendToDockNode::active_goal_;
+    return husarion_ugv_docking::SendToDockNode::active_goal_;
   }
 
   void SetActiveGoal() {
-    send_to_dock::SendToDockNode::active_goal_ =
+    husarion_ugv_docking::SendToDockNode::active_goal_ =
         ClientGoalHandleDockRobot::SharedPtr(
             reinterpret_cast<ClientGoalHandleDockRobot *>(0x1), [](auto *) {});
   }

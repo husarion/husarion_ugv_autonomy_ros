@@ -10,7 +10,7 @@ The package contains a `ChargingDock` plugin for the [opennav_docking](https://g
 ## Configuration Files
 
 - [`husarion_ugv_docking_server.yaml`](./config/docking_server.yaml): Defines parameters for a `docking_server` and a `ChargingDock` plugin. Defines poses where charging docks are spawned in the Gazebo.
-- `send_to_dock.yaml`: Defines parameters used by `send_to_dock_node` for docking action.
+- [`send_to_dock.yaml`](./config/send_to_dock.yaml): Defines parameters used by `send_to_dock_node` for docking action.
 
 ## ROS Nodes
 

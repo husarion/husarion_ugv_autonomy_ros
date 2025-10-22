@@ -198,6 +198,15 @@ def generate_launch_description():
         emulate_tty=True,
     )
 
+    send_to_dock_node = Node(
+        package="husarion_ugv_docking",
+        executable="send_to_dock_node",
+        name="send_to_dock",
+        parameters=[send_to_dock_config_path],
+        namespace=namespace,
+        emulate_tty=True,
+    )
+
     spawn_charging_docks = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution(
@@ -212,15 +221,6 @@ def generate_launch_description():
             "namespace": namespace,
         }.items(),
         condition=IfCondition(use_sim),
-    )
-
-    send_to_dock_node = Node(
-        package="husarion_ugv_docking",
-        executable="send_to_dock_node",
-        name="send_to_dock",
-        parameters=[send_to_dock_config_path],
-        namespace=namespace,
-        emulate_tty=True,
     )
 
     return LaunchDescription(

@@ -23,7 +23,7 @@
 #include <nav2_msgs/action/dock_robot.hpp>
 #include <std_srvs/srv/set_bool.hpp>
 
-namespace send_to_dock {
+namespace husarion_ugv_docking {
 using SetBoolSrv = std_srvs::srv::SetBool;
 using DockRobot = nav2_msgs::action::DockRobot;
 using GoalHandleDockRobot = rclcpp_action::ClientGoalHandle<DockRobot>;
@@ -52,5 +52,5 @@ protected:
   bool navigate_to_staging_pose_;
   std::string dock_id_;
 };
-} // namespace send_to_dock
+} // namespace husarion_ugv_docking
 #endif // HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_SEND_TO_DOCK_NODE_HPP_

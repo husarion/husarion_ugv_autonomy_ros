@@ -14,7 +14,7 @@
 
 #include "husarion_ugv_docking/send_to_dock_node.hpp"
 
-namespace send_to_dock {
+namespace husarion_ugv_docking {
 
 SendToDockNode::SendToDockNode(const std::string &node_name,
                                const rclcpp::NodeOptions &options)
@@ -143,4 +143,4 @@ void SendToDockNode::HandleService(const SetBoolSrv::Request::SharedPtr request,
   response->message = "No active docking goal to cancel.";
   RCLCPP_WARN(this->get_logger(), "No active docking goal to cancel.");
 }
-} // namespace send_to_dock
+} // namespace husarion_ugv_docking
