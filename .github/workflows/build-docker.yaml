@@ -58,7 +58,7 @@ on:
 
 
 jobs:
-  build:
+  build-amd:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -78,7 +78,34 @@ jobs:
           repo_name: husarion-ugv-autonomy
           build_type: ${{ inputs.build_type }}
           ros_distro: ${{ inputs.target_distro }}
-          platforms: linux/amd64, linux/arm64
+          platforms: linux/amd64
+          # variables important only for stable release
+          target_distro: ${{ inputs.target_distro }}
+          target_release: ${{ inputs.target_release }}
+          target_date: ${{ inputs.target_date }}
+
+
+  build-arm:
+    runs-on: ubuntu-24.04-arm64
+    strategy:
+      fail-fast: false
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        uses: husarion-ci/ros-docker-img-action@v0.8
+        with:
+          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
+          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+          dockerfile: docker/Dockerfile
+          main_branch_name: ros2
+          repo_name: husarion-ugv-autonomy
+          build_type: ${{ inputs.build_type }}
+          ros_distro: ${{ inputs.target_distro }}
+          platforms: linux/arm64
           # variables important only for stable release
           target_distro: ${{ inputs.target_distro }}
           target_release: ${{ inputs.target_release }}
