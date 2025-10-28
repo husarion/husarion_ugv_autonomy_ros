@@ -77,6 +77,7 @@ The package contains a `ChargingDock` plugin for the [opennav_docking](https://g
 - `<dock_name>.type` [*string*, default: **charging_dock**]: Type of the dock with the given name.
 - `<dock_name>.pose` [*list of doubles*, default: **[0.0, 0.0, 0.0]**]: Pose of the dock with the given name.
 - `<dock_name>.frame` [*string*, default: **main_wibotic_transmitter_link**]: Frame ID associated with the dock.
+
 ### SendToDockNode
 
 #### Service server

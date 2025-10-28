@@ -159,10 +159,11 @@ bool DockDatabaseUpdaterNode::UpdateDatabaseFile(
 
     std::ofstream fout(filepath_);
     if (!fout.is_open()) {
-     RCLCPP_ERROR(this->get_logger(),
-                 "Failed to open or create the dock database file: '%s'",
-                 filepath_.c_str());
-      throw std::runtime_error("Failed to open or create the dock database file");
+      RCLCPP_ERROR(this->get_logger(),
+                   "Failed to open or create the dock database file: '%s'",
+                   filepath_.c_str());
+      throw std::runtime_error(
+          "Failed to open or create the dock database file");
     }
 
     fout << yaml_file_;

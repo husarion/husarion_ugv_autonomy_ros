@@ -146,14 +146,14 @@ if(BUILD_TESTING)
 
   ament_add_gtest(
     ${PROJECT_NAME}_test_dock_database_updater
-    test/unit/test_dock_database_updater.cpp src/dock_database_updater_node.cpp )
+    test/unit/test_dock_database_updater.cpp src/dock_database_updater_node.cpp)
   target_link_libraries(${PROJECT_NAME}_test_dock_database_updater yaml-cpp)
   target_include_directories(
     ${PROJECT_NAME}_test_dock_database_updater
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
            $<INSTALL_INTERFACE:include>)
   ament_target_dependencies(${PROJECT_NAME}_test_dock_database_updater
-  ${PACKAGE_DEPENDENCIES})
+                            ${PACKAGE_DEPENDENCIES})
 
   ament_add_gtest(
     ${PROJECT_NAME}_test_send_to_dock_node test/unit/test_send_to_dock_node.cpp
