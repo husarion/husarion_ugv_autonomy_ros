@@ -1,0 +1,6 @@
+/**:
+  send_to_dock_node:
+    ros__parameters:
+      dock_type: charging_dock
+      navigate_to_staging_pose: true
+      dock_id: main

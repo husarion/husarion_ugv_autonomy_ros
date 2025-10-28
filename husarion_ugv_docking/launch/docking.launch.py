@@ -98,6 +98,15 @@ def generate_launch_description():
         },
     )
 
+    send_to_dock_config_path = LaunchConfiguration("send_to_dock_config_path")
+    declare_send_to_dock_config_path = DeclareLaunchArgument(
+        "send_to_dock_config_path",
+        default_value=PathJoinSubstitution(
+            [husarion_ugv_docking_dir, "config", "send_to_dock.yaml"]
+        ),
+        description="Specify path to configuration file for send robot to dock service",
+    )
+
     docking_server_node = Node(
         package="opennav_docking",
         executable="opennav_docking",
@@ -203,6 +212,15 @@ def generate_launch_description():
         emulate_tty=True,
     )
 
+    send_to_dock_node = Node(
+        package="husarion_ugv_docking",
+        executable="send_to_dock_node",
+        name="send_to_dock",
+        parameters=[send_to_dock_config_path],
+        namespace=namespace,
+        emulate_tty=True,
+    )
+
     spawn_charging_docks = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution(
@@ -227,6 +245,7 @@ def generate_launch_description():
             declare_camera_info_topic_arg,
             declare_docking_server_config_path_arg,
             declare_log_level,
+            declare_send_to_dock_config_path,
             declare_use_wibotic_info_arg,
             station_launch,
             docking_server_node,
@@ -236,6 +255,7 @@ def generate_launch_description():
             dock_database_updater,
             docking_manager_node,
             wibotic_connector_can,
+            send_to_dock_node,
             spawn_charging_docks,
         ]
     )
