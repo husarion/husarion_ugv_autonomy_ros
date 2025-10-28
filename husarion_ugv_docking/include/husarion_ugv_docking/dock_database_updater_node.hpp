@@ -30,7 +30,7 @@
 namespace husarion_ugv_docking {
 
 using PoseStampedMsg = geometry_msgs::msg::PoseStamped;
-using RealodDockDatabaseSrv = nav2_msgs::srv::ReloadDockDatabase;
+using ReloadDockDatabaseSrv = nav2_msgs::srv::ReloadDockDatabase;
 
 class DockDatabaseUpdaterNode : public rclcpp::Node {
 public:
@@ -55,9 +55,9 @@ protected:
                     const std::vector<double> &pose_vec);
   std::vector<rclcpp::Subscription<PoseStampedMsg>::SharedPtr> subscriptions_;
   rclcpp::CallbackGroup::SharedPtr client_cb_group_;
-  rclcpp::Client<RealodDockDatabaseSrv>::SharedPtr reload_dock_database_client_;
+  rclcpp::Client<ReloadDockDatabaseSrv>::SharedPtr reload_dock_database_client_;
 
-  YAML::Node yaml_file;
+  YAML::Node yaml_file_;
   std::vector<std::string> dock_names_;
   std::string filepath_;
 };

@@ -88,7 +88,7 @@ DockDatabaseUpdaterNode::DockDatabaseUpdaterNode(
 
   auto qos = rclcpp::QoS(rclcpp::ServicesQoS());
 
-  reload_dock_database_client_ = this->create_client<RealodDockDatabaseSrv>(
+  reload_dock_database_client_ = this->create_client<ReloadDockDatabaseSrv>(
       "docking_server/reload_database", qos, client_cb_group_);
 
   RCLCPP_INFO(this->get_logger(), "Node started.");
@@ -111,7 +111,7 @@ void DockDatabaseUpdaterNode::PoseCallback(
     return;
   }
 
-  auto request = std::make_shared<RealodDockDatabaseSrv::Request>();
+  auto request = std::make_shared<ReloadDockDatabaseSrv::Request>();
   request->filepath = filepath_;
 
   reload_dock_database_client_->async_send_request(request);
@@ -122,6 +122,7 @@ void DockDatabaseUpdaterNode::PoseCallback(
 YAML::Node DockDatabaseUpdaterNode::UpdateDockDatabase(
     const std::string &dock_name, const std::string &dock_type,
     const PoseStampedMsg::SharedPtr pose) {
+  YAML::Node yaml_file;
   auto yaml_docks = yaml_file["docks"];
   auto yaml_dock = yaml_docks[dock_name];
 
@@ -134,12 +135,6 @@ YAML::Node DockDatabaseUpdaterNode::UpdateDockDatabase(
   std::array<double, 3> pose_yaml = {pose->pose.position.x,
                                      pose->pose.position.y, yaw};
   yaml_dock["pose"] = pose_yaml;
-
-  std::string ns = this->get_namespace();
-  if (ns != "/") {
-    ns = ns.substr(1);
-  }
-
   yaml_dock["frame"] = pose->header.frame_id;
 
   return yaml_file;
@@ -160,10 +155,17 @@ bool DockDatabaseUpdaterNode::UpdateDatabaseFile(
     const std::string &dock_name, const std::string &dock_type,
     const PoseStampedMsg::SharedPtr pose) {
   try {
-    yaml_file = UpdateDockDatabase(dock_name, dock_type, pose);
+    yaml_file_ = UpdateDockDatabase(dock_name, dock_type, pose);
 
     std::ofstream fout(filepath_);
-    fout << yaml_file;
+    if (!fout.is_open()) {
+     RCLCPP_ERROR(this->get_logger(),
+                 "Failed to open or create the dock database file: '%s'",
+                 filepath_.c_str());
+      throw std::runtime_error("Failed to open or create the dock database file");
+    }
+
+    fout << yaml_file_;
     fout.close();
 
     RCLCPP_INFO(this->get_logger(), "Dock database file updated: '%s'",
