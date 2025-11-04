@@ -37,6 +37,7 @@ export CAMERA_IMAGE_TOPIC={camera_image_topic} # absolute camera rgb image topic
 export CAMERA_INFO_TOPIC={camera_info_topic} # absolute camera info topic (e.g. /camera/camera_info)
 export SLAM=True # set False if you already have a map
 export ROBOT_MODEL=panther # set to 'lynx' if using Husarion UGV Lynx
+export ROBOT_NAMESPACE=panther # set to 'lynx' if using Husarion UGV Lynx
 ```
 
 ### Step 2: Start navigation

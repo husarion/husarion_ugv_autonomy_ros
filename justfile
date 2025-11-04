@@ -52,7 +52,7 @@ start-visualization: check-husarion-webui
     #!/bin/bash
     sudo cp foxglove-layout.json /var/snap/husarion-webui/common/foxglove-husarion-ugv-navigation.json
     sudo snap set husarion-webui webui.layout=husarion-ugv-navigation
-    sudo snap set husarion-webui ros.namespace=panther
+    sudo snap set husarion-webui ros.namespace=${ROBOT_NAMESPACE:-panther}
     sudo snap set husarion-webui ros.transport=rmw_cyclonedds_cpp
     sudo husarion-webui.start
 
@@ -69,20 +69,20 @@ stop-visualization: check-husarion-webui
 dock DOCK_NAME:
     #!/bin/bash
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /panther/dock_robot nav2_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: true, dock_id: {{DOCK_NAME}} }\""
+     "source install/setup.bash && ros2 action send_goal /${ROBOT_NAMESPACE:-panther}/dock_robot nav2_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: true, dock_id: {{DOCK_NAME}} }\""
 
 # Dock Husarion UGV to the charging dock without using navigation stack
 dock-direct DOCK_NAME:
     #!/bin/bash
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /panther/dock_robot nav2_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: false, dock_id: {{DOCK_NAME}} }\""
+     "source install/setup.bash && ros2 action send_goal /${ROBOT_NAMESPACE:-panther}/dock_robot nav2_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: false, dock_id: {{DOCK_NAME}} }\""
 
 
 # Undock Husarion UGV from the charging dock
 undock:
     #!/bin/bash
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /panther/undock_robot nav2_msgs/action/UndockRobot \" {  dock_type: charging_dock }\""
+     "source install/setup.bash && ros2 action send_goal /${ROBOT_NAMESPACE:-panther}/undock_robot nav2_msgs/action/UndockRobot \" {  dock_type: charging_dock }\""
 
 setup-os:
     bash docker/setup_os.sh
