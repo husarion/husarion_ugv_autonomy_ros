@@ -58,13 +58,26 @@ on:
 
 
 jobs:
-  build-amd:
+  build:
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build Docker Image (AMD64)
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 35000
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+
+      - name: Build Docker Image
         uses: husarion-ci/ros-docker-img-action@v0.8
         with:
           dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -74,54 +87,8 @@ jobs:
           repo_name: husarion-ugv-autonomy
           build_type: ${{ inputs.build_type }}
           ros_distro: ${{ inputs.target_distro }}
-          platforms: linux/amd64
+          platforms: linux/amd64, linux/arm64
+          # variables important only for stable release
           target_distro: ${{ inputs.target_distro }}
           target_release: ${{ inputs.target_release }}
           target_date: ${{ inputs.target_date }}
-
-      - name: Tag and push AMD64 image
-        run: |
-          docker tag husarion/husarion-ugv-autonomy:jazzy-fix-build-docker-action husarion/husarion-ugv-autonomy:jazzy-fix-build-docker-action-amd64
-          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-          docker push husarion/husarion-ugv-autonomy:jazzy-fix-build-docker-action-amd64
-
-
-  build-arm:
-    runs-on: ubuntu-24.04-arm64
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Build Docker Image (ARM64)
-        uses: husarion-ci/ros-docker-img-action@v0.8
-        with:
-          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
-          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
-          dockerfile: docker/Dockerfile
-          main_branch_name: ros2
-          repo_name: husarion-ugv-autonomy
-          build_type: ${{ inputs.build_type }}
-          ros_distro: ${{ inputs.target_distro }}
-          platforms: linux/arm64
-          target_distro: ${{ inputs.target_distro }}
-          target_release: ${{ inputs.target_release }}
-          target_date: ${{ inputs.target_date }}
-
-      - name: Tag and push ARM64 image
-        run: |
-          docker tag husarion/husarion-ugv-autonomy:jazzy-fix-build-docker-action husarion/husarion-ugv-autonomy:jazzy-fix-build-docker-action-arm64
-          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-          docker push husarion/husarion-ugv-autonomy:jazzy-fix-build-docker-action-arm64
-
-
-  merge-manifest:
-    runs-on: ubuntu-24.04
-    needs: [build-amd, build-arm]
-    steps:
-      - name: Create and push multi-arch manifest
-        run: |
-          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-          docker manifest create husarion/${{ env.IMAGE_NAME }}:${{ inputs.prefix }}${{ inputs.ros_distro }}-nightly \
-            --amend husarion/${{ env.IMAGE_NAME }}:${{ inputs.prefix }}${{ inputs.ros_distro }}-nightly-amd64 \
-            --amend husarion/${{ env.IMAGE_NAME }}:${{ inputs.prefix }}${{ inputs.ros_distro }}-nightly-arm64
-          docker manifest push husarion/${{ env.IMAGE_NAME }}:${{ inputs.prefix }}${{ inputs.ros_distro }}-nightly
