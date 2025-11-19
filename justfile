@@ -34,7 +34,7 @@ check-husarion-webui:
 # Start navigation on User Computer inside Husarion UGV
 start-hardware service="navigation docking":
     #!/bin/bash
-    docker compose -f docker/compose.hardware.yaml down
+    docker compose -f docker/compose.hardware.yaml down {{service}}
     docker compose -f docker/compose.hardware.yaml pull
     docker compose -f docker/compose.hardware.yaml up {{service}}
 
