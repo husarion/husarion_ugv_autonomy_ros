@@ -18,6 +18,6 @@ components:
     device_namespace: camera
 
   - type: WCH01
-    parent_link: lights_channel_1_link
-    xyz: -0.02 0.0 -0.0185
+    parent_link: front_bumper_link
+    xyz: 0.0 0.0 0.0
     rpy: 0.0 0.0 0.0

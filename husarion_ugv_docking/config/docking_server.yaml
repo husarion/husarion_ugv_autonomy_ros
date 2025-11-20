@@ -32,14 +32,14 @@
       type: charging_dock
       frame: <robot_namespace>/map
       dock_frame: main_wibotic_transmitter_link
-      pose: [2.00, 1.20, 1.57] # [x, y, yaw] of the dock on the map. Used also for spawning dock in the simulation.
+      pose: [2.00, 1.3, -1.57] # [x, y, yaw] of the dock on the map. Used also for spawning dock in the simulation.
       apriltag_id: 0
 
     backup:
       type: charging_dock
       frame: <robot_namespace>/map
       dock_frame: backup_wibotic_transmitter_link
-      pose: [-1.00, 1.20, 1.57] # [x, y, yaw] of the dock on the map. Used also for spawning dock in the simulation.
+      pose: [-1.00, 1.3, -1.57] # [x, y, yaw] of the dock on the map. Used also for spawning dock in the simulation.
       apriltag_id: 1
 
     controller:

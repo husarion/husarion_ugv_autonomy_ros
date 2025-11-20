@@ -56,7 +56,7 @@ def spawn_stations(context, *args, **kwargs):
                 "-x",
                 str(pose[0]),
                 "-y",
-                str(pose[1] - 2.0),  # -2.0 is the offset between world and map
+                str(pose[1]),
                 "-z",
                 "0.5",  # station z is not in 0.0
                 "-R",
@@ -64,7 +64,7 @@ def spawn_stations(context, *args, **kwargs):
                 "-P",
                 "0.0",
                 "-Y",
-                str(pose[2] - 1.57),
+                str(-pose[2] - 1.57),
             ],
             emulate_tty=True,
         )
