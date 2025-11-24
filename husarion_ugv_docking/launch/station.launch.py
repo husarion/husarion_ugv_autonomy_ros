@@ -74,10 +74,11 @@ def generate_urdf(name, apriltag_id, apriltag_height, apriltag_size, apriltag_ou
 
 
 def launch_stations_descriptions(context, *args, **kwargs):
-    apriltag_id = int(LaunchConfiguration("apriltag_id").perform(context))
     apriltag_height = LaunchConfiguration("apriltag_height").perform(context)
+    apriltag_output_dir = LaunchConfiguration(
+        "apriltag_output_dir", default="/tmp/husarion_ugv_docking_apriltags"
+    ).perform(context)
     apriltag_size = LaunchConfiguration("apriltag_size").perform(context)
-    apriltag_output_dir = LaunchConfiguration("apriltag_output_dir").perform(context)
 
     docking_server_config_path = LaunchConfiguration("docking_server_config_path").perform(context)
     apriltag_size = LaunchConfiguration("apriltag_size").perform(context)
@@ -122,12 +123,6 @@ def launch_stations_descriptions(context, *args, **kwargs):
 
 
 def generate_launch_description():
-    declare_apriltag_id = DeclareLaunchArgument(
-        "apriltag_id",
-        default_value="0",
-        description="ID of a generated apriltag on the station",
-    )
-
     declare_apriltag_height = DeclareLaunchArgument(
         "apriltag_height",
         default_value="0.5",
@@ -142,7 +137,6 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            declare_apriltag_id,
             declare_apriltag_height,
             declare_apriltag_size,
             OpaqueFunction(function=launch_stations_descriptions),
