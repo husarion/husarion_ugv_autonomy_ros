@@ -87,10 +87,11 @@ def generate_launch_description():
         choices=[True, False, "True", "False", "true", "false", "1", "0"],
     )
 
+    ns = PythonExpression(["'", namespace, "' + '/' if '", namespace, "' else ''"])
     namespaced_docking_server_config = ReplaceString(
         source_file=docking_server_config_path,
         replacements={
-            "<robot_namespace>": namespace,
+            "<robot_namespace>": ns,
             "//": "",
             "<use_wibotic_info_param>": PythonExpression(
                 ["'false' if ", use_sim, " else '", use_wibotic_info, "'"]

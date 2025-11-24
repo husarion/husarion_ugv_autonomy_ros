@@ -26,6 +26,7 @@ from launch_ros.substitutions import FindPackageShare
 
 def spawn_stations(context, *args, **kwargs):
     docking_server_config_path = LaunchConfiguration("docking_server_config_path").perform(context)
+    apriltag_height = LaunchConfiguration("apriltag_height").perform(context)
     docking_server_config = None
 
     try:
@@ -58,13 +59,13 @@ def spawn_stations(context, *args, **kwargs):
                 "-y",
                 str(pose[1]),
                 "-z",
-                "0.5",  # station z is not in 0.0
+                apriltag_height, # AprilTag is a root link of the station
                 "-R",
                 "1.57",
                 "-P",
                 "0.0",
                 "-Y",
-                str(-pose[2] - 1.57),
+                str(pose[2] + 1.57),
             ],
             emulate_tty=True,
         )
@@ -86,10 +87,16 @@ def generate_launch_description():
         ),
         description=("Path to docking server configuration file."),
     )
+    declare_apriltag_height_arg = DeclareLaunchArgument(
+        "apriltag_height",
+        default_value="0.5",
+        description=("Height of the AprilTag."),
+    )
 
     return LaunchDescription(
         [
             declare_docking_server_config_path_arg,
+            declare_apriltag_height_arg,
             OpaqueFunction(function=spawn_stations),
         ]
     )

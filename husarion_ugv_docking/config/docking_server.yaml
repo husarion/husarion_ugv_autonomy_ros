@@ -10,8 +10,8 @@
     undock_linear_tolerance: 0.19
     undock_angular_tolerance: 0.08
     max_retries: 3
-    base_frame: <robot_namespace>/wibotic_receiver_link # Distance to the dock is calculated from this frame
-    fixed_frame: <robot_namespace>/odom
+    base_frame: <robot_namespace>wibotic_receiver_coil_link # Distance to the dock is calculated from this frame
+    fixed_frame: <robot_namespace>odom
     dock_backwards: false
     dock_prestaging_tolerance: 0.15
 
@@ -30,15 +30,15 @@
     docks: ["main", "backup"]
     main:
       type: charging_dock
-      frame: <robot_namespace>/map
-      dock_frame: main_wibotic_transmitter_link
+      frame: <robot_namespace>map
+      dock_frame: main_wibotic_dock_frame
       pose: [2.00, 1.3, -1.57] # [x, y, yaw] of the dock on the map. Used also for spawning dock in the simulation.
       apriltag_id: 0
 
     backup:
       type: charging_dock
-      frame: <robot_namespace>/map
-      dock_frame: backup_wibotic_transmitter_link
+      frame: <robot_namespace>map
+      dock_frame: backup_wibotic_dock_frame
       pose: [-1.00, 1.3, -1.57] # [x, y, yaw] of the dock on the map. Used also for spawning dock in the simulation.
       apriltag_id: 1
 
