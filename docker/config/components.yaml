@@ -19,5 +19,5 @@ components:
 
   - type: WCH01
     parent_link: front_bumper_link
-    xyz: 0.0 0.0 0.0
+    xyz: -0.01 0.0 0.0
     rpy: 0.0 0.0 0.0

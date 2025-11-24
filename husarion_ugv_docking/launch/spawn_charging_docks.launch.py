@@ -59,7 +59,7 @@ def spawn_stations(context, *args, **kwargs):
                 "-y",
                 str(pose[1]),
                 "-z",
-                apriltag_height, # AprilTag is a root link of the station
+                apriltag_height,  # AprilTag is a root link of the station
                 "-R",
                 "1.57",
                 "-P",

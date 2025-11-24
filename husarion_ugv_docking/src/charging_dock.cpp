@@ -317,12 +317,12 @@ void ChargingDock::updateAndPublishStagingPose(const std::string &frame) {
   staging_pose_ = dock_pose_;
   staging_pose_.header.frame_id = frame;
   staging_pose_.header.stamp = node_.lock()->now();
-  staging_pose_.pose.position.x += std::cos(yaw) * staging_x_offset_;
-  staging_pose_.pose.position.y += std::sin(yaw) * staging_x_offset_;
+  staging_pose_.pose.position.x -= std::cos(yaw) * staging_x_offset_;
+  staging_pose_.pose.position.y -= std::sin(yaw) * staging_x_offset_;
   staging_pose_.pose.position.z = 0.0;
 
   tf2::Quaternion orientation;
-  orientation.setRPY(0.0, 0.0, yaw);
+  orientation.setRPY(0.0, 0.0, -yaw);
   staging_pose_.pose.orientation = tf2::toMsg(orientation);
 
   staging_pose_pub_->publish(staging_pose_);
