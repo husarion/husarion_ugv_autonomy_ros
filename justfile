@@ -82,7 +82,7 @@ dock-direct DOCK_NAME:
 undock:
     #!/bin/bash
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /${ROBOT_NAMESPACE:-panther}/undock_robot nav2_msgs/action/UndockRobot \" {  dock_type: charging_dock }\""
+     "source install/setup.bash && ros2 action send_goal /${ROBOT_NAMESPACE:-panther}/undock_robot nav2_msgs/action/UndockRobot \" {  dock_type: charging_dock, max_undocking_time: 15 }\""
 
 setup-os:
     bash docker/setup_os.sh

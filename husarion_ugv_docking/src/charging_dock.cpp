@@ -141,7 +141,7 @@ void ChargingDock::getParameters(
   node->get_parameter(name_ + ".wibotic_info_timeout", wibotic_info_timeout_);
 }
 
-// When there is no pose actual position of robot is a staging pose
+//  Provide the pre-docking staging pose given a dock’s location and frame
 ChargingDock::PoseStampedMsg
 ChargingDock::getStagingPose(const geometry_msgs::msg::Pose &pose,
                              const std::string &frame) {
@@ -151,6 +151,8 @@ ChargingDock::getStagingPose(const geometry_msgs::msg::Pose &pose,
   if (pose != geometry_msgs::msg::Pose()) {
     dock_pose_.pose = pose;
     dock_frame_ = frame;
+    RCLCPP_INFO_STREAM(logger_, "Dock pose x: " << pose.position.x
+                                  << " y: " << pose.position.y);
   }
 
   updateAndPublishStagingPose(frame);
@@ -317,12 +319,12 @@ void ChargingDock::updateAndPublishStagingPose(const std::string &frame) {
   staging_pose_ = dock_pose_;
   staging_pose_.header.frame_id = frame;
   staging_pose_.header.stamp = node_.lock()->now();
-  staging_pose_.pose.position.x -= std::cos(yaw) * staging_x_offset_;
-  staging_pose_.pose.position.y -= std::sin(yaw) * staging_x_offset_;
+  staging_pose_.pose.position.x += std::cos(yaw) * staging_x_offset_;
+  staging_pose_.pose.position.y += std::sin(yaw) * staging_x_offset_;
   staging_pose_.pose.position.z = 0.0;
 
   tf2::Quaternion orientation;
-  orientation.setRPY(0.0, 0.0, -yaw);
+  orientation.setRPY(0.0, 0.0, yaw);
   staging_pose_.pose.orientation = tf2::toMsg(orientation);
 
   staging_pose_pub_->publish(staging_pose_);

@@ -25,7 +25,7 @@
                        buttons="{GAMEPAD_UNDOCKING_SEQUENCE}"/>
           <UndockRobot name="Undock Action"
                        dock_type="charging_dock"
-                       max_undocking_time="100"
+                       max_undocking_time="15"
                        action_name="undock_robot"/>
         </Sequence>
       </Fallback>

@@ -124,7 +124,7 @@ TEST_F(TestChargingDock, GetStagingPoseLocal) {
   geometry_msgs::msg::PoseStamped staging_pose =
       dock_->getStagingPose(pose.pose, kOdomFrame);
 
-  ASSERT_FLOAT_EQ(staging_pose.pose.position.x, 1.7);
+  ASSERT_FLOAT_EQ(staging_pose.pose.position.x, 0.3);
   ASSERT_FLOAT_EQ(staging_pose.pose.position.y, 1.0);
   ASSERT_FLOAT_EQ(staging_pose.pose.position.z, 0.0);
 }
