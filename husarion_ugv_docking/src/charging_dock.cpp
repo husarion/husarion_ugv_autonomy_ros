@@ -151,8 +151,6 @@ ChargingDock::getStagingPose(const geometry_msgs::msg::Pose &pose,
   if (pose != geometry_msgs::msg::Pose()) {
     dock_pose_.pose = pose;
     dock_frame_ = frame;
-    RCLCPP_INFO_STREAM(logger_, "Dock pose x: " << pose.position.x
-                                  << " y: " << pose.position.y);
   }
 
   updateAndPublishStagingPose(frame);

@@ -51,8 +51,8 @@ protected:
                                 const std::string &dock_type,
                                 const PoseStampedMsg::SharedPtr pose);
   PoseStampedMsg::SharedPtr
-  CreateInitialDockPose(const std::string &frame,
-                    const std::vector<double> &station_pose_vec);
+  CreateInitialPose(const std::string &frame,
+                    const std::vector<double> &pose_vec);
   std::vector<rclcpp::Subscription<PoseStampedMsg>::SharedPtr> subscriptions_;
   rclcpp::CallbackGroup::SharedPtr client_cb_group_;
   rclcpp::Client<ReloadDockDatabaseSrv>::SharedPtr reload_dock_database_client_;

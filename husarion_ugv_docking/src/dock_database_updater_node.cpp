@@ -56,17 +56,17 @@ DockDatabaseUpdaterNode::DockDatabaseUpdaterNode(
 
     std::string dock_type =
         this->get_parameter(dock_name + ".type").as_string();
-    std::vector<double> station_pose =
+    std::vector<double> dock_pose =
         this->get_parameter(dock_name + ".pose").as_double_array();
     std::string frame = this->get_parameter(dock_name + ".frame").as_string();
-    if (station_pose.size() != 3) {
+    if (dock_pose.size() != 3) {
       RCLCPP_ERROR(this->get_logger(), "Invalid pose parameter for dock '%s'",
                    dock_name.c_str());
       throw std::runtime_error("Invalid pose parameter");
     }
 
     PoseStampedMsg::SharedPtr initial_pose =
-        CreateInitialDockPose(frame, station_pose);
+        CreateInitialPose(frame, dock_pose);
 
     if (!UpdateDatabaseFile(dock_name, dock_type, initial_pose)) {
       RCLCPP_ERROR(this->get_logger(),
@@ -133,7 +133,7 @@ YAML::Node DockDatabaseUpdaterNode::UpdateDockDatabase(
 
   double yaw = tf2::getYaw(q);
   std::array<double, 3> pose_yaml = {pose->pose.position.x,
-                                     pose->pose.position.y, yaw - M_PI};
+                                     pose->pose.position.y, yaw};
   yaml_dock["pose"] = pose_yaml;
   yaml_dock["frame"] = pose->header.frame_id;
 
@@ -179,18 +179,18 @@ bool DockDatabaseUpdaterNode::UpdateDatabaseFile(
   }
 }
 
-PoseStampedMsg::SharedPtr DockDatabaseUpdaterNode::CreateInitialDockPose(
-    const std::string &frame, const std::vector<double> &station_pose_vec) {
+PoseStampedMsg::SharedPtr DockDatabaseUpdaterNode::CreateInitialPose(
+    const std::string &frame, const std::vector<double> &pose_vec) {
   auto pose_msg = std::make_shared<PoseStampedMsg>();
   pose_msg->header.frame_id = frame;
   pose_msg->header.stamp = this->now();
 
-  pose_msg->pose.position.x = station_pose_vec[0];
-  pose_msg->pose.position.y = station_pose_vec[1];
+  pose_msg->pose.position.x = pose_vec[0];
+  pose_msg->pose.position.y = pose_vec[1];
   pose_msg->pose.position.z = 0.0;
 
   tf2::Quaternion q;
-  q.setRPY(0, 0, station_pose_vec[2] - M_PI); // Dock faces opposite to station
+  q.setRPY(0, 0, pose_vec[2]);
   pose_msg->pose.orientation.x = q.x();
   pose_msg->pose.orientation.y = q.y();
   pose_msg->pose.orientation.z = q.z();
