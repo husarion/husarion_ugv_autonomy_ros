@@ -58,7 +58,7 @@ The package contains a `ChargingDock` plugin for the [opennav_docking](https://g
 - `charging_dock.wibotic_info_timeout` [*double*, default: **1.5**]: A timeout in seconds to receive a wibotic_info.
 - `<dock_name>.apriltag_id` [*int*, default: **0**]: AprilTag ID of a dock.
 - `<dock_name>.dock_frame` [*string*, default: **main_wibotic_transmitter_link**]: A frame id to compare with fixed frame if docked.
-- `<dock_name>.pose` [*list*, default: **[0.0, 0.0, 0.0]**]: A pose of a dock on the map. If the simulation is used a dock is spawned in this pose.
+- `<dock_name>.pose` [*list*, default: **[0.0, 0.0, 0.0]**]: A dock position on the map. In the simulation, the station will be created with an orientation facing opposite to the dock position.
 
 ### DockDatabaseUpdater
 
