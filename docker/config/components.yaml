@@ -9,13 +9,13 @@ components:
     parent_link: mount_link
     xyz: -0.19 0.0 0.07
     rpy: 0.0 0.0 0.0
-    device_namespace: rplidar
+    name: rplidar
 
   - type: CAM01
     parent_link: mount_link
     xyz: 0.2 0.0 0.05
     rpy: 0.0 0.0 0.0
-    device_namespace: camera
+    name: camera
 
   - type: WCH01
     parent_link: front_bumper_link
