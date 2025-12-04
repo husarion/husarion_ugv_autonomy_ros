@@ -48,7 +48,7 @@ install(
   RUNTIME DESTINATION bin)
 
 # Rest of the files
-install(DIRECTORY behaviour_tree config launch map
+install(DIRECTORY behavior_trees config launch map
         DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY include DESTINATION include)
 

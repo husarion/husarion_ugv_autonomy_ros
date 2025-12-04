@@ -109,12 +109,12 @@ def generate_launch_description():
 
     nav_to_pose_bt = {
         "default_nav_to_pose_bt_xml": os.path.join(
-            husarion_dir, "behaviour_tree", "navigate_to_pose_w_replanning_and_recovery.xml"
+            husarion_dir, "behavior_trees", "navigate_to_pose_w_replanning_and_recovery.xml"
         )
     }
     nav_throught_poses_bt = {
         "default_nav_through_poses_bt_xml": os.path.join(
-            husarion_dir, "behaviour_tree", "navigate_through_poses_w_replanning_and_recovery.xml"
+            husarion_dir, "behavior_trees", "navigate_through_poses_w_replanning_and_recovery.xml"
         )
     }
 
