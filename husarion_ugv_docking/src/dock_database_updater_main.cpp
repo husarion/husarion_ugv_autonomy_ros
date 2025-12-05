@@ -20,21 +20,20 @@
 
 #include "husarion_ugv_docking/dock_database_updater_node.hpp"
 
-int main(int argc, char **argv) {
+int main(int argc, char ** argv)
+{
   rclcpp::init(argc, argv);
 
   auto dock_database_updater_node =
-      std::make_shared<husarion_ugv_docking::DockDatabaseUpdaterNode>(
-          "dock_database_updater_node");
+    std::make_shared<husarion_ugv_docking::DockDatabaseUpdaterNode>("dock_database_updater_node");
 
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(dock_database_updater_node);
 
   try {
     executor.spin();
-  } catch (const std::runtime_error &e) {
-    std::cerr << "[dock_database_updater_node] Caught exception: " << e.what()
-              << std::endl;
+  } catch (const std::runtime_error & e) {
+    std::cerr << "[dock_database_updater_node] Caught exception: " << e.what() << std::endl;
   }
 
   std::cout << "[dock_database_updater_node] Shutting down" << std::endl;

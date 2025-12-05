@@ -14,16 +14,16 @@
 
 #include "husarion_ugv_docking/send_to_dock_node.hpp"
 
-int main(int argc, char **argv) {
+int main(int argc, char ** argv)
+{
   rclcpp::init(argc, argv);
 
   auto send_to_dock_node =
-      std::make_shared<husarion_ugv_docking::SendToDockNode>(
-          "send_to_dock_node");
+    std::make_shared<husarion_ugv_docking::SendToDockNode>("send_to_dock_node");
 
   try {
     rclcpp::spin(send_to_dock_node);
-  } catch (const std::runtime_error &err) {
+  } catch (const std::runtime_error & err) {
     std::cerr << "[send_to_dock] Caught exception: " << err.what() << std::endl;
   }
 

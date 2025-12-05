@@ -25,18 +25,19 @@
 #include "husarion_ugv_manager/behavior_tree_manager.hpp"
 #include "husarion_ugv_utils/moving_average.hpp"
 
-namespace husarion_ugv_docking {
+namespace husarion_ugv_docking
+{
 
 /**
  * @brief This class is responsible for creating a BehaviorTree responsible for
  * docking management, spinning it, and updating blackboard entries based on
  * subscribed topics.
  */
-class DockingManagerNode : public rclcpp::Node {
+class DockingManagerNode : public rclcpp::Node
+{
 public:
   DockingManagerNode(
-      const std::string &node_name,
-      const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
+    const std::string & node_name, const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   ~DockingManagerNode() = default;
 
   /**
@@ -49,8 +50,7 @@ public:
 protected:
   void RegisterBehaviorTree();
 
-  std::unique_ptr<husarion_ugv_manager::BehaviorTreeManager>
-      docking_tree_manager_;
+  std::unique_ptr<husarion_ugv_manager::BehaviorTreeManager> docking_tree_manager_;
 
 private:
   void TimerCB();
@@ -62,6 +62,6 @@ private:
   docking_manager::Params params_;
 };
 
-} // namespace husarion_ugv_docking
+}  // namespace husarion_ugv_docking
 
-#endif // HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_DOCKING_MANAGER_NODE_HPP_
+#endif  // HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_DOCKING_MANAGER_NODE_HPP_

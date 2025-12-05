@@ -20,33 +20,34 @@
 
 #include "husarion_ugv_navigation/plugins/condition/is_estop.hpp"
 
-namespace husarion_ugv_navigation {
+namespace husarion_ugv_navigation
+{
 
-IsEStop::IsEStop(const std::string &condition_name, const BT::NodeConfig &conf)
-    : BT::ConditionNode(condition_name, conf), estop_(true),
-      topic_("hardware/e_stop") {
+IsEStop::IsEStop(const std::string & condition_name, const BT::NodeConfig & conf)
+: BT::ConditionNode(condition_name, conf), estop_(true), topic_("hardware/e_stop")
+{
   getInput("topic", topic_);
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   callback_group_ = node_->create_callback_group(
-      rclcpp::CallbackGroupType::MutuallyExclusive, false);
-  callback_group_executor_.add_callback_group(callback_group_,
-                                              node_->get_node_base_interface());
-  callback_group_executor_thread =
-      std::thread([this]() { callback_group_executor_.spin(); });
+    rclcpp::CallbackGroupType::MutuallyExclusive, false);
+  callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+  callback_group_executor_thread = std::thread([this]() { callback_group_executor_.spin(); });
 
   rclcpp::SubscriptionOptions sub_option;
   sub_option.callback_group = callback_group_;
   estop_sub_ = node_->create_subscription<std_msgs::msg::Bool>(
-      topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-      std::bind(&IsEStop::eStopCb, this, std::placeholders::_1), sub_option);
+    topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+    std::bind(&IsEStop::eStopCb, this, std::placeholders::_1), sub_option);
 }
 
-IsEStop::~IsEStop() {
+IsEStop::~IsEStop()
+{
   callback_group_executor_.cancel();
   callback_group_executor_thread.join();
 }
 
-BT::NodeStatus IsEStop::tick() {
+BT::NodeStatus IsEStop::tick()
+{
   if (estop_) {
     RCLCPP_WARN(node_->get_logger(), "E-stop activated. Halting navigation.");
     return BT::NodeStatus::SUCCESS;
@@ -56,9 +57,10 @@ BT::NodeStatus IsEStop::tick() {
 
 void IsEStop::eStopCb(const BoolMsg::SharedPtr msg) { estop_ = msg->data; }
 
-} // namespace husarion_ugv_navigation
+}  // namespace husarion_ugv_navigation
 
 #include "behaviortree_cpp/bt_factory.h"
-BT_REGISTER_NODES(factory) {
+BT_REGISTER_NODES(factory)
+{
   factory.registerNodeType<husarion_ugv_navigation::IsEStop>("IsEStop");
 }

@@ -16,29 +16,31 @@
 
 #include "husarion_ugv_manager/behavior_tree_utils.hpp"
 
-namespace husarion_ugv_docking {
+namespace husarion_ugv_docking
+{
 
-bool UndockRobot::setGoal(Goal &goal) {
-  if (!this->getInput<std::string>("dock_type", goal.dock_type) ||
-      goal.dock_type.empty()) {
-    RCLCPP_ERROR_STREAM(this->logger(),
-                        husarion_ugv_manager::GetLoggerPrefix(name())
-                            << "Failed to get input [dock_type]");
+bool UndockRobot::setGoal(Goal & goal)
+{
+  if (!this->getInput<std::string>("dock_type", goal.dock_type) || goal.dock_type.empty()) {
+    RCLCPP_ERROR_STREAM(
+      this->logger(), husarion_ugv_manager::GetLoggerPrefix(name())
+                        << "Failed to get input [dock_type]");
     return false;
   }
 
   if (!this->getInput<float>("max_undocking_time", goal.max_undocking_time)) {
-    RCLCPP_ERROR_STREAM(this->logger(),
-                        husarion_ugv_manager::GetLoggerPrefix(name())
-                            << "Failed to get input [max_undocking_time]");
+    RCLCPP_ERROR_STREAM(
+      this->logger(), husarion_ugv_manager::GetLoggerPrefix(name())
+                        << "Failed to get input [max_undocking_time]");
     return false;
   }
 
   return true;
 }
 
-BT::NodeStatus UndockRobot::onResultReceived(const WrappedResult &wr) {
-  const auto &result = wr.result;
+BT::NodeStatus UndockRobot::onResultReceived(const WrappedResult & wr)
+{
+  const auto & result = wr.result;
 
   this->setOutput("error_code", result->error_code);
 
@@ -49,20 +51,20 @@ BT::NodeStatus UndockRobot::onResultReceived(const WrappedResult &wr) {
   return BT::NodeStatus::FAILURE;
 }
 
-BT::NodeStatus UndockRobot::onFailure(BT::ActionNodeErrorCode error) {
-  RCLCPP_ERROR_STREAM(this->logger(),
-                      husarion_ugv_manager::GetLoggerPrefix(name())
-                          << ": onFailure with error: " << toStr(error));
+BT::NodeStatus UndockRobot::onFailure(BT::ActionNodeErrorCode error)
+{
+  RCLCPP_ERROR_STREAM(
+    this->logger(), husarion_ugv_manager::GetLoggerPrefix(name())
+                      << ": onFailure with error: " << toStr(error));
   return BT::NodeStatus::FAILURE;
 }
 
-void UndockRobot::onHalt() {
-  RCLCPP_INFO_STREAM(this->logger(),
-                     husarion_ugv_manager::GetLoggerPrefix(name())
-                         << ": onHalt");
+void UndockRobot::onHalt()
+{
+  RCLCPP_INFO_STREAM(this->logger(), husarion_ugv_manager::GetLoggerPrefix(name()) << ": onHalt");
 }
 
-} // namespace husarion_ugv_docking
+}  // namespace husarion_ugv_docking
 
 #include "behaviortree_ros2/plugins.hpp"
 CreateRosNodePlugin(husarion_ugv_docking::UndockRobot, "UndockRobot");

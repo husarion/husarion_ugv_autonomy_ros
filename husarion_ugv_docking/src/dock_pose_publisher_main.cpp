@@ -20,22 +20,21 @@
 
 #include "husarion_ugv_docking/dock_pose_publisher_node.hpp"
 
-int main(int argc, char **argv) {
+int main(int argc, char ** argv)
+{
   rclcpp::init(argc, argv);
 
   auto dock_pose_publisher_node =
-      std::make_shared<husarion_ugv_docking::DockPosePublisherNode>(
-          "dock_pose_publisher_node");
+    std::make_shared<husarion_ugv_docking::DockPosePublisherNode>("dock_pose_publisher_node");
 
   try {
     rclcpp::spin(dock_pose_publisher_node->get_node_base_interface());
-  } catch (const std::runtime_error &e) {
-    std::cerr << "[" << dock_pose_publisher_node->get_name()
-              << "] Caught exception: " << e.what() << std::endl;
+  } catch (const std::runtime_error & e) {
+    std::cerr << "[" << dock_pose_publisher_node->get_name() << "] Caught exception: " << e.what()
+              << std::endl;
   }
 
-  std::cout << "[" << dock_pose_publisher_node->get_name() << "] Shutting down"
-            << std::endl;
+  std::cout << "[" << dock_pose_publisher_node->get_name() << "] Shutting down" << std::endl;
   rclcpp::shutdown();
   return 0;
 }

@@ -23,24 +23,25 @@
 #include <nav2_msgs/action/dock_robot.hpp>
 #include <std_srvs/srv/set_bool.hpp>
 
-namespace husarion_ugv_docking {
+namespace husarion_ugv_docking
+{
 using SetBoolSrv = std_srvs::srv::SetBool;
 using DockRobot = nav2_msgs::action::DockRobot;
 using GoalHandleDockRobot = rclcpp_action::ClientGoalHandle<DockRobot>;
 using SendGoalOptions = rclcpp_action::Client<DockRobot>::SendGoalOptions;
 
-class SendToDockNode : public rclcpp::Node {
+class SendToDockNode : public rclcpp::Node
+{
 public:
   explicit SendToDockNode(
-      const std::string &node_name,
-      const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
+    const std::string & node_name, const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
 protected:
-  void HandleService(const SetBoolSrv::Request::SharedPtr request,
-                     SetBoolSrv::Response::SharedPtr response);
-  void FeedbackCallback(GoalHandleDockRobot::SharedPtr,
-                        const DockRobot::Feedback::ConstSharedPtr feedback);
-  void ResultCallback(const GoalHandleDockRobot::WrappedResult &result);
+  void HandleService(
+    const SetBoolSrv::Request::SharedPtr request, SetBoolSrv::Response::SharedPtr response);
+  void FeedbackCallback(
+    GoalHandleDockRobot::SharedPtr, const DockRobot::Feedback::ConstSharedPtr feedback);
+  void ResultCallback(const GoalHandleDockRobot::WrappedResult & result);
   void GoalResponseCallback(GoalHandleDockRobot::SharedPtr goal_handle);
   DockRobot::Goal CreateGoalMsg();
   SendGoalOptions CreateGoalOptions();
@@ -52,5 +53,5 @@ protected:
   bool navigate_to_staging_pose_;
   std::string dock_id_;
 };
-} // namespace husarion_ugv_docking
-#endif // HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_SEND_TO_DOCK_NODE_HPP_
+}  // namespace husarion_ugv_docking
+#endif  // HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_SEND_TO_DOCK_NODE_HPP_

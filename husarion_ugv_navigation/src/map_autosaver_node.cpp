@@ -14,13 +14,13 @@
 
 #include "husarion_ugv_navigation/map_autosaver_node.hpp"
 
-namespace husarion_ugv_navigation {
+namespace husarion_ugv_navigation
+{
 
-AutosaveMapNode::AutosaveMapNode(const std::string &node_name,
-                                 const rclcpp::NodeOptions &options)
-    : Node(node_name, options) {
-  this->declare_parameter<double>("autosave_period",
-                                  MIN_SAVE_MAP_PERIOD.count());
+AutosaveMapNode::AutosaveMapNode(const std::string & node_name, const rclcpp::NodeOptions & options)
+: Node(node_name, options)
+{
+  this->declare_parameter<double>("autosave_period", MIN_SAVE_MAP_PERIOD.count());
   this->declare_parameter<std::string>("map_directory", "/maps/map");
 
   double period;
@@ -29,23 +29,21 @@ AutosaveMapNode::AutosaveMapNode(const std::string &node_name,
 
   if (autosave_period_ < MIN_SAVE_MAP_PERIOD) {
     RCLCPP_WARN_STREAM(
-        get_logger(),
-        "autosave_period is too short. It will be set to the minimum period of "
-            << MIN_SAVE_MAP_PERIOD.count() << " seconds");
+      get_logger(), "autosave_period is too short. It will be set to the minimum period of "
+                      << MIN_SAVE_MAP_PERIOD.count() << " seconds");
     autosave_period_ = MIN_SAVE_MAP_PERIOD;
   }
 
-  save_map_client_ =
-      this->create_client<nav2_msgs::srv::SaveMap>("map_saver/save_map");
+  save_map_client_ = this->create_client<nav2_msgs::srv::SaveMap>("map_saver/save_map");
   save_map_timer_ = this->create_wall_timer(
-      autosave_period_, std::bind(&AutosaveMapNode::SaveMapCB, this));
+    autosave_period_, std::bind(&AutosaveMapNode::SaveMapCB, this));
 
-  RCLCPP_INFO_STREAM(get_logger(), "Map saver initialized with period "
-                                       << autosave_period_.count()
-                                       << " seconds");
+  RCLCPP_INFO_STREAM(
+    get_logger(), "Map saver initialized with period " << autosave_period_.count() << " seconds");
 }
 
-void AutosaveMapNode::SaveMapCB() {
+void AutosaveMapNode::SaveMapCB()
+{
   if (save_map_client_->wait_for_service(SAVE_MAP_CONNECTION_TIMEOUT)) {
     auto request = CreateSaveMapRequest();
     save_map_client_->async_send_request(request);
@@ -54,7 +52,8 @@ void AutosaveMapNode::SaveMapCB() {
   }
 }
 
-SaveMapReq::SharedPtr AutosaveMapNode::CreateSaveMapRequest() {
+SaveMapReq::SharedPtr AutosaveMapNode::CreateSaveMapRequest()
+{
   std::string ns = this->get_namespace();
   if (ns.back() != '/') {
     ns = ns + "/";
@@ -72,4 +71,4 @@ SaveMapReq::SharedPtr AutosaveMapNode::CreateSaveMapRequest() {
   return request;
 }
 
-} // namespace husarion_ugv_navigation
+}  // namespace husarion_ugv_navigation

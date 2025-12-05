@@ -24,40 +24,44 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav2_msgs/action/undock_robot.hpp>
 
-namespace husarion_ugv_docking {
+namespace husarion_ugv_docking
+{
 
-class UndockRobot : public BT::RosActionNode<nav2_msgs::action::UndockRobot> {
+class UndockRobot : public BT::RosActionNode<nav2_msgs::action::UndockRobot>
+{
   using UndockRobotAction = nav2_msgs::action::UndockRobot;
   using UndockRobotActionResult = UndockRobotAction::Result;
 
 public:
-  UndockRobot(const std::string &name, const BT::NodeConfig &conf,
-              const BT::RosNodeParams &params)
-      : RosActionNode<UndockRobotAction>(name, conf, params) {}
+  UndockRobot(
+    const std::string & name, const BT::NodeConfig & conf, const BT::RosNodeParams & params)
+  : RosActionNode<UndockRobotAction>(name, conf, params)
+  {
+  }
 
-  bool setGoal(Goal &goal) override;
+  bool setGoal(Goal & goal) override;
 
   void onHalt() override;
 
-  BT::NodeStatus onResultReceived(const WrappedResult &wr) override;
+  BT::NodeStatus onResultReceived(const WrappedResult & wr) override;
 
   virtual BT::NodeStatus onFailure(BT::ActionNodeErrorCode error) override;
 
-  static BT::PortsList providedPorts() {
+  static BT::PortsList providedPorts()
+  {
     return providedBasicPorts(
-        {BT::InputPort<std::string>(
-             "dock_type",
-             "Specifies the dock plugin type to use for undocking."),
-         BT::InputPort<float>("max_undocking_time", 30.0,
-                              "Maximum allowable time (in seconds) to undock "
-                              "and return to the staging pose."),
+      {BT::InputPort<std::string>(
+         "dock_type", "Specifies the dock plugin type to use for undocking."),
+       BT::InputPort<float>(
+         "max_undocking_time", 30.0,
+         "Maximum allowable time (in seconds) to undock "
+         "and return to the staging pose."),
 
-         BT::OutputPort<UndockRobotActionResult::_error_code_type>(
-             "error_code",
-             "Returns an error code if the undocking process fails.")});
+       BT::OutputPort<UndockRobotActionResult::_error_code_type>(
+         "error_code", "Returns an error code if the undocking process fails.")});
   }
 };
 
-} // namespace husarion_ugv_docking
+}  // namespace husarion_ugv_docking
 
-#endif // HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_PLUGINS_ACTION_UNDOCK_ROBOT_NODE_HPP_
+#endif  // HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_PLUGINS_ACTION_UNDOCK_ROBOT_NODE_HPP_

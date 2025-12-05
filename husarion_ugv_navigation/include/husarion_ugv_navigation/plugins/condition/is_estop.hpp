@@ -23,13 +23,15 @@
 
 #include <std_msgs/msg/bool.hpp>
 
-namespace husarion_ugv_navigation {
+namespace husarion_ugv_navigation
+{
 
 /**
  * @brief A BT::ConditionNode that returns SUCCESS when a specified goal
  * is reached and FAILURE otherwise
  */
-class IsEStop : public BT::ConditionNode {
+class IsEStop : public BT::ConditionNode
+{
   using BoolMsg = std_msgs::msg::Bool;
 
 public:
@@ -38,7 +40,7 @@ public:
    * @param condition_name Name for the XML tag for this node
    * @param conf BT node configuration
    */
-  IsEStop(const std::string &condition_name, const BT::NodeConfig &conf);
+  IsEStop(const std::string & condition_name, const BT::NodeConfig & conf);
 
   IsEStop() = delete;
 
@@ -59,11 +61,11 @@ public:
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing node-specific ports
    */
-  static BT::PortsList providedPorts() {
+  static BT::PortsList providedPorts()
+  {
     return {
-        BT::InputPort<std::string>(
-            "topic", "hardware/e_stop	",
-            "The Bool type topic contains e-stop status"),
+      BT::InputPort<std::string>(
+        "topic", "hardware/e_stop	", "The Bool type topic contains e-stop status"),
     };
   }
 
@@ -80,6 +82,6 @@ private:
   std::string topic_;
 };
 
-} // namespace husarion_ugv_navigation
+}  // namespace husarion_ugv_navigation
 
-#endif // HUSARION_UGV_NAVIGATION__PLUGINS__CONDITION__IS_ESTOP_HPP_
+#endif  // HUSARION_UGV_NAVIGATION__PLUGINS__CONDITION__IS_ESTOP_HPP_

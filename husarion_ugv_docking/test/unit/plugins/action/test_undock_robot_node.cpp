@@ -26,8 +26,8 @@
 
 #include "husarion_ugv_docking/plugins/action/undock_robot_node.hpp"
 
-class TestUndockRobot
-    : public husarion_ugv_manager::plugin_test_utils::PluginTestUtils {
+class TestUndockRobot : public husarion_ugv_manager::plugin_test_utils::PluginTestUtils
+{
 public:
   using Action = nav2_msgs::action::UndockRobot;
   using ActionResult = nav2_msgs::action::UndockRobot::Result;
@@ -35,38 +35,41 @@ public:
   using GoalResponse = rclcpp_action::GoalResponse;
   using CancelResponse = rclcpp_action::CancelResponse;
 
-  void CreateActionServer(GoalResponse goal_response,
-                          CancelResponse cancel_response, bool success,
-                          std::uint16_t error_code) {
+  void CreateActionServer(
+    GoalResponse goal_response, CancelResponse cancel_response, bool success,
+    std::uint16_t error_code)
+  {
     auto handle_goal =
-        [&, goal_response](const rclcpp_action::GoalUUID & /*uuid*/,
-                           std::shared_ptr<const Action::Goal> /*goal*/)
-        -> rclcpp_action::GoalResponse { return goal_response; };
+      [&, goal_response](
+        const rclcpp_action::GoalUUID & /*uuid*/,
+        std::shared_ptr<const Action::Goal> /*goal*/) -> rclcpp_action::GoalResponse {
+      return goal_response;
+    };
 
     auto handle_cancel =
-        [&, cancel_response](
-            const std::shared_ptr<GoalHandleAction> /*goal_handle*/)
-        -> rclcpp_action::CancelResponse { return cancel_response; };
+      [&, cancel_response](
+        const std::shared_ptr<GoalHandleAction> /*goal_handle*/) -> rclcpp_action::CancelResponse {
+      return cancel_response;
+    };
 
     auto handle_accepted =
-        [&, success, error_code](
-            const std::shared_ptr<GoalHandleAction> goal_handle) -> void {
+      [&, success, error_code](const std::shared_ptr<GoalHandleAction> goal_handle) -> void {
       ActionResult::SharedPtr result = std::make_shared<ActionResult>();
       result->success = success;
       result->error_code = error_code;
       goal_handle->succeed(result);
     };
 
-    CreateAction<Action>("test_undock_action", handle_goal, handle_cancel,
-                         handle_accepted);
+    CreateAction<Action>("test_undock_action", handle_goal, handle_cancel, handle_accepted);
   }
 };
 
-TEST_F(TestUndockRobot, GoodLoadingUndockRobotPlugin) {
+TEST_F(TestUndockRobot, GoodLoadingUndockRobotPlugin)
+{
   std::map<std::string, std::string> params = {
-      {"action_name", "test_undock_action"},
-      {"dock_type", "test_dock_type"},
-      {"max_undocking_time", "5.0"},
+    {"action_name", "test_undock_action"},
+    {"dock_type", "test_dock_type"},
+    {"max_undocking_time", "5.0"},
   };
 
   RegisterNodeWithParams<husarion_ugv_docking::UndockRobot>("UndockRobot");
@@ -74,11 +77,12 @@ TEST_F(TestUndockRobot, GoodLoadingUndockRobotPlugin) {
   ASSERT_NO_THROW({ CreateTree("UndockRobot", params); });
 }
 
-TEST_F(TestUndockRobot, WrongLoadingUndockRobotPlugin) {
+TEST_F(TestUndockRobot, WrongLoadingUndockRobotPlugin)
+{
   std::map<std::string, std::string> params = {
-      {"action_name", ""},
-      {"dock_type", "test_dock_type"},
-      {"max_undocking_time", "5.0"},
+    {"action_name", ""},
+    {"dock_type", "test_dock_type"},
+    {"max_undocking_time", "5.0"},
   };
 
   RegisterNodeWithParams<husarion_ugv_docking::UndockRobot>("UndockRobot");
@@ -86,78 +90,82 @@ TEST_F(TestUndockRobot, WrongLoadingUndockRobotPlugin) {
   EXPECT_THROW({ CreateTree("WrongUndockRobot", params); }, BT::RuntimeError);
 }
 
-TEST_F(TestUndockRobot, WrongCallUndockRobotServerNotInitialized) {
+TEST_F(TestUndockRobot, WrongCallUndockRobotServerNotInitialized)
+{
   std::map<std::string, std::string> params = {
-      {"action_name", "test_undock_action"},
-      {"dock_type", "test_dock_type"},
-      {"max_undocking_time", "5.0"},
+    {"action_name", "test_undock_action"},
+    {"dock_type", "test_dock_type"},
+    {"max_undocking_time", "5.0"},
   };
 
   RegisterNodeWithParams<husarion_ugv_docking::UndockRobot>("UndockRobot");
 
   CreateTree("UndockRobot", params);
 
-  auto &tree = GetTree();
+  auto & tree = GetTree();
 
   auto status = tree.tickWhileRunning(std::chrono::milliseconds(100));
   EXPECT_EQ(status, BT::NodeStatus::FAILURE);
 }
 
-TEST_F(TestUndockRobot, WrongCallUndockRobotServerWithNoDockType) {
-  CreateActionServer(GoalResponse::ACCEPT_AND_EXECUTE, CancelResponse::ACCEPT,
-                     true, ActionResult::NONE);
+TEST_F(TestUndockRobot, WrongCallUndockRobotServerWithNoDockType)
+{
+  CreateActionServer(
+    GoalResponse::ACCEPT_AND_EXECUTE, CancelResponse::ACCEPT, true, ActionResult::NONE);
 
   std::map<std::string, std::string> params = {
-      {"action_name", "test_undock_action"},
-      {"dock_type", ""},
-      {"max_undocking_time", "5.0"},
+    {"action_name", "test_undock_action"},
+    {"dock_type", ""},
+    {"max_undocking_time", "5.0"},
   };
 
   RegisterNodeWithParams<husarion_ugv_docking::UndockRobot>("UndockRobot");
   CreateTree("UndockRobot", params);
 
-  auto &tree = GetTree();
+  auto & tree = GetTree();
   auto status = tree.tickWhileRunning(std::chrono::milliseconds(100));
   EXPECT_EQ(status, BT::NodeStatus::FAILURE);
 }
 
-TEST_F(TestUndockRobot, CallUndockRobotServerFailure) {
-  CreateActionServer(GoalResponse::REJECT, CancelResponse::ACCEPT, true,
-                     ActionResult::NONE);
+TEST_F(TestUndockRobot, CallUndockRobotServerFailure)
+{
+  CreateActionServer(GoalResponse::REJECT, CancelResponse::ACCEPT, true, ActionResult::NONE);
 
   std::map<std::string, std::string> params = {
-      {"action_name", "test_undock_action"},
-      {"dock_type", "test_dock_type"},
-      {"max_undocking_time", "5.0"},
+    {"action_name", "test_undock_action"},
+    {"dock_type", "test_dock_type"},
+    {"max_undocking_time", "5.0"},
   };
 
   RegisterNodeWithParams<husarion_ugv_docking::UndockRobot>("UndockRobot");
   CreateTree("UndockRobot", params);
 
-  auto &tree = GetTree();
+  auto & tree = GetTree();
   auto status = tree.tickWhileRunning(std::chrono::milliseconds(100));
   EXPECT_EQ(status, BT::NodeStatus::FAILURE);
 }
 
-TEST_F(TestUndockRobot, CallUndockRobotServerSuccess) {
-  CreateActionServer(GoalResponse::ACCEPT_AND_EXECUTE, CancelResponse::ACCEPT,
-                     true, ActionResult::NONE);
+TEST_F(TestUndockRobot, CallUndockRobotServerSuccess)
+{
+  CreateActionServer(
+    GoalResponse::ACCEPT_AND_EXECUTE, CancelResponse::ACCEPT, true, ActionResult::NONE);
 
   std::map<std::string, std::string> params = {
-      {"action_name", "test_undock_action"},
-      {"dock_type", "test_dock_type"},
-      {"max_undocking_time", "5.0"},
+    {"action_name", "test_undock_action"},
+    {"dock_type", "test_dock_type"},
+    {"max_undocking_time", "5.0"},
   };
 
   RegisterNodeWithParams<husarion_ugv_docking::UndockRobot>("UndockRobot");
   CreateTree("UndockRobot", params);
 
-  auto &tree = GetTree();
+  auto & tree = GetTree();
   auto status = tree.tickWhileRunning(std::chrono::milliseconds(100));
   EXPECT_EQ(status, BT::NodeStatus::SUCCESS);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char ** argv)
+{
   testing::InitGoogleTest(&argc, argv);
 
   auto result = RUN_ALL_TESTS();

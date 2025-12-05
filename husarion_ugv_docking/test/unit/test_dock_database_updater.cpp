@@ -17,9 +17,9 @@
 #include <vector>
 
 #include <gtest/gtest.h>
-#include <rclcpp/rclcpp.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/utils.h>
+#include <rclcpp/rclcpp.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include "husarion_ugv_docking/dock_database_updater_node.hpp"
@@ -29,59 +29,64 @@ static constexpr char kDefaultFrame[] = "map";
 static constexpr char kDefaultDockName[] = "main";
 static constexpr char kDefaultDockType[] = "charging_dock";
 
-class DockDatabaseUpdaterWrapper
-    : public husarion_ugv_docking::DockDatabaseUpdaterNode {
+class DockDatabaseUpdaterWrapper : public husarion_ugv_docking::DockDatabaseUpdaterNode
+{
 public:
   DockDatabaseUpdaterWrapper(
-      const std::string &node_name,
-      const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
-      : husarion_ugv_docking::DockDatabaseUpdaterNode(node_name, options) {}
+    const std::string & node_name, const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
+  : husarion_ugv_docking::DockDatabaseUpdaterNode(node_name, options)
+  {
+  }
 
-  void PoseCallback(const std::string &dock_name, const std::string &dock_type,
-                    const husarion_ugv_docking::PoseStampedMsg::SharedPtr msg) {
-    husarion_ugv_docking::DockDatabaseUpdaterNode::PoseCallback(dock_name,
-                                                                dock_type, msg);
+  void PoseCallback(
+    const std::string & dock_name, const std::string & dock_type,
+    const husarion_ugv_docking::PoseStampedMsg::SharedPtr msg)
+  {
+    husarion_ugv_docking::DockDatabaseUpdaterNode::PoseCallback(dock_name, dock_type, msg);
   }
 
   bool UpdateDatabaseFile(
-      const std::string &dock_name, const std::string &dock_type,
-      const husarion_ugv_docking::PoseStampedMsg::SharedPtr pose) {
+    const std::string & dock_name, const std::string & dock_type,
+    const husarion_ugv_docking::PoseStampedMsg::SharedPtr pose)
+  {
     return husarion_ugv_docking::DockDatabaseUpdaterNode::UpdateDatabaseFile(
-        dock_name, dock_type, pose);
+      dock_name, dock_type, pose);
   }
 
   YAML::Node UpdateDockDatabase(
-      const std::string &dock_name, const std::string &dock_type,
-      const husarion_ugv_docking::PoseStampedMsg::SharedPtr pose) {
+    const std::string & dock_name, const std::string & dock_type,
+    const husarion_ugv_docking::PoseStampedMsg::SharedPtr pose)
+  {
     return husarion_ugv_docking::DockDatabaseUpdaterNode::UpdateDockDatabase(
-        dock_name, dock_type, pose);
+      dock_name, dock_type, pose);
   }
 
-  husarion_ugv_docking::PoseStampedMsg::SharedPtr
-  CreateInitialPose(const std::string &frame,
-                    const std::vector<double> &pose_vec) {
-    return husarion_ugv_docking::DockDatabaseUpdaterNode::CreateInitialPose(
-        frame, pose_vec);
+  husarion_ugv_docking::PoseStampedMsg::SharedPtr CreateInitialPose(
+    const std::string & frame, const std::vector<double> & pose_vec)
+  {
+    return husarion_ugv_docking::DockDatabaseUpdaterNode::CreateInitialPose(frame, pose_vec);
   }
 };
 
-class TestDockDatabaseUpdater : public ::testing::Test {
+class TestDockDatabaseUpdater : public ::testing::Test
+{
 protected:
   TestDockDatabaseUpdater();
-  void
-  CreateDockDatabaseUpdaterNode(const std::vector<rclcpp::Parameter> &params);
+  void CreateDockDatabaseUpdaterNode(const std::vector<rclcpp::Parameter> & params);
 
   std::shared_ptr<DockDatabaseUpdaterWrapper> dock_database_updater_node_;
 };
 
-TestDockDatabaseUpdater::TestDockDatabaseUpdater() {
+TestDockDatabaseUpdater::TestDockDatabaseUpdater()
+{
   std::vector<rclcpp::Parameter> params;
   params.emplace_back("dock_database_filepath", kFilepath);
   CreateDockDatabaseUpdaterNode(params);
 }
 
 void TestDockDatabaseUpdater::CreateDockDatabaseUpdaterNode(
-    const std::vector<rclcpp::Parameter> &params) {
+  const std::vector<rclcpp::Parameter> & params)
+{
   if (dock_database_updater_node_) {
     dock_database_updater_node_.reset();
   }
@@ -90,14 +95,14 @@ void TestDockDatabaseUpdater::CreateDockDatabaseUpdaterNode(
   options.parameter_overrides(params);
 
   dock_database_updater_node_ = std::make_shared<DockDatabaseUpdaterWrapper>(
-      "dock_database_updater_node_for_test", options);
+    "dock_database_updater_node_for_test", options);
 }
 
-TEST_F(TestDockDatabaseUpdater, CreateInitialPoseCreatesValidPose) {
+TEST_F(TestDockDatabaseUpdater, CreateInitialPoseCreatesValidPose)
+{
   std::vector<double> pose_vec = {1.0, 2.0, M_PI / 2};
 
-  auto pose =
-      dock_database_updater_node_->CreateInitialPose(kDefaultFrame, pose_vec);
+  auto pose = dock_database_updater_node_->CreateInitialPose(kDefaultFrame, pose_vec);
 
   EXPECT_EQ(pose->header.frame_id, kDefaultFrame);
   EXPECT_DOUBLE_EQ(pose->pose.position.x, 1.0);
@@ -112,17 +117,15 @@ TEST_F(TestDockDatabaseUpdater, CreateInitialPoseCreatesValidPose) {
   EXPECT_DOUBLE_EQ(pose->pose.orientation.w, q.w());
 }
 
-TEST_F(TestDockDatabaseUpdater,
-       UpdateDockDatabaseCreatesValidYAMLWithDefaultParameters) {
+TEST_F(TestDockDatabaseUpdater, UpdateDockDatabaseCreatesValidYAMLWithDefaultParameters)
+{
   YAML::Node yaml = YAML::LoadFile(kFilepath);
 
   EXPECT_TRUE(yaml.IsMap());
   ASSERT_EQ(yaml["docks"].size(), 1);
   EXPECT_NO_THROW(yaml["docks"][kDefaultDockName]);
-  EXPECT_EQ(yaml["docks"][kDefaultDockName]["type"].as<std::string>(),
-            kDefaultDockType);
-  EXPECT_EQ(yaml["docks"][kDefaultDockName]["frame"].as<std::string>(),
-            kDefaultFrame);
+  EXPECT_EQ(yaml["docks"][kDefaultDockName]["type"].as<std::string>(), kDefaultDockType);
+  EXPECT_EQ(yaml["docks"][kDefaultDockName]["frame"].as<std::string>(), kDefaultFrame);
 
   auto pose_yaml = yaml["docks"][kDefaultDockName]["pose"];
   ASSERT_TRUE(pose_yaml.IsSequence());
@@ -132,14 +135,15 @@ TEST_F(TestDockDatabaseUpdater,
   EXPECT_DOUBLE_EQ(pose_yaml[2].as<double>(), 0.0);
 }
 
-TEST_F(TestDockDatabaseUpdater, UpdateDatabaseFileHandlesExceptions) {
+TEST_F(TestDockDatabaseUpdater, UpdateDatabaseFileHandlesExceptions)
+{
   std::vector<rclcpp::Parameter> params;
-  params.emplace_back("dock_database_filepath",
-                      "/invalid_path/dock_database.yaml");
+  params.emplace_back("dock_database_filepath", "/invalid_path/dock_database.yaml");
   EXPECT_THROW(CreateDockDatabaseUpdaterNode(params), std::runtime_error);
 }
 
-TEST_F(TestDockDatabaseUpdater, UpdateDatabaseFileHandlesSavingFile) {
+TEST_F(TestDockDatabaseUpdater, UpdateDatabaseFileHandlesSavingFile)
+{
   std::string dock_name = "dock1";
   std::string dock_type = "typeA";
   std::vector<double> pose_vec = {1.0, 2.0, M_PI / 2};
@@ -150,14 +154,13 @@ TEST_F(TestDockDatabaseUpdater, UpdateDatabaseFileHandlesSavingFile) {
   params.emplace_back(dock_name + ".pose", pose_vec);
   params.emplace_back(dock_name + ".frame", kDefaultFrame);
 
-  auto pose =
-      dock_database_updater_node_->CreateInitialPose(kDefaultFrame, pose_vec);
-  bool result = dock_database_updater_node_->UpdateDatabaseFile(
-      dock_name, dock_type, pose);
+  auto pose = dock_database_updater_node_->CreateInitialPose(kDefaultFrame, pose_vec);
+  bool result = dock_database_updater_node_->UpdateDatabaseFile(dock_name, dock_type, pose);
   EXPECT_TRUE(result);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char ** argv)
+{
   rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);
 

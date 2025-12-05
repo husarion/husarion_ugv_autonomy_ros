@@ -15,15 +15,16 @@
 #ifndef HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_TF2_UTILS_HPP_
 #define HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_TF2_UTILS_HPP_
 
-#include <rclcpp/rclcpp.hpp>
 #include <tf2/utils.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/buffer.h>
+#include <rclcpp/rclcpp.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/vector3.hpp>
 
-namespace husarion_ugv_docking::tf2_utils {
+namespace husarion_ugv_docking::tf2_utils
+{
 
 /**
  * @brief Transforms a pose to a target frame.
@@ -37,25 +38,24 @@ namespace husarion_ugv_docking::tf2_utils {
  *
  * @return The transformed pose.
  */
-geometry_msgs::msg::PoseStamped
-TransformPose(const tf2_ros::Buffer::SharedPtr &tf2_buffer,
-              const geometry_msgs::msg::PoseStamped &pose,
-              const std::string &target_frame, double timeout_s = 0.0) {
+geometry_msgs::msg::PoseStamped TransformPose(
+  const tf2_ros::Buffer::SharedPtr & tf2_buffer, const geometry_msgs::msg::PoseStamped & pose,
+  const std::string & target_frame, double timeout_s = 0.0)
+{
   geometry_msgs::msg::PoseStamped transformed_pose;
 
   if (pose.header.frame_id.empty() || target_frame.empty()) {
-    throw std::runtime_error("Pose or target frame is empty, pose frame: \"" +
-                             pose.header.frame_id + "\", target frame: \"" +
-                             target_frame + "\"");
+    throw std::runtime_error(
+      "Pose or target frame is empty, pose frame: \"" + pose.header.frame_id +
+      "\", target frame: \"" + target_frame + "\"");
   }
 
-  if (!tf2_buffer->canTransform(pose.header.frame_id, target_frame,
-                                pose.header.stamp,
-                                rclcpp::Duration::from_seconds(timeout_s))) {
-    throw std::runtime_error("Cannot transform " + pose.header.frame_id +
-                             " to " + target_frame + " at time " +
-                             std::to_string(pose.header.stamp.sec) + "." +
-                             std::to_string(pose.header.stamp.nanosec));
+  if (!tf2_buffer->canTransform(
+        pose.header.frame_id, target_frame, pose.header.stamp,
+        rclcpp::Duration::from_seconds(timeout_s))) {
+    throw std::runtime_error(
+      "Cannot transform " + pose.header.frame_id + " to " + target_frame + " at time " +
+      std::to_string(pose.header.stamp.sec) + "." + std::to_string(pose.header.stamp.nanosec));
   }
 
   tf2_buffer->transform(pose, transformed_pose, target_frame);
@@ -72,9 +72,9 @@ TransformPose(const tf2_ros::Buffer::SharedPtr &tf2_buffer,
  *
  * @return The offset pose.
  */
-geometry_msgs::msg::PoseStamped
-OffsetPose(const geometry_msgs::msg::PoseStamped &pose,
-           const tf2::Transform &offset) {
+geometry_msgs::msg::PoseStamped OffsetPose(
+  const geometry_msgs::msg::PoseStamped & pose, const tf2::Transform & offset)
+{
   tf2::Transform pose_transform;
   tf2::fromMsg(pose.pose, pose_transform);
 
@@ -95,8 +95,8 @@ OffsetPose(const geometry_msgs::msg::PoseStamped &pose,
  * @param orientation The orientation quaternion.
  * @return geometry_msgs::msg::Vector3 The roll, pitch, and yaw.
  */
-geometry_msgs::msg::Vector3
-GetRPY(const geometry_msgs::msg::Quaternion &orientation) {
+geometry_msgs::msg::Vector3 GetRPY(const geometry_msgs::msg::Quaternion & orientation)
+{
   geometry_msgs::msg::Vector3 v;
   tf2::Quaternion q;
   tf2::fromMsg(orientation, q);
@@ -117,29 +117,28 @@ GetRPY(const geometry_msgs::msg::Quaternion &orientation) {
  * @return True if the poses are near each other on the XY plane, false
  * otherwise.
  */
-bool ArePosesNear(const geometry_msgs::msg::PoseStamped &pose_1,
-                  const geometry_msgs::msg::PoseStamped &pose_2,
-                  double distance_tolerance, double angle_tolerance) {
+bool ArePosesNear(
+  const geometry_msgs::msg::PoseStamped & pose_1, const geometry_msgs::msg::PoseStamped & pose_2,
+  double distance_tolerance, double angle_tolerance)
+{
   if (pose_1.header.frame_id.empty() || pose_2.header.frame_id.empty()) {
-    throw std::runtime_error(
-        "Provided frame IDs are empty, can't compare poses.");
+    throw std::runtime_error("Provided frame IDs are empty, can't compare poses.");
   }
 
   if (pose_1.header.frame_id != pose_2.header.frame_id) {
-    throw std::runtime_error(
-        "Provided frame IDs are different, can't compare poses.");
+    throw std::runtime_error("Provided frame IDs are different, can't compare poses.");
   }
 
   auto pose_1_rpy = GetRPY(pose_1.pose.orientation);
   auto pose_2_rpy = GetRPY(pose_2.pose.orientation);
 
-  const double d = std::hypot(pose_1.pose.position.x - pose_2.pose.position.x,
-                              pose_1.pose.position.y - pose_2.pose.position.y);
-  return d < distance_tolerance &&
-         std::abs(pose_1_rpy.x - pose_2_rpy.x) < angle_tolerance &&
+  const double d = std::hypot(
+    pose_1.pose.position.x - pose_2.pose.position.x,
+    pose_1.pose.position.y - pose_2.pose.position.y);
+  return d < distance_tolerance && std::abs(pose_1_rpy.x - pose_2_rpy.x) < angle_tolerance &&
          std::abs(pose_1_rpy.y - pose_2_rpy.y) < angle_tolerance &&
          std::abs(pose_1_rpy.z - pose_2_rpy.z) < angle_tolerance;
 }
-} // namespace husarion_ugv_docking::tf2_utils
+}  // namespace husarion_ugv_docking::tf2_utils
 
-#endif // HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_TF2_UTILS_HPP_
+#endif  // HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_TF2_UTILS_HPP_

@@ -18,20 +18,19 @@
 #include <memory>
 #include <stdexcept>
 
-int main(int argc, char **argv) {
+int main(int argc, char ** argv)
+{
   rclcpp::init(argc, argv);
   auto map_autosaver_node =
-      std::make_shared<husarion_ugv_navigation::AutosaveMapNode>(
-          "map_autosaver_node");
+    std::make_shared<husarion_ugv_navigation::AutosaveMapNode>("map_autosaver_node");
 
   try {
     rclcpp::spin(map_autosaver_node);
-  } catch (const std::runtime_error &e) {
-    std::cerr << "[" << map_autosaver_node->get_name()
-              << "] Caught exception: " << e.what() << std::endl;
+  } catch (const std::runtime_error & e) {
+    std::cerr << "[" << map_autosaver_node->get_name() << "] Caught exception: " << e.what()
+              << std::endl;
   }
-  std::cout << "[" << map_autosaver_node->get_name() << "] Shutting down"
-            << std::endl;
+  std::cout << "[" << map_autosaver_node->get_name() << "] Shutting down" << std::endl;
   rclcpp::shutdown();
   return 0;
 }

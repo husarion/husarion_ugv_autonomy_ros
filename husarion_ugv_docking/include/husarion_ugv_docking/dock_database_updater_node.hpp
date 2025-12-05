@@ -27,32 +27,33 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav2_msgs/srv/reload_dock_database.hpp>
 
-namespace husarion_ugv_docking {
+namespace husarion_ugv_docking
+{
 
 using PoseStampedMsg = geometry_msgs::msg::PoseStamped;
 using ReloadDockDatabaseSrv = nav2_msgs::srv::ReloadDockDatabase;
 
-class DockDatabaseUpdaterNode : public rclcpp::Node {
+class DockDatabaseUpdaterNode : public rclcpp::Node
+{
 public:
   DockDatabaseUpdaterNode(
-      const std::string &node_name,
-      const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
+    const std::string & node_name, const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
 protected:
-  void PoseCallback(const std::string &dock_name, const std::string &dock_type,
-                    const PoseStampedMsg::SharedPtr msg);
+  void PoseCallback(
+    const std::string & dock_name, const std::string & dock_type,
+    const PoseStampedMsg::SharedPtr msg);
 
   void ClearDatabaseFile();
 
-  bool UpdateDatabaseFile(const std::string &dock_name,
-                          const std::string &dock_type,
-                          const PoseStampedMsg::SharedPtr pose);
-  YAML::Node UpdateDockDatabase(const std::string &dock_name,
-                                const std::string &dock_type,
-                                const PoseStampedMsg::SharedPtr pose);
-  PoseStampedMsg::SharedPtr
-  CreateInitialPose(const std::string &frame,
-                    const std::vector<double> &pose_vec);
+  bool UpdateDatabaseFile(
+    const std::string & dock_name, const std::string & dock_type,
+    const PoseStampedMsg::SharedPtr pose);
+  YAML::Node UpdateDockDatabase(
+    const std::string & dock_name, const std::string & dock_type,
+    const PoseStampedMsg::SharedPtr pose);
+  PoseStampedMsg::SharedPtr CreateInitialPose(
+    const std::string & frame, const std::vector<double> & pose_vec);
   std::vector<rclcpp::Subscription<PoseStampedMsg>::SharedPtr> subscriptions_;
   rclcpp::CallbackGroup::SharedPtr client_cb_group_;
   rclcpp::Client<ReloadDockDatabaseSrv>::SharedPtr reload_dock_database_client_;
@@ -62,6 +63,6 @@ protected:
   std::string filepath_;
 };
 
-} // namespace husarion_ugv_docking
+}  // namespace husarion_ugv_docking
 
-#endif // HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_POSE_CONVERTER_NODE_HPP_
+#endif  // HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_POSE_CONVERTER_NODE_HPP_

@@ -14,12 +14,12 @@
 
 #include "husarion_ugv_docking/send_to_dock_node.hpp"
 
-namespace husarion_ugv_docking {
+namespace husarion_ugv_docking
+{
 
-SendToDockNode::SendToDockNode(const std::string &node_name,
-                               const rclcpp::NodeOptions &options)
-    : rclcpp::Node(node_name, options) {
-
+SendToDockNode::SendToDockNode(const std::string & node_name, const rclcpp::NodeOptions & options)
+: rclcpp::Node(node_name, options)
+{
   this->declare_parameter("dock_type", "charging_dock");
   this->declare_parameter("navigate_to_staging_pose", true);
   this->declare_parameter("dock_id", "main");
@@ -28,47 +28,44 @@ SendToDockNode::SendToDockNode(const std::string &node_name,
   this->get_parameter("navigate_to_staging_pose", navigate_to_staging_pose_);
   this->get_parameter("dock_id", dock_id_);
 
-  dock_action_client_ =
-      rclcpp_action::create_client<DockRobot>(this, "dock_robot");
+  dock_action_client_ = rclcpp_action::create_client<DockRobot>(this, "dock_robot");
 
   service_ = this->create_service<SetBoolSrv>(
-      "send_robot_to_dock",
-      std::bind(&SendToDockNode::HandleService, this, std::placeholders::_1,
-                std::placeholders::_2));
+    "send_robot_to_dock",
+    std::bind(&SendToDockNode::HandleService, this, std::placeholders::_1, std::placeholders::_2));
 
   RCLCPP_INFO(this->get_logger(), "Service server 'send_robot_to_dock' ready");
 }
 
 void SendToDockNode::FeedbackCallback(
-    GoalHandleDockRobot::SharedPtr,
-    const DockRobot::Feedback::ConstSharedPtr feedback) {
-
-  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
-                       "Feedback received: dock state = %d", feedback->state);
+  GoalHandleDockRobot::SharedPtr, const DockRobot::Feedback::ConstSharedPtr feedback)
+{
+  RCLCPP_INFO_THROTTLE(
+    this->get_logger(), *this->get_clock(), 1000, "Feedback received: dock state = %d",
+    feedback->state);
 }
 
-void SendToDockNode::ResultCallback(
-    const GoalHandleDockRobot::WrappedResult &result) {
+void SendToDockNode::ResultCallback(const GoalHandleDockRobot::WrappedResult & result)
+{
   switch (result.code) {
-  case rclcpp_action::ResultCode::SUCCEEDED:
-    RCLCPP_INFO(this->get_logger(), "Docking succeeded! Robot is charging.");
-    break;
-  case rclcpp_action::ResultCode::ABORTED:
-    RCLCPP_WARN(this->get_logger(), "Docking aborted!");
-    break;
-  case rclcpp_action::ResultCode::CANCELED:
-    RCLCPP_INFO(this->get_logger(), "Docking canceled by user.");
-    break;
-  default:
-    RCLCPP_ERROR(this->get_logger(), "Unknown result code.");
-    break;
+    case rclcpp_action::ResultCode::SUCCEEDED:
+      RCLCPP_INFO(this->get_logger(), "Docking succeeded! Robot is charging.");
+      break;
+    case rclcpp_action::ResultCode::ABORTED:
+      RCLCPP_WARN(this->get_logger(), "Docking aborted!");
+      break;
+    case rclcpp_action::ResultCode::CANCELED:
+      RCLCPP_INFO(this->get_logger(), "Docking canceled by user.");
+      break;
+    default:
+      RCLCPP_ERROR(this->get_logger(), "Unknown result code.");
+      break;
   }
   active_goal_.reset();
 }
 
-void SendToDockNode::GoalResponseCallback(
-    GoalHandleDockRobot::SharedPtr goal_handle) {
-
+void SendToDockNode::GoalResponseCallback(GoalHandleDockRobot::SharedPtr goal_handle)
+{
   if (!goal_handle) {
     RCLCPP_ERROR(this->get_logger(), "Goal rejected by the server");
     return;
@@ -77,7 +74,8 @@ void SendToDockNode::GoalResponseCallback(
   active_goal_ = goal_handle;
 }
 
-DockRobot::Goal SendToDockNode::CreateGoalMsg() {
+DockRobot::Goal SendToDockNode::CreateGoalMsg()
+{
   auto goal_msg = DockRobot::Goal();
   goal_msg.dock_type = dock_type_;
   goal_msg.navigate_to_staging_pose = navigate_to_staging_pose_;
@@ -86,29 +84,27 @@ DockRobot::Goal SendToDockNode::CreateGoalMsg() {
   return goal_msg;
 }
 
-SendGoalOptions SendToDockNode::CreateGoalOptions() {
+SendGoalOptions SendToDockNode::CreateGoalOptions()
+{
   auto goal_options = rclcpp_action::Client<DockRobot>::SendGoalOptions();
 
-  goal_options.feedback_callback =
-      std::bind(&SendToDockNode::FeedbackCallback, this, std::placeholders::_1,
-                std::placeholders::_2);
+  goal_options.feedback_callback = std::bind(
+    &SendToDockNode::FeedbackCallback, this, std::placeholders::_1, std::placeholders::_2);
 
-  goal_options.result_callback =
-      std::bind(&SendToDockNode::ResultCallback, this, std::placeholders::_1);
+  goal_options.result_callback = std::bind(
+    &SendToDockNode::ResultCallback, this, std::placeholders::_1);
 
   goal_options.goal_response_callback = std::bind(
-      &SendToDockNode::GoalResponseCallback, this, std::placeholders::_1);
+    &SendToDockNode::GoalResponseCallback, this, std::placeholders::_1);
 
   return goal_options;
 }
 
-void SendToDockNode::HandleService(const SetBoolSrv::Request::SharedPtr request,
-                                   SetBoolSrv::Response::SharedPtr response) {
-
-  if (!this->dock_action_client_->wait_for_action_server(
-          std::chrono::seconds(2))) {
-    RCLCPP_ERROR(this->get_logger(),
-                 "Docking action server is not available after waiting");
+void SendToDockNode::HandleService(
+  const SetBoolSrv::Request::SharedPtr request, SetBoolSrv::Response::SharedPtr response)
+{
+  if (!this->dock_action_client_->wait_for_action_server(std::chrono::seconds(2))) {
+    RCLCPP_ERROR(this->get_logger(), "Docking action server is not available after waiting");
     response->success = false;
     response->message = "Docking action server is not available";
     return;
@@ -116,8 +112,8 @@ void SendToDockNode::HandleService(const SetBoolSrv::Request::SharedPtr request,
 
   if (request->data) {
     if (active_goal_) {
-      response->success = true; // Set to true after receiving every request for
-                                // proper functioning of Vizanti buttons
+      response->success = true;  // Set to true after receiving every request for
+                                 // proper functioning of Vizanti buttons
       response->message = "Docking goal already exists.";
       RCLCPP_WARN(this->get_logger(), "Docking goal already exists.");
       return;
@@ -143,4 +139,4 @@ void SendToDockNode::HandleService(const SetBoolSrv::Request::SharedPtr request,
   response->message = "No active docking goal to cancel.";
   RCLCPP_WARN(this->get_logger(), "No active docking goal to cancel.");
 }
-} // namespace husarion_ugv_docking
+}  // namespace husarion_ugv_docking

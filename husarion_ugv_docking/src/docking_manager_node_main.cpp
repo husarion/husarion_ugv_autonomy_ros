@@ -18,19 +18,18 @@
 #include <memory>
 #include <stdexcept>
 
-int main(int argc, char **argv) {
+int main(int argc, char ** argv)
+{
   rclcpp::init(argc, argv);
 
   auto docking_manager_node =
-      std::make_shared<husarion_ugv_docking::DockingManagerNode>(
-          "docking_manager");
+    std::make_shared<husarion_ugv_docking::DockingManagerNode>("docking_manager");
   docking_manager_node->Initialize();
 
   try {
     rclcpp::spin(docking_manager_node);
-  } catch (const std::runtime_error &err) {
-    std::cerr << "[docking_manager] Caught exception: " << err.what()
-              << std::endl;
+  } catch (const std::runtime_error & err) {
+    std::cerr << "[docking_manager] Caught exception: " << err.what() << std::endl;
   }
 
   std::cout << "[docking_manager] Shutting down" << std::endl;

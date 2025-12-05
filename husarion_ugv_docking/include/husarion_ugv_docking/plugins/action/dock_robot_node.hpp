@@ -24,57 +24,67 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav2_msgs/action/dock_robot.hpp>
 
-namespace husarion_ugv_docking {
+namespace husarion_ugv_docking
+{
 
-class DockRobot : public BT::RosActionNode<nav2_msgs::action::DockRobot> {
+class DockRobot : public BT::RosActionNode<nav2_msgs::action::DockRobot>
+{
   using DockRobotAction = nav2_msgs::action::DockRobot;
   using DockRobotActionResult = DockRobotAction::Result;
 
 public:
-  DockRobot(const std::string &name, const BT::NodeConfig &conf,
-            const BT::RosNodeParams &params)
-      : RosActionNode<DockRobotAction>(name, conf, params) {}
+  DockRobot(const std::string & name, const BT::NodeConfig & conf, const BT::RosNodeParams & params)
+  : RosActionNode<DockRobotAction>(name, conf, params)
+  {
+  }
 
-  bool setGoal(Goal &goal) override;
+  bool setGoal(Goal & goal) override;
 
   void onHalt() override;
 
-  BT::NodeStatus onResultReceived(const WrappedResult &wr) override;
+  BT::NodeStatus onResultReceived(const WrappedResult & wr) override;
 
   virtual BT::NodeStatus onFailure(BT::ActionNodeErrorCode error) override;
 
-  static BT::PortsList providedPorts() {
+  static BT::PortsList providedPorts()
+  {
     return providedBasicPorts(
-        {BT::InputPort<bool>(
-             "use_dock_id", true,
-             "Determines whether to use the dock's ID or dock pose fields."),
-         BT::InputPort<std::string>(
-             "dock_id", "Specifies the dock's ID or name from the dock "
-                        "database (used if 'use_dock_id' is true)."),
-         BT::InputPort<geometry_msgs::msg::PoseStamped>(
-             "dock_pose", "Specifies the dock's pose (used if 'use_dock_id' is "
-                          "false). Format: "
-                          "\"x;y;z;roll;pitch;yaw;frame_id\""),
-         BT::InputPort<std::string>(
-             "dock_type", "Defines the type of dock being used when docking "
-                          "via pose. Not needed if only one dock "
-                          "type is available."),
-         BT::InputPort<float>("max_staging_time", 120.0,
-                              "Maximum time allowed (in seconds) for "
-                              "navigating to the dock's staging pose."),
-         BT::InputPort<bool>("navigate_to_staging_pose", true,
-                             "Specifies whether the robot should autonomously "
-                             "navigate to the staging pose."),
+      {BT::InputPort<bool>(
+         "use_dock_id", true, "Determines whether to use the dock's ID or dock pose fields."),
+       BT::InputPort<std::string>(
+         "dock_id",
+         "Specifies the dock's ID or name from the dock "
+         "database (used if 'use_dock_id' is true)."),
+       BT::InputPort<geometry_msgs::msg::PoseStamped>(
+         "dock_pose",
+         "Specifies the dock's pose (used if 'use_dock_id' is "
+         "false). Format: "
+         "\"x;y;z;roll;pitch;yaw;frame_id\""),
+       BT::InputPort<std::string>(
+         "dock_type",
+         "Defines the type of dock being used when docking "
+         "via pose. Not needed if only one dock "
+         "type is available."),
+       BT::InputPort<float>(
+         "max_staging_time", 120.0,
+         "Maximum time allowed (in seconds) for "
+         "navigating to the dock's staging pose."),
+       BT::InputPort<bool>(
+         "navigate_to_staging_pose", true,
+         "Specifies whether the robot should autonomously "
+         "navigate to the staging pose."),
 
-         BT::OutputPort<DockRobotActionResult::_error_code_type>(
-             "error_code", "Returns an error code indicating the reason for "
-                           "failure, if any."),
-         BT::OutputPort<DockRobotActionResult::_num_retries_type>(
-             "num_retries", "Reports the number of retry attempts made during "
-                            "the docking process.")});
+       BT::OutputPort<DockRobotActionResult::_error_code_type>(
+         "error_code",
+         "Returns an error code indicating the reason for "
+         "failure, if any."),
+       BT::OutputPort<DockRobotActionResult::_num_retries_type>(
+         "num_retries",
+         "Reports the number of retry attempts made during "
+         "the docking process.")});
   }
 };
 
-} // namespace husarion_ugv_docking
+}  // namespace husarion_ugv_docking
 
-#endif // HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_PLUGINS_ACTION_DOCK_ROBOT_NODE_HPP_
+#endif  // HUSARION_UGV_DOCKING_HUSARION_UGV_DOCKING_PLUGINS_ACTION_DOCK_ROBOT_NODE_HPP_
