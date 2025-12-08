@@ -42,12 +42,12 @@ We recommend starting with the simulation demo, as it lets you explore the auton
 | Argument                 | Description <br/> ***Type:*** `Default`                                                               |
 | ------------------------ | ----------------------------------------------------------------------------------------------------- |
 | `autostart`              | Automatically startup the nav2 stack. <br/> ***bool:*** `True`                                        |
-| `log_level`              | Logging level. <br/> ***string*** `info` (choices: `debug`, `info`, `warning`, `error`)     |
+| `log_level`              | Logging level. <br/> ***string*** `info` (choices: `debug`, `info`, `warning`, `error`)               |
 | `map`                    | Path to map yaml file to load. <br/> ***string:*** `/maps/map.yaml`                                   |
 | `namespace`              | Add namespace to all launched nodes. <br/> ***string:*** `env(ROBOT_NAMESPACE)`                       |
-| `observation_topic`      | Topic name for LaserScan or PointCloud2 observation messages type. <br/> `''`                         |
+| `observation_topic`      | Topic name for LaserScan or PointCloud2 observation messages type. <br/> ***string:*** `''`           |
 | `observation_topic_type` | Observation topic type. <br/> ***string:*** `pointcloud` (choices: `laserscan`, `pointcloud`)         |
-| `params_file`            | Path to the parameters file to use for all nav2 related nodes. <br/> ***string:*** [`nav2_params.yaml](./husarion_ugv_navigation/config/nav2_params.yaml) |
+| `params_file`            | Path to the parameters file to use for all nav2 related nodes. <br/> ***string:*** [`nav2_params.yaml`](./husarion_ugv_navigation/config/nav2_params.yaml) |
 | `slam`                   | Whether run a SLAM. <br/> ***bool:*** `False`                                                         |
 | `use_composition`        | Whether to use composed bringup. <br/> ***bool:*** `True`                                             |
 | `use_respawn`            | Whether to respawn if a node crashes. Applied when composition is disabled. <br/> ***bool:*** `False` |
