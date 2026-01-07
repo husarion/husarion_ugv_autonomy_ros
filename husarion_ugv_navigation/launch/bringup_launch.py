@@ -140,21 +140,21 @@ def generate_launch_description():
 
     robot_bounding_box = {
         "panther": {
-            "min_x": -0.45,
-            "min_y": -0.47,
+            "min_x": -0.41,
+            "min_y": -0.43,
             "min_z": 0.05,
-            "max_x": 0.45,
-            "max_y": 0.47,
+            "max_x": 0.41,
+            "max_y": 0.43,
             "max_z": 0.5,
         },
         "lynx": {
-            "min_x": -0.38,
-            "min_y": -0.33,
+            "min_x": -0.32,
+            "min_y": -0.27,
             "min_z": 0.05,
-            "max_x": 0.38,
-            "max_y": 0.33,
+            "max_x": 0.32,
+            "max_y": 0.27,
             "max_z": 0.5,
-        }
+        },
     }
     observation_topic_filtered = PythonExpression(
         ["'", observation_topic, "_filtered'"],

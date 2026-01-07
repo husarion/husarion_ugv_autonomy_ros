@@ -35,7 +35,7 @@ services:
       - CYCLONE_DDS_URI=file:///config/cyclonedds.xml
     command: >
       ros2 launch husarion_ugv_docking docking.launch.py
-        namespace:=panther
+        namespace:=${ROBOT_MODEL:-panther}
         use_wibotic_info:=False
         camera_image_topic:=${CAMERA_IMAGE_TOPIC:-/panther/camera/color/image_raw}
         camera_info_topic:=${CAMERA_INFO_TOPIC:-/panther/camera/color/camera_info}
@@ -55,7 +55,7 @@ services:
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
     command: >
       ros2 launch husarion_ugv_navigation bringup_launch.py
-        namespace:=panther
+        namespace:=${ROBOT_MODEL:-panther}
         observation_topic:=/panther/velodyne_points
         observation_topic_type:=pointcloud
         slam:=${SLAM:-True}
