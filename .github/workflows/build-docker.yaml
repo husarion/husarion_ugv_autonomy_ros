@@ -15,9 +15,9 @@ on:
         default: development
       target_distro:
         description: In case of "stable" release specify the ROS distro of the existing docker image (eg.
-          jazzy)
+          humble)
         type: string
-        default: jazzy
+        default: humble
       target_release:
         description: In case of "stable" release specify the version of the existing docker image (eg.
           1.0.12)
@@ -40,9 +40,9 @@ on:
           - stable
       target_distro:
         description: In case of "stable" release specify the ROS distro of the existing docker image (eg.
-          jazzy)
+          humble)
         type: string
-        default: jazzy
+        default: humble
       target_release:
         description: In case of "stable" release specify the version of the existing docker image (eg.
           1.0.12)
