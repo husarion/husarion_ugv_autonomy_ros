@@ -17,7 +17,6 @@ git clone https://github.com/husarion/husarion_ugv_autonomy_ros.git src/husarion
 ### Build
 
 ```bash
-vcs import src < src/husarion_ugv_autonomy_ros/husarion_ugv_autonomy/docking_deps.repos
 vcs import src < src/husarion_ugv_autonomy_ros/husarion_ugv_autonomy/autonomy_deps.repos
 
 sudo rosdep init
