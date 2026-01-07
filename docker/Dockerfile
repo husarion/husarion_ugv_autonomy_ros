@@ -14,7 +14,7 @@ RUN MYDISTRO=${PREFIX:-ros}; MYDISTRO=${MYDISTRO//-/} && \
     apt upgrade -y && \
     apt-get install -y \
         ros-dev-tools && \
-    vcs import src < src/husarion_ugv_autonomy_ros/husarion_ugv_autonomy/docking_deps.repos && \
+    vcs import src < src/husarion_ugv_autonomy_ros/husarion_ugv_autonomy/autonomy_deps.repos && \
     # Remove unnecessary packages
     find src/husarion_ugv_ros/ -maxdepth 1 -mindepth 1 \
         ! -name 'husarion_ugv_description' \
