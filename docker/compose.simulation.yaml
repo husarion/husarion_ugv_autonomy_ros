@@ -24,7 +24,10 @@ services:
         robot_model:=${ROBOT_MODEL:-panther}
 
   docking:
-    image: husarion/husarion-ugv-autonomy:humble-0.1.0-20250210-stable
+    image: husarion/husarion-ugv-autonomy:humble-0.1.0-20260108
+    # build: 
+    #   context: ..
+    #   dockerfile: docker/Dockerfile
     container_name: docking
     <<: *common-config
     volumes:
@@ -45,7 +48,10 @@ services:
         use_sim:=True
 
   navigation:
-    image: husarion/husarion-ugv-autonomy:humble-0.1.0-20250210-stable
+    image: husarion/husarion-ugv-autonomy:humble-0.1.0-20260108
+    # build: 
+    #   context: ..
+    #   dockerfile: docker/Dockerfile
     container_name: navigation
     <<: *common-config
     volumes:
