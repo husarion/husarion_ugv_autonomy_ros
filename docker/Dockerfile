@@ -1,7 +1,7 @@
 ARG ROS_DISTRO=humble
 ARG PREFIX=
 
-FROM husarnet/ros:${PREFIX}${ROS_DISTRO}-ros-core
+FROM husarnet/ros:${PREFIX}${ROS_DISTRO}-ros-base
 
 ARG PREFIX
 
@@ -17,9 +17,9 @@ RUN MYDISTRO=${PREFIX:-ros}; MYDISTRO=${MYDISTRO//-/} && \
     vcs import src < src/husarion_ugv_autonomy_ros/husarion_ugv_autonomy/autonomy_deps.repos && \
     # Remove unnecessary packages
     find src/husarion_ugv_ros/ -maxdepth 1 -mindepth 1 \
-        # ! -name 'husarion_ugv_description' \
+        ! -name 'husarion_ugv_description' \
         ! -name 'husarion_ugv_manager' \
-        # ! -name 'husarion_ugv_msgs' \
+        ! -name 'husarion_ugv_msgs' \
         ! -name 'husarion_ugv_utils' \
         -exec rm -rf {} + && \
     # Install dependencies
