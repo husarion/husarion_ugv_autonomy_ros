@@ -1,94 +1,278 @@
----
-name: Build Docker
+# .github/workflows/docker-build.yml
+name: Build and Push Multi-Arch Docker Images
 
 on:
-  workflow_call:
-    inputs:
-      branch_name:
-        description: Tag used in the docker image (branch/tag/commit).
-        required: true
-        type: string
-      build_type:
-        description: Is it a "development" or a "stable" release?
-        required: true
-        type: string
-        default: development
-      target_distro:
-        description: In case of "stable" release specify the ROS distro of the existing docker image (eg.
-          humble)
-        type: string
-        default: humble
-      target_release:
-        description: In case of "stable" release specify the version of the existing docker image (eg.
-          1.0.12)
-        type: string
-        default: 0.0.0
-      target_date:
-        description: In case of "stable" release specify the date of the existing docker image in format
-          YYYYMMDD (eg. 20220124)
-        type: string
-        default: '20131206'
+  push:
+    branches:
+      - main
+      - develop
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
-      build_type:
-        description: Is it a "development" or a "stable" release?
+      ros_distro:
+        description: 'ROS Distribution'
         required: true
-        default: development
+        default: 'humble'
         type: choice
         options:
-          - development
-          - stable
-      target_distro:
-        description: In case of "stable" release specify the ROS distro of the existing docker image (eg.
-          humble)
-        type: string
-        default: humble
-      target_release:
-        description: In case of "stable" release specify the version of the existing docker image (eg.
-          1.0.12)
-        type: string
-        default: 0.0.0
-      target_date:
-        description: In case of "stable" release specify the date of the existing docker image in format
-          YYYYMMDD (eg. 20220124)
-        type: string
-        default: '20131206'
-  repository_dispatch:
-    types: [rebuild]
+          - humble
+          - jazzy
 
+env:
+  # Domyślna dystrybucja ROS (używana gdy nie jest dispatch)
+  ROS_DISTRO: humble
+  REGISTRY_IMAGE: husarion/husarion-ugv-autonomy
+  PACKAGE_XML_PATH: husarion_ugv_autonomy/package.xml
 
 jobs:
-  build:
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-
+  # ============================================
+  # JOB 1: Przygotowanie - ekstrakcja wersji i metadanych
+  # ============================================
+  prepare:
+    name: 📋 Prepare Build Metadata
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      date: ${{ steps.date.outputs.date }}
+      ros_distro: ${{ steps.ros.outputs.distro }}
+      full_tag: ${{ steps.tag.outputs.full_tag }}
+      short_sha: ${{ steps.sha.outputs.short_sha }}
+    
     steps:
-
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 35000
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
+      - name: Debug - Show repository structure
+        run: |
+          echo "📂 Current directory: $(pwd)"
+          echo "📂 GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+          echo ""
+          echo "📂 Repository structure (first 3 levels):"
+          find . -maxdepth 3 -type f -name "*.xml" | head -20
+          echo ""
+          echo "🔍 Looking for package.xml at: ${{ env.PACKAGE_XML_PATH }}"
+          if [ -f "${{ env.PACKAGE_XML_PATH }}" ]; then
+            echo "✅ File exists!"
+            echo "📄 Content:"
+            cat "${{ env.PACKAGE_XML_PATH }}"
+          else
+            echo "❌ File not found at specified path"
+            echo "📂 Searching for package.xml files:"
+            find . -name "package.xml" -type f
+          fi
 
-      - name: Build Docker Image
-        uses: husarion-ci/ros-docker-img-action@v0.8
+      - name: Extract version from package.xml
+        id: version
+        run: |
+          PACKAGE_XML="${{ env.PACKAGE_XML_PATH }}"
+          
+          if [ -f "$PACKAGE_XML" ]; then
+            # Ekstrakcja wersji z package.xml
+            VERSION=$(grep -oP '<version>\K[^<]+' "$PACKAGE_XML" || echo "")
+            
+            if [ -n "$VERSION" ]; then
+              echo "✅ Version from $PACKAGE_XML: $VERSION"
+            else
+              echo "⚠️ Could not parse version from $PACKAGE_XML"
+              VERSION="0.0.0"
+            fi
+          elif [ -f "VERSION" ]; then
+            VERSION=$(cat VERSION | tr -d '[:space:]')
+            echo "📦 Version from VERSION file: $VERSION"
+          else
+            VERSION="0.0.0"
+            echo "⚠️ No version file found, using default: $VERSION"
+            echo "   Expected package.xml at: $PACKAGE_XML"
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate date stamp
+        id: date
+        run: |
+          DATE=$(date +'%Y%m%d')
+          echo "📅 Date: $DATE"
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+
+      - name: Set ROS distribution
+        id: ros
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            DISTRO="${{ github.event.inputs.ros_distro }}"
+          else
+            DISTRO="${{ env.ROS_DISTRO }}"
+          fi
+          echo "🤖 ROS Distro: $DISTRO"
+          echo "distro=$DISTRO" >> $GITHUB_OUTPUT
+
+      - name: Generate full tag
+        id: tag
+        run: |
+          FULL_TAG="${{ steps.ros.outputs.distro }}-${{ steps.version.outputs.version }}-${{ steps.date.outputs.date }}"
+          echo "🏷️ Full tag: $FULL_TAG"
+          echo "full_tag=$FULL_TAG" >> $GITHUB_OUTPUT
+
+      - name: Get short SHA
+        id: sha
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+
+  # ============================================
+  # JOB 2: Build na natywnych runnerach
+  # ============================================
+  build:
+    name: 🔨 Build ${{ matrix.platform }}
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # AMD64 - standardowy GitHub runner
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+            arch_name: amd64
+          # ARM64 - natywny ARM runner GitHub
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm64
+            arch_name: arm64
+    
+    runs-on: ${{ matrix.runner }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
         with:
-          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
-          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
-          dockerfile: docker/Dockerfile
-          main_branch_name: ros2
-          repo_name: husarion-ugv-autonomy
-          build_type: ${{ inputs.build_type }}
-          ros_distro: ${{ inputs.target_distro }}
-          platforms: linux/amd64, linux/arm64
-          # variables important only for stable release
-          target_distro: ${{ inputs.target_distro }}
-          target_release: ${{ inputs.target_release }}
-          target_date: ${{ inputs.target_date }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          labels: |
+            org.opencontainers.image.title=Husarion UGV Autonomy
+            org.opencontainers.image.description=Husarion UGV Autonomy Stack
+            org.opencontainers.image.vendor=Husarion
+            org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
+            ros.distro=${{ needs.prepare.outputs.ros_distro }}
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            ROS_DISTRO=${{ needs.prepare.outputs.ros_distro }}
+            VERSION=${{ needs.prepare.outputs.version }}
+            BUILD_DATE=${{ needs.prepare.outputs.date }}
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=build-${{ matrix.arch_name }}
+          cache-to: type=gha,mode=max,scope=build-${{ matrix.arch_name }}
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+          echo "📝 Digest: $digest"
+
+      - name: Upload digest artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.arch_name }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # ============================================
+  # JOB 3: Merge manifestów i push finalny
+  # ============================================
+  merge:
+    name: 🚀 Merge and Push Manifest
+    runs-on: ubuntu-latest
+    needs: [prepare, build]
+    
+    steps:
+      - name: Download all digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: List digests
+        run: |
+          echo "📋 Downloaded digests:"
+          ls -la /tmp/digests/
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          # Tag główny: {ros_distro}-{version}-{date}
+          FULL_TAG="${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.full_tag }}"
+          
+          # Tag latest dla danej dystrybucji
+          LATEST_TAG="${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.ros_distro }}-latest"
+          
+          # Tag z wersją (bez daty)
+          VERSION_TAG="${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.ros_distro }}-${{ needs.prepare.outputs.version }}"
+          
+          echo "🏷️ Creating multi-arch manifest for:"
+          echo "   - $FULL_TAG"
+          echo "   - $LATEST_TAG"
+          echo "   - $VERSION_TAG"
+          
+          docker buildx imagetools create \
+            -t "$FULL_TAG" \
+            -t "$LATEST_TAG" \
+            -t "$VERSION_TAG" \
+            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+
+      - name: Inspect final image
+        run: |
+          echo "🔍 Inspecting final multi-arch image:"
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.full_tag }}
+
+      - name: Summary
+        run: |
+          echo "## 🎉 Docker Image Published Successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Image Tags:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.full_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.ros_distro }}-${{ needs.prepare.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.ros_distro }}-latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Platforms:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`linux/amd64\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`linux/arm64\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Metadata:" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| ROS Distro | ${{ needs.prepare.outputs.ros_distro }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | ${{ needs.prepare.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Date | ${{ needs.prepare.outputs.date }} |" >> $GITHUB_STEP_SUMMARY
