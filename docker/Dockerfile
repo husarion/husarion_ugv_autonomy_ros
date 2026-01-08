@@ -14,9 +14,12 @@ RUN MYDISTRO=${PREFIX:-ros}; MYDISTRO=${MYDISTRO//-/} && \
     apt upgrade -y && \
     apt-get install -y \
         ros-dev-tools \
+        ros-${ROS_DISTRO}-rosidl-default-generators \
+        ros-${ROS_DISTRO}-rosidl-default-runtime \
         ros-${ROS_DISTRO}-rosidl-generator-c \
+        ros-${ROS_DISTRO}-rosidl-generator-cpp \
         ros-${ROS_DISTRO}-rosidl-typesupport-c \
-        ros-${ROS_DISTRO}-builtin-interfaces && \
+        ros-${ROS_DISTRO}-rosidl-typesupport-cpp && \
     vcs import src < src/husarion_ugv_autonomy_ros/husarion_ugv_autonomy/autonomy_deps.repos && \
     # Remove unnecessary packages
     find src/husarion_ugv_ros/ -maxdepth 1 -mindepth 1 \
