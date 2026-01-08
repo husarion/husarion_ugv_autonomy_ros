@@ -23,6 +23,7 @@ RUN MYDISTRO=${PREFIX:-ros}; MYDISTRO=${MYDISTRO//-/} && \
         ! -name 'husarion_ugv_msgs' \
         ! -name 'husarion_ugv_utils' \
         -exec rm -rf {} + && \
+    # Install dependencies
     rm -rf /etc/ros/rosdep/sources.list.d/20-default.list && \
     rosdep init && \
     rosdep update --rosdistro $ROS_DISTRO && \

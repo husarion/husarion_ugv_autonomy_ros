@@ -1,22 +1,21 @@
-# .github/workflows/docker-build.yml
+---
 name: Build and Push Multi-Arch Docker Images
 
 on:
   push:
     branches:
       - main
-      - develop
     tags:
-      - 'v*'
+      - v*
   pull_request:
     branches:
       - main
   workflow_dispatch:
     inputs:
       ros_distro:
-        description: 'ROS Distribution'
+        description: ROS Distribution
         required: true
-        default: 'humble'
+        default: humble
         type: choice
         options:
           - humble
@@ -41,7 +40,7 @@ jobs:
       ros_distro: ${{ steps.ros.outputs.distro }}
       full_tag: ${{ steps.tag.outputs.full_tag }}
       short_sha: ${{ steps.sha.outputs.short_sha }}
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -69,11 +68,11 @@ jobs:
         id: version
         run: |
           PACKAGE_XML="${{ env.PACKAGE_XML_PATH }}"
-          
+
           if [ -f "$PACKAGE_XML" ]; then
             # Ekstrakcja wersji z package.xml
             VERSION=$(grep -oP '<version>\K[^<]+' "$PACKAGE_XML" || echo "")
-            
+
             if [ -n "$VERSION" ]; then
               echo "✅ Version from $PACKAGE_XML: $VERSION"
             else
@@ -88,7 +87,7 @@ jobs:
             echo "⚠️ No version file found, using default: $VERSION"
             echo "   Expected package.xml at: $PACKAGE_XML"
           fi
-          
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Generate date stamp
@@ -140,9 +139,9 @@ jobs:
           - platform: linux/arm64
             runner: ubuntu-24.04-arm64
             arch_name: arm64
-    
+
     runs-on: ${{ matrix.runner }}
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -206,7 +205,7 @@ jobs:
     name: 🚀 Merge and Push Manifest
     runs-on: ubuntu-latest
     needs: [prepare, build]
-    
+
     steps:
       - name: Download all digests
         uses: actions/download-artifact@v4
@@ -232,20 +231,20 @@ jobs:
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
-          # Tag główny: {ros_distro}-{version}-{date}
+          # Tag: {ros_distro}-{version}-{date}
           FULL_TAG="${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.full_tag }}"
-          
-          # Tag latest dla danej dystrybucji
-          LATEST_TAG="${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.ros_distro }}-latest"
-          
-          # Tag z wersją (bez daty)
+
+          # Tag: {ros_distro}-{version}
           VERSION_TAG="${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.ros_distro }}-${{ needs.prepare.outputs.version }}"
-          
+
+          # Tag: {ros_distro}-latest
+          LATEST_TAG="${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.ros_distro }}-latest"
+
           echo "🏷️ Creating multi-arch manifest for:"
           echo "   - $FULL_TAG"
           echo "   - $LATEST_TAG"
           echo "   - $VERSION_TAG"
-          
+
           docker buildx imagetools create \
             -t "$FULL_TAG" \
             -t "$LATEST_TAG" \

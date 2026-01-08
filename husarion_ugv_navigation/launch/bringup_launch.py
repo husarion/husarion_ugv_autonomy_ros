@@ -159,6 +159,7 @@ def generate_launch_description():
     observation_topic_filtered = PythonExpression(
         ["'", observation_topic, "_filtered'"],
     )
+
     def override_params_file(robot_model_name):
         bounding_box = robot_bounding_box[robot_model_name]
         params = ReplaceString(
