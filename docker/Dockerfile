@@ -1,7 +1,7 @@
 ARG ROS_DISTRO=humble
 ARG PREFIX=
 
-FROM husarnet/ros:${PREFIX}${ROS_DISTRO}-ros-base
+FROM husarnet/ros:${PREFIX}${ROS_DISTRO}-ros-core
 
 ARG PREFIX
 
@@ -13,7 +13,10 @@ RUN MYDISTRO=${PREFIX:-ros}; MYDISTRO=${MYDISTRO//-/} && \
     apt-get update --fix-missing && \
     apt upgrade -y && \
     apt-get install -y \
-        ros-dev-tools && \
+        ros-dev-tools \
+        ros-${ROS_DISTRO}-rosidl-generator-c \
+        ros-${ROS_DISTRO}-rosidl-typesupport-c \
+        ros-${ROS_DISTRO}-builtin-interfaces && \
     vcs import src < src/husarion_ugv_autonomy_ros/husarion_ugv_autonomy/autonomy_deps.repos && \
     # Remove unnecessary packages
     find src/husarion_ugv_ros/ -maxdepth 1 -mindepth 1 \
