@@ -21,7 +21,7 @@ vcs import src < src/husarion_ugv_autonomy_ros/husarion_ugv_autonomy/autonomy_de
 
 sudo rosdep init
 rosdep update --rosdistro $ROS_DISTRO
-rosdep install --from-paths src -y -i
+rosdep install --from-paths src -y -i -r
 
 source /opt/ros/$ROS_DISTRO/setup.bash
 colcon build --symlink-install --packages-up-to husarion_ugv_autonomy --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF

@@ -2,19 +2,19 @@ repositories:
   behaviortree_ros2:
     type: git
     url: https://github.com/BehaviorTree/BehaviorTree.ROS2
-    version: a0de087a2f3af5ec5a19edd622aa85506105afcd
+    version: 6c6aa078ee7bc52fec98984bed4964556abf5beb
   husarion_ugv_ros:
     type: git
     url: https://github.com/husarion/husarion_ugv_ros
-    version: 8be7cab2ebfccdda2aab78985338a77e50f5f3d0
+    version: 876ee7ce05d0692a9cb293f74b15e793096cac2c
   husarion_components_description:
     type: git
     url: https://github.com/husarion/husarion_components_description.git
-    version: e01e2777cb364b08d654209dd71222477693e7ff
+    version: 5b92d1ce55d6503896e0a59ac910358c7e516d93
   pointcloud_crop_box:
     type: git
     url: https://github.com/husarion/pointcloud_crop_box
-    version: df97a803eb0244cd5da407512fe4c38d538677d8
+    version: 1a73cb85775fb31d453c16faed366e5a44d5fd2a
   wibotic_ros:
     type: git
     url: https://github.com/husarion/wibotic_ros/

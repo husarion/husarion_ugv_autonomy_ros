@@ -6,38 +6,54 @@ This guide walks you through the most important steps needed to run the autonomy
 
 1. **Husarion UGV Platform & ROS Driver**
 
-    This demo is prepared for the **Lynx** and **Panther** robots. This version has been tested with [**Husarion UGV Jazzy 2.3.1**](https://github.com/husarion/husarion_ugv_ros/tree/2.3.1) ROS drivers.
+    This demo is prepared for the **Lynx** and **Panther** robots. This version has been tested with [husarion-ugv:jazzy-update-components-description](https://hub.docker.com/layers/husarion/husarion-ugv/jazzy-update-components-description/images/sha256-25c9afeab20864504edcfe0eed11c5d10d32015cf9644a00222c8e7ced9a472d) ROS driver.
 
 2. **Robot Configuration**
 
     - Run the demo from the **User Computer** with IP address: **`10.15.20.3/24`**.
-    - A LIDAR publishing either a `PointCloud2` or a `LaserScan` topic.
-    - A camera that publish RGB `Image` and corresponding `CameraInfo` topic. (Not required if docking is not used.)
-    - A static transform between the LIDAR, Camera, and robot frame. Ensure the **`frame_id`** in the published messages is connected to the robot’s `base_link`. For more details, see the [documentation on configuring transforms for sensors](https://github.com/husarion/husarion_ugv_ros/blob/ros2/husarion_ugv_description/CONFIGURATION.md#urdf---robot-model-configuration).
-.
+    - Set up/Configure and prepare a LIDAR to publish either a PointCloud2 or a LaserScan topic.
+    - Set up/Configure and prepare a camera to publish RGB `Image` and corresponding `CameraInfo` topic. (Not required if docking is not used.)
+    - Define a static transform between the LIDAR, camera, and robot frames, and ensure the published messages use a **`frame_id`** connected to the robot’s `base_link`. For more details, see the [documentation on configuring transforms for sensors](https://github.com/husarion/husarion_ugv_ros/blob/ros2/husarion_ugv_description/CONFIGURATION.md#urdf---robot-model-configuration).
+
+3. **Wibotic**
+    - If you plan to dock the robot using the `wibotic_receiver`, make sure this component is added to the robot URDF on the **Built-in Computer** (IP address: **`10.15.20.2/24`**). If neccessary, update the file `config/husarion_ugv_description/config/components.yaml` as shown below, and ensure the `xyz` and `rpy` values are set correctly for your setup:
+    ```yaml
+    components:
+        - type: WCH01
+            parent_link: cover_link
+            xyz: 0.33 0.0 -0.15
+            rpy: 0.0 0.0 0.0
+    ```
+    - After adding the component, restart the driver on the Built-in Computer to apply the changes:
+    ```bash
+    docker compose down
+    docker compose up --force-recreate
+    ```
+    - If the `wibotic` system is not used, disable it by setting `use_wibotic_info:=False` in `docker/compose.hardware.yaml`.
 
 3. **Just**
 
     To simplify running commands, we use [just](https://github.com/casey/just). Install it with:
 
     ```bash
-    sudo snap install just
+    sudo snap install just --classic
     ```
 
 ## 🧭 Navigation
 
 ### Step 1: Configure the environment
 
-Setup environment:
+Configure the environment variables. **Check and adjust** the content of the `.env` file. Make sure that the file is located in the `docker` directory so that it works correctly with the `docker compose`.
 
 ```bash
-export OBSERVATION_TOPIC={point_cloud_topic} # absolute LIDAR topic (e.g. /scan)
-export OBSERVATION_TOPIC_TYPE={msg_type} # laserscan | pointcloud
-export CAMERA_IMAGE_TOPIC={camera_image_topic} # absolute camera rgb image topic (e.g. /camera/color/image_raw)
-export CAMERA_INFO_TOPIC={camera_info_topic} # absolute camera info topic (e.g. /camera/camera_info)
-export SLAM=True # set False if you already have a map
-export ROBOT_MODEL=panther # set to 'lynx' if using Husarion UGV Lynx
-export ROBOT_NAMESPACE=panther # set to 'lynx' if using Husarion UGV Lynx
+cp src/husarion_ugv_autonomy_ros/.env.template src/husarion_ugv_autonomy_ros/docker/.env
+```
+
+After modifying the file, and **in each newly opened terminal**, source the `.env` file:
+
+```bash
+cd src/husarion_ugv_autonomy_ros
+source docker/.env
 ```
 
 ### Step 2: Start navigation
@@ -78,6 +94,13 @@ In the example below for dock named `main` the position is `pose: [1.0, 1.20, 1.
         pose: [1.0, 1.20, 1.57] # [x, y, yaw] of the dock on the map. Used also for spawning dock in the simulation.
 [...]
 ```
+
+-----------------
+^ komentarz o mapach i o punkcie 0,0,0
+
+-----------------
+
+
 
 ### Step 3: Setup OS
 
