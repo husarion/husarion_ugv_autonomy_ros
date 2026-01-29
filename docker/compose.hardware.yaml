@@ -5,6 +5,15 @@ x-common-config:
   env_file: .env
 
 services:
+
+  reset_odometry:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: reset_odometry
+    <<: *common-config
+    command: >
+      ros2 service call /${ROBOT_NAMESPACE:-panther}/reset std_srvs/srv/Empty
   docking:
     # image: husarion/husarion-ugv-autonomy:jazzy-jazzy-devel
     build:

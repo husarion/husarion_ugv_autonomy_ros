@@ -33,6 +33,8 @@ This guide walks you through the most important steps needed to run the autonomy
     docker compose up --force-recreate
     ```
 
+    - Make sure that the `wibotic_receiver` sensor is properly configured.
+
     - If the `wibotic` system is not used, disable it by setting `use_wibotic_info:=False` in `docker/compose.hardware.yaml`.
 
 4. **Just**
@@ -87,7 +89,7 @@ just start-hardware navigation
 
 ### Step 2: Define dock locations
 
-After mapping the area, specify charging dock poses in [docker/config/docking_server.yaml](docker/config/docking_server.yaml). You can use **RViz** or **Foxglove** to get the poses.
+After mapping the area, specify charging dock poses in [husarion_ugv_docking/config/docking_server.yaml](https://github.com/husarion/husarion_ugv_autonomy_ros/blob/ros2/husarion_ugv_docking/config/docking_server.yaml). You can use **RViz** or **Foxglove** to get the poses.
 
 In the example below for dock named `main` the position is `pose: [1.0, 1.20, 1.57]`.
 
@@ -99,8 +101,14 @@ In the example below for dock named `main` the position is `pose: [1.0, 1.20, 1.
 [...]
 ```
 
------------------
-^ komentarz o mapach i o punkcie 0,0,0
+The system provides a service that allows resetting the odometry frame.
+To reset the odometry, run:
+
+```bash
+just start-hardware reset_odometry
+```
+
+After calling this service, the `odom` frame is aligned with the current `base_link` frame. Consequently, the robot’s current pose is set to: `pose: [0.0, 0.0, 0.0]`.
 
 -----------------
 

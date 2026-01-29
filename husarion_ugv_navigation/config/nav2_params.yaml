@@ -8,7 +8,7 @@
       robot_base_frame: <namespace>/base_link
       odom_topic: odometry/filtered
       plugin_lib_names:
-        - is_estop # rename it to mach standard (is_estop_bt_node)
+        - is_estop # rename it to match standard (is_estop_bt_node)
 
   bt_navigator_navigate_through_poses_rclcpp_node:
     ros__parameters:

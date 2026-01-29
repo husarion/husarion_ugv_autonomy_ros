@@ -32,12 +32,11 @@ check-husarion-webui:
     fi
 
 # Start navigation on User Computer inside Husarion UGV
-start-hardware service="navigation docking":
+start-hardware service="navigation docking reset_odometry":
     #!/bin/bash
     docker compose -f docker/compose.hardware.yaml down {{service}}
     docker compose -f docker/compose.hardware.yaml pull
     docker compose -f docker/compose.hardware.yaml up {{service}}
-
 
 # Start Gazebo simulator with full autonomy stack
 start-simulation:
