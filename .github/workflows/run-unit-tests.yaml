@@ -1,5 +1,5 @@
 ---
-name: CI
+name: Run unit tests
 
 on:
   push:
@@ -42,7 +42,7 @@ jobs:
               "build": {
                 "cmake-args": ["-DCMAKE_BUILD_TYPE=Release"],
                 "packages-up-to": [
-                    "husarion_ugv_autonomy",
+                    "husarion_ugv_autonomy"
                 ]
               },
               "test": {
