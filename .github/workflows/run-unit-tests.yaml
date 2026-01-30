@@ -25,13 +25,6 @@ jobs:
       - name: Setup ROS
         uses: ros-tooling/setup-ros@v0.7
 
-      - name: Print python version and folder
-        run: |
-          echo "Python version:"
-          python3 --version
-          echo "Current folder contents: ${PYTHONPATH}"
-
-
       - name: Build and test
         uses: ros-tooling/action-ros-ci@v0.3
         with:
