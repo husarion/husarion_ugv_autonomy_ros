@@ -23,17 +23,17 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup ROS
-        uses: ros-tooling/setup-ros@0.7.4
+        uses: ros-tooling/setup-ros@v0.7
 
       - name: Print python version and folder
         run: |
           echo "Python version:"
           python3 --version
           echo "Current folder contents: ${PYTHONPATH}"
-
+          
 
       - name: Build and test
-        uses: ros-tooling/action-ros-ci@0.3.12
+        uses: ros-tooling/action-ros-ci@v0.3
         with:
           vcs-repo-file-url: ${{ github.workspace }}/husarion_ugv_autonomy/autonomy_deps.repos
           target-ros2-distro: jazzy
