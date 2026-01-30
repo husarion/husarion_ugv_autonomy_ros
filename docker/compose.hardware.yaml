@@ -27,7 +27,7 @@ services:
     command: >
       ros2 launch husarion_ugv_docking docking.launch.py
         namespace:=${ROBOT_NAMESPACE:-panther}
-        use_wibotic_info:=True
+        use_wibotic_info:=${USE_WIBOTIC_INFO:-True}
         camera_image_topic:=${CAMERA_IMAGE_TOPIC:-/panther/camera/color/image_raw}
         camera_info_topic:=${CAMERA_INFO_TOPIC:-/panther/camera/color/camera_info}
         apriltag_output_dir:=/config/apriltags

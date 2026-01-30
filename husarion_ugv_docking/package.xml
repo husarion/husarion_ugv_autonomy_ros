@@ -3,7 +3,7 @@
 <package format="3">
   <name>husarion_ugv_docking</name>
   <version>0.1.2</version>
-  <description>Integration Panther with Wibotic charger and Opennav Docking framework</description>
+  <description>Integration Panther with WiBotic charger and Opennav Docking framework</description>
 
   <maintainer email="support@husarion.com">Husarion</maintainer>
   <license>Apache License 2.0</license>

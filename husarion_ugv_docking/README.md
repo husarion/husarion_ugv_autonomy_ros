@@ -54,7 +54,7 @@ The package contains a `ChargingDock` plugin for the [opennav_docking](https://g
 - `charging_dock.docking_yaw_threshold` [*double*, default: **0.3**]: A threshold of a difference of yaw angles between a robot pose and a dock pose to declare if docking succeed.
 - `charging_dock.staging_x_offset` [*double*, default: **-0.7**]: A staging pose is defined by offsetting a dock pose in axis X.
 - `charging_dock.filter_coef` [*double*, default: **0.1**]: A key parameter that influences the trade-off between the filter's responsiveness and its smoothness, balancing how quickly it reacts to new pose data pose how much it smooths out fluctuations.
-- `charging_dock.use_wibotic_info` [*bool*, default: **True**]: Whether Wibotic information is used.
+- `charging_dock.use_wibotic_info` [*bool*, default: **True**]: Whether WiBotic information is used.
 - `charging_dock.wibotic_info_timeout` [*double*, default: **1.5**]: A timeout in seconds to receive a wibotic_info.
 - `<dock_name>.apriltag_id` [*int*, default: **0**]: AprilTag ID of a dock.
 - `<dock_name>.dock_frame` [*string*, default: **main_wibotic_transmitter_link**]: A frame id to compare with fixed frame if docked.

@@ -11,11 +11,13 @@ This guide walks you through the most important steps needed to run the autonomy
 2. **Robot Configuration**
 
     - Run the demo from the **User Computer** with IP address: **`10.15.20.3/24`**.
-    - Set up/Configure and prepare a LIDAR to publish either a PointCloud2 or a LaserScan topic.
-    - Set up/Configure and prepare a camera to publish RGB `Image` and corresponding `CameraInfo` topic. (Not required if docking is not used.)
+    - Set up a LIDAR to publish either a PointCloud2 or a LaserScan topic.
+    - Set up a camera to publish RGB `Image` and corresponding `CameraInfo` topic (not required if docking is not used).
     - Define a static transform between the LIDAR, camera, and robot frames, and ensure the published messages use a **`frame_id`** connected to the robot’s `base_link`. For more details, see the [documentation on configuring transforms for sensors](https://github.com/husarion/husarion_ugv_ros/blob/ros2/husarion_ugv_description/CONFIGURATION.md#urdf---robot-model-configuration).
+    - Attach an AprilTag to your docking station, if used.
+    - Detailed instructions on hardware and software setup, and apriltag requirements can be accessed in the article: [Autonomous Navigation and Docking for Panther & Lynx UGVs](https://husarion.com/blog/husarion-ugv-autonomy/).
 
-3. **Wibotic**
+3. **WiBotic**
     - If you plan to dock the robot using the `wibotic_receiver`, make sure this component is added to the robot URDF on the **Built-in Computer** (IP address: **`10.15.20.2/24`**). If necessary, update the file `/home/husarion/config/husarion_ugv_description/config/components.yaml` as shown below, and ensure the `xyz` and `rpy` values are set correctly for your setup:
 
     ```yaml
@@ -35,7 +37,7 @@ This guide walks you through the most important steps needed to run the autonomy
 
     - Make sure that the `wibotic_receiver` sensor is properly configured.
 
-    - If the `wibotic` system is not used, disable it by setting `use_wibotic_info:=False` in `docker/compose.hardware.yaml`.
+    - If the WiBotic system is not used, disable it by setting `export USE_WIBOTIC_INFO=False` in the `.env` file.
 
 4. **Just**
 
@@ -81,6 +83,7 @@ just start-hardware navigation
 2. Open your browser and navigate to:
 
     - http://{ip_address}:8080/ui (devices in the same LAN)
+
 - default: [http://10.15.20.3:8080/ui](http://10.15.20.3:8080/ui])
 - http://{ip_address}:8080/ui (devices in the same LAN)
 - http://{hostname}:8080/ui (devices in the same Husarnet Network)

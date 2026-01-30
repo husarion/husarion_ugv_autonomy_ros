@@ -5,7 +5,7 @@ This is a basic demo that's a good place to start when preparing your robot for 
 - Velodyne Puck
 - RPLIDAR S3
 - Astra Camera
-- Wibotic receiver
+- WiBotic receiver
 
 ## 📋 Requirements
 
