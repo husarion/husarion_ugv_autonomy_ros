@@ -44,7 +44,7 @@ start-simulation:
     #!/bin/bash
     xhost +local:docker
     docker compose -f docker/compose.simulation.yaml down
-    docker compose -f docker/compose.simulation.yaml pull
+    docker compose -f docker/compose.simulation.yaml build
     docker compose -f docker/compose.simulation.yaml up
 
 # Configure and run Husarion WebUI

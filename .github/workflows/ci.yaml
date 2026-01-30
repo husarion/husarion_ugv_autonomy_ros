@@ -37,11 +37,13 @@ jobs:
         with:
           vcs-repo-file-url: ${{ github.workspace }}/husarion_ugv_autonomy/autonomy_deps.repos
           target-ros2-distro: jazzy
-          package-name: husarion_ugv_autonomy
           colcon-defaults: |
             {
               "build": {
-                "cmake-args": ["-DCMAKE_BUILD_TYPE=Release"]
+                "cmake-args": ["-DCMAKE_BUILD_TYPE=Release"],
+                "packages-up-to": [
+                    "husarion_ugv_autonomy",
+                ]
               },
               "test": {
                 "packages-select": [

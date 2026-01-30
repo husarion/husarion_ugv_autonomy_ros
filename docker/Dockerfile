@@ -31,7 +31,7 @@ RUN MYDISTRO=${PREFIX:-ros}; MYDISTRO=${MYDISTRO//-/} && \
     rosdep install -i --from-path src --rosdistro $ROS_DISTRO -y && \
     # Build
     source /opt/ros/$ROS_DISTRO/setup.bash && \
-    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release && \
+    colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release && \
     # Save version
     echo $(cat /ros2_ws/src/husarion_ugv_autonomy_ros/husarion_ugv_autonomy/package.xml | grep '<version>' | sed -r 's/.*<version>([0-9]+.[0-9]+.[0-9]+)<\/version>/\1/g') >> /version.txt && \
     # Size optimization
