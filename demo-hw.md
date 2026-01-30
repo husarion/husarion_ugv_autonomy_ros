@@ -81,7 +81,9 @@ just start-hardware navigation
 2. Open your browser and navigate to:
 
     - http://{ip_address}:8080/ui (devices in the same LAN)
-    - http://{hostname}:8080/ui (devices in the same Husarnet Network)
+- default: [http://10.15.20.3:8080/ui](http://10.15.20.3:8080/ui])
+- http://{ip_address}:8080/ui (devices in the same LAN)
+- http://{hostname}:8080/ui (devices in the same Husarnet Network)
 
 ## ⚓ Docking
 
