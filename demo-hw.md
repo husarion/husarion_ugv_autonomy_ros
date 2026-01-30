@@ -16,7 +16,7 @@ This guide walks you through the most important steps needed to run the autonomy
     - Define a static transform between the LIDAR, camera, and robot frames, and ensure the published messages use a **`frame_id`** connected to the robot’s `base_link`. For more details, see the [documentation on configuring transforms for sensors](https://github.com/husarion/husarion_ugv_ros/blob/ros2/husarion_ugv_description/CONFIGURATION.md#urdf---robot-model-configuration).
 
 3. **Wibotic**
-    - If you plan to dock the robot using the `wibotic_receiver`, make sure this component is added to the robot URDF on the **Built-in Computer** (IP address: **`10.15.20.2/24`**). If necessary, update the file `config/husarion_ugv_description/config/components.yaml` as shown below, and ensure the `xyz` and `rpy` values are set correctly for your setup:
+    - If you plan to dock the robot using the `wibotic_receiver`, make sure this component is added to the robot URDF on the **Built-in Computer** (IP address: **`10.15.20.2/24`**). If necessary, update the file `/home/husarion/config/husarion_ugv_description/config/components.yaml` as shown below, and ensure the `xyz` and `rpy` values are set correctly for your setup:
 
     ```yaml
     components:
