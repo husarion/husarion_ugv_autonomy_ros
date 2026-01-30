@@ -35,11 +35,10 @@ jobs:
         with:
           vcs-repo-file-url: ${{ github.workspace }}/husarion_ugv_autonomy/autonomy_deps.repos
           target-ros2-distro: jazzy
-          package-name: ament_package
+          package-name: husarion_ugv_autonomy
           colcon-defaults: |
             {
               "build": {
-                "packages-up-to": ["husarion_ugv_autonomy"],
                 "cmake-args": ["-DCMAKE_BUILD_TYPE=Release"]
               },
               "test": {
