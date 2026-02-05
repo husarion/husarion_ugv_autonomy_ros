@@ -18,13 +18,25 @@ This guide walks you through the most important steps needed to run the autonomy
     - Detailed instructions on hardware and software setup, and apriltag requirements can be accessed in the article: [Autonomous Navigation and Docking for Panther & Lynx UGVs](https://husarion.com/blog/husarion-ugv-autonomy/).
 
 3. **WiBotic**
-    - If you plan to dock the robot using the `wibotic_receiver`, make sure this component is added to the robot URDF on the **Built-in Computer** (IP address: **`10.15.20.2/24`**). If necessary, update the file `/home/husarion/config/husarion_ugv_description/config/components.yaml` as shown below, and ensure the `xyz` and `rpy` values are set correctly for your setup:
+    - If you plan to dock the robot using the `wibotic_receiver`, make sure this component is added to the robot URDF on the **Built-in Computer** (IP address: **`10.15.20.2/24`**). Add the appropriate configuration snippet shown below for your robot to the following file: `/home/husarion/config/husarion_ugv_description/config/components.yaml`.
+
+    For Lynx:
 
     ```yaml
     components:
         - type: WCH01
             parent_link: cover_link
             xyz: 0.33 0.0 -0.15
+            rpy: 0.0 0.0 0.0
+    ```
+
+    For Panther:
+
+    ```yaml
+    components:
+        - type: WCH01
+            parent_link: lights_channel_1_link
+            xyz: -0.02 0.0 -0.0185
             rpy: 0.0 0.0 0.0
     ```
 
@@ -51,6 +63,8 @@ This guide walks you through the most important steps needed to run the autonomy
 
 ### Step 1: Configure the environment
 
+Remember to run the demo from the **User Computer** with IP address: **`10.15.20.3/24`**.
+
 Configure the environment variables. **Check and adjust** the content of the `.env` file. Make sure that the file is located in the `docker` directory so that it works correctly with the `docker compose`.
 
 ```bash
@@ -64,15 +78,21 @@ cd src/husarion_ugv_autonomy_ros
 source docker/.env
 ```
 
-### Step 2: Start navigation
+### Step 2: Setup OS
 
-Run navigation on the **physical robot**:
+```bash
+just setup-os
+```
+
+### Step 3: Start navigation
+
+Open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, source the `.env` file, and run the navigation:
 
 ```bash
 just start-hardware navigation
 ```
 
-### Step 3: Control the robot via Web Browser
+### Step 4: Control the robot via Web Browser
 
 1. Start the web interface:
 
@@ -90,7 +110,9 @@ just start-hardware navigation
 
 ## ⚓ Docking
 
-### Step 1: Ensure navigation is running
+### Step 1: Ensure the navigation is running
+
+Verify that the navigation stack is running by opening the visualization tool and confirming that the previously created map is visible and that the robot’s position updates in real time.
 
 ### Step 2: Define dock locations
 
@@ -106,6 +128,7 @@ In the example below for dock named `main` the position is `pose: [1.0, 1.20, 1.
 [...]
 ```
 
+If your robot is docked you can reset the odometry and make sure that the pose of the dock is set to [0.0, 0.0, 0.0] as well as the pose of the robot.
 The system provides a service that allows resetting the odometry frame.
 To reset the odometry, run:
 
@@ -117,19 +140,13 @@ After calling this service, the `odom` frame is aligned with the current `base_l
 
 -----------------
 
-### Step 3: Setup OS
-
-```bash
-just setup-os
-```
-
-### Step 4: Start Docking
+### Step 3: Start Docking
 
 ```bash
 just start-hardware docking
 ```
 
-### Step 5: Dock the robot
+### Step 4: Dock the robot
 
 ```bash
 just dock main
@@ -137,7 +154,7 @@ just dock main
 
 or press **LB + RB + Y** on the gamepad.
 
-### Step 6: Undock the robot
+### Step 5: Undock the robot
 
 ```bash
 just undock
