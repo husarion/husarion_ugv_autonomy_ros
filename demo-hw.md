@@ -6,7 +6,7 @@ This guide walks you through the most important steps needed to run the autonomy
 
 1. **Husarion UGV Platform & ROS Driver**
 
-    This demo is prepared for the **Lynx** and **Panther** robots. This version has been tested with [husarion-ugv:jazzy-update-components-description](https://hub.docker.com/layers/husarion/husarion-ugv/jazzy-update-components-description/images/sha256-25c9afeab20864504edcfe0eed11c5d10d32015cf9644a00222c8e7ced9a472d) ROS driver.
+    This demo is prepared for the **Lynx** and **Panther** robots. This version has been tested with [husarion-ugv:jazzy-update-components-description](https://hub.docker.com/layers/husarion/husarion-ugv/jazzy-update-components-description/images/sha256-25c9afeab20864504edcfe0eed11c5d10d32015cf9644a00222c8e7ced9a472d) ROS driver, which should be specified on the **Built-in Computer** (IP address: **`10.15.20.2/24`**) in the `/home/husarion_ws/compose.yaml` file.
 
 2. **Robot Configuration**
 
@@ -15,7 +15,7 @@ This guide walks you through the most important steps needed to run the autonomy
     - Set up a camera to publish RGB `Image` and corresponding `CameraInfo` topic (not required if docking is not used).
     - Define a static transform between the LIDAR, camera, and robot frames, and ensure the published messages use a **`frame_id`** connected to the robot’s `base_link`. For more details, see the [documentation on configuring transforms for sensors](https://github.com/husarion/husarion_ugv_ros/blob/ros2/husarion_ugv_description/CONFIGURATION.md#urdf---robot-model-configuration).
     - Attach an AprilTag to your docking station, if used.
-    - Detailed instructions on hardware and software setup, and apriltag requirements can be accessed in the article: [Autonomous Navigation and Docking for Panther & Lynx UGVs](https://husarion.com/blog/husarion-ugv-autonomy/).
+    - Detailed instructions on hardware and software setup, and apriltag requirements can be accessed in this article: [Autonomous Navigation and Docking for Panther & Lynx UGVs](https://husarion.com/blog/husarion-ugv-autonomy/).
 
 3. **WiBotic**
     - If you plan to dock the robot using the `wibotic_receiver`, make sure this component is added to the robot URDF on the **Built-in Computer** (IP address: **`10.15.20.2/24`**). Add the appropriate configuration snippet shown below for your robot to the following file: `/home/husarion/config/husarion_ugv_description/config/components.yaml`.
@@ -49,7 +49,7 @@ This guide walks you through the most important steps needed to run the autonomy
 
     - Make sure that the `wibotic_receiver` sensor is properly configured.
 
-    - If the WiBotic system is not used, disable it by setting `export USE_WIBOTIC_INFO=False` in the `.env` file.
+    - If the WiBotic system is not used, disable it later (during `Step 1` in `Navigation` part) by setting `export USE_WIBOTIC_INFO=False` in the `.env` file.
 
 4. **Just**
 
@@ -86,7 +86,7 @@ just setup-os
 
 ### Step 3: Start navigation
 
-Open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, source the `.env` file, and run the navigation:
+Run the navigation:
 
 ```bash
 just start-hardware navigation
@@ -94,19 +94,16 @@ just start-hardware navigation
 
 ### Step 4: Control the robot via Web Browser
 
-1. Start the web interface:
+1. Open your browser and navigate to:
+
+    - http://{ip_address}:8080/ui (devices in the same LAN) (default: [http://10.15.20.3:8080/ui](http://10.15.20.3:8080/ui]))
+    - http://{hostname}:8080/ui (devices in the same Husarnet Network)
+
+2. If the visualization did not start itself, open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, source the `.env` file, and start the web interface:
 
     ```bash
     just start-visualization
     ```
-
-2. Open your browser and navigate to:
-
-    - http://{ip_address}:8080/ui (devices in the same LAN)
-
-- default: [http://10.15.20.3:8080/ui](http://10.15.20.3:8080/ui])
-- http://{ip_address}:8080/ui (devices in the same LAN)
-- http://{hostname}:8080/ui (devices in the same Husarnet Network)
 
 ## ⚓ Docking
 
@@ -130,7 +127,7 @@ In the example below for dock named `main` the position is `pose: [1.0, 1.20, 1.
 
 If your robot is docked you can reset the odometry and make sure that the pose of the dock is set to [0.0, 0.0, 0.0] as well as the pose of the robot.
 The system provides a service that allows resetting the odometry frame.
-To reset the odometry, run:
+To reset the odometry, open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, source the `.env` file, and run:
 
 ```bash
 just start-hardware reset_odometry
@@ -142,11 +139,15 @@ After calling this service, the `odom` frame is aligned with the current `base_l
 
 ### Step 3: Start Docking
 
+Open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, source the `.env` file, and start docking:
+
 ```bash
 just start-hardware docking
 ```
 
 ### Step 4: Dock the robot
+
+Open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, source the `.env` file, and dock the robot to the `main` station:
 
 ```bash
 just dock main
