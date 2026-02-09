@@ -1,5 +1,5 @@
 ---
-name: CI
+name: Run unit tests
 
 on:
   push:
@@ -14,7 +14,9 @@ jobs:
 
   build-and-test:
     name: Run unit tests
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:24.04
 
     steps:
       - name: Checkout repository
@@ -31,8 +33,10 @@ jobs:
           colcon-defaults: |
             {
               "build": {
-                "packages-up-to": ["husarion_ugv_autonomy"],
-                "cmake-args": ["-DCMAKE_BUILD_TYPE=Release"]
+                "cmake-args": ["-DCMAKE_BUILD_TYPE=Release", "-DBUILD_TESTING=ON"],
+                "packages-up-to": [
+                    "husarion_ugv_autonomy"
+                ]
               },
               "test": {
                 "packages-select": [
