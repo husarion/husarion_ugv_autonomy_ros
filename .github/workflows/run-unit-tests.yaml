@@ -33,7 +33,7 @@ jobs:
           colcon-defaults: |
             {
               "build": {
-                "cmake-args": ["-DCMAKE_BUILD_TYPE=Release"],
+                "cmake-args": ["-DCMAKE_BUILD_TYPE=Release", "-DBUILD_TESTING=ON"],
                 "packages-up-to": [
                     "husarion_ugv_autonomy"
                 ]
