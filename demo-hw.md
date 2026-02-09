@@ -96,7 +96,7 @@ just start-hardware navigation
 
 1. Open your browser and navigate to:
 
-    - http://{ip_address}:8080/ui (devices in the same LAN) (default: [http://10.15.20.3:8080/ui](http://10.15.20.3:8080/ui]))
+    - http://{ip_address}:8080/ui (devices in the same LAN) (default: [http://10.15.20.3:8080/ui](http://10.15.20.3:8080/ui))
     - http://{hostname}:8080/ui (devices in the same Husarnet Network)
 
 2. If the visualization did not start itself, open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, source the `.env` file, and start the web interface:
@@ -109,11 +109,11 @@ just start-hardware navigation
 
 ### Step 1: Ensure the navigation is running
 
-Verify that the navigation stack is running by opening the visualization tool and confirming that the previously created map is visible and that the robot’s position updates in real time.
+Verify that the navigation stack is running by opening the visualization tool and confirming that the map is visible and that the robot’s position updates in real time.
 
 ### Step 2: Define dock locations
 
-After mapping the area, specify charging dock poses in [husarion_ugv_docking/config/docking_server.yaml](https://github.com/husarion/husarion_ugv_autonomy_ros/blob/ros2/husarion_ugv_docking/config/docking_server.yaml). You can use **RViz** or **Foxglove** to get the poses.
+Map the area and after that, specify charging dock poses in [husarion_ugv_docking/config/docking_server.yaml](https://github.com/husarion/husarion_ugv_autonomy_ros/blob/ros2/husarion_ugv_docking/config/docking_server.yaml). You can use **RViz** or **Foxglove** to get the poses.
 
 In the example below for dock named `main` the position is `pose: [1.0, 1.20, 1.57]`.
 
@@ -153,7 +153,15 @@ Open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`*
 just dock main
 ```
 
-or press **LB + RB + Y** on the gamepad.
+or press **LB + RB + Y** on the gamepad (if AprilTag is visible).
+
+The `just dock <dock_name>` command consists of two stages: navigating to the staging pose and then approaching the docking station from that pose. If the robot is already close enough to the docking station, you can skip the navigation stage and perform only the final docking maneuver by running:
+
+```bash
+just dock-direct main
+```
+
+Pressing **LB + RB + Y** on the gamepad triggers docking **without** navigating to the staging pose. This option works only when the AprilTag is visible in the camera.
 
 ### Step 5: Undock the robot
 
