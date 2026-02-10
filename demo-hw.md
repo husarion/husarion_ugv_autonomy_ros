@@ -65,17 +65,16 @@ This guide walks you through the most important steps needed to run the autonomy
 
 Remember to run the demo from the **User Computer** with IP address: **`10.15.20.3/24`**.
 
-Configure the environment variables. **Check and adjust** the content of the `.env` file. Make sure that the file is located in the `docker` directory so that it works correctly with the `docker compose`.
+Configure the environment variables. Copy the `.env.template` into `.env` file:
 
 ```bash
 cp src/husarion_ugv_autonomy_ros/.env.template src/husarion_ugv_autonomy_ros/docker/.env
 ```
 
-After modifying the file, and **in each newly opened terminal**, source the `.env` file:
+**Check and adjust** the content of the `.env` file. Make sure that the file is located in the `docker` directory so that it works correctly with the `docker compose`. This file will automatically be sourced by `just`. Navigate to the directory from where the `just` commands might be called:
 
 ```bash
 cd src/husarion_ugv_autonomy_ros
-source docker/.env
 ```
 
 ### Step 2: Setup OS
@@ -99,7 +98,7 @@ just start-hardware navigation
     - http://{ip_address}:8080/ui (devices in the same LAN) (default: [http://10.15.20.3:8080/ui](http://10.15.20.3:8080/ui))
     - http://{hostname}:8080/ui (devices in the same Husarnet Network)
 
-2. If the visualization did not start itself, open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, source the `.env` file, and start the web interface:
+2. If the visualization did not start itself, open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros` and start the web interface:
 
     ```bash
     just start-visualization
@@ -113,7 +112,7 @@ Verify that the navigation stack is running by opening the visualization tool an
 
 ### Step 2: Define dock locations
 
-Map the area and after that, specify charging dock poses in [husarion_ugv_docking/config/docking_server.yaml](https://github.com/husarion/husarion_ugv_autonomy_ros/blob/ros2/husarion_ugv_docking/config/docking_server.yaml). You can use **RViz** or **Foxglove** to get the poses.
+Map the area, and after that, specify charging dock poses in [husarion_ugv_docking/config/docking_server.yaml](https://github.com/husarion/husarion_ugv_autonomy_ros/blob/ros2/husarion_ugv_docking/config/docking_server.yaml). You can use **RViz** or **Foxglove** to get the poses.
 
 In the example below for dock named `main` the position is `pose: [1.0, 1.20, 1.57]`.
 
@@ -127,7 +126,7 @@ In the example below for dock named `main` the position is `pose: [1.0, 1.20, 1.
 
 If your robot is docked you can reset the odometry and make sure that the pose of the dock is set to [0.0, 0.0, 0.0] as well as the pose of the robot.
 The system provides a service that allows resetting the odometry frame.
-To reset the odometry, open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, source the `.env` file, and run:
+To reset the odometry, open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, and run:
 
 ```bash
 just start-hardware reset_odometry
@@ -139,7 +138,7 @@ After calling this service, the `odom` frame is aligned with the current `base_l
 
 ### Step 3: Start Docking
 
-Open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, source the `.env` file, and start docking:
+Open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, and start docking:
 
 ```bash
 just start-hardware docking
@@ -147,7 +146,7 @@ just start-hardware docking
 
 ### Step 4: Dock the robot
 
-Open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, source the `.env` file, and dock the robot to the `main` station:
+Open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, and dock the robot to the `main` station:
 
 ```bash
 just dock main

@@ -34,6 +34,7 @@ check-husarion-webui:
 # Start navigation on User Computer inside Husarion UGV
 start-hardware service="navigation docking reset_odometry":
     #!/bin/bash
+    source docker/.env
     docker compose -f docker/compose.hardware.yaml down {{service}}
     docker compose -f docker/compose.hardware.yaml pull
     docker compose -f docker/compose.hardware.yaml up {{service}}
@@ -49,6 +50,7 @@ start-simulation:
 # Configure and run Husarion WebUI
 start-visualization: check-husarion-webui
     #!/bin/bash
+    source docker/.env
     sudo cp foxglove-layout.json /var/snap/husarion-webui/common/foxglove-husarion-ugv-navigation.json
     sudo snap set husarion-webui webui.layout=husarion-ugv-navigation
     sudo snap set husarion-webui ros.namespace=${ROBOT_NAMESPACE:-panther}
@@ -67,12 +69,14 @@ stop-visualization: check-husarion-webui
 # Dock Husarion UGV to the charging dock using navigation stack
 dock DOCK_NAME:
     #!/bin/bash
+    source docker/.env
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
      "source install/setup.bash && ros2 action send_goal /${ROBOT_NAMESPACE:-panther}/dock_robot nav2_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: true, dock_id: {{DOCK_NAME}} }\""
 
 # Dock Husarion UGV to the charging dock without using navigation stack
 dock-direct DOCK_NAME:
     #!/bin/bash
+    source docker/.env
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
      "source install/setup.bash && ros2 action send_goal /${ROBOT_NAMESPACE:-panther}/dock_robot nav2_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: false, dock_id: {{DOCK_NAME}} }\""
 
@@ -80,6 +84,7 @@ dock-direct DOCK_NAME:
 # Undock Husarion UGV from the charging dock
 undock:
     #!/bin/bash
+    source docker/.env
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
      "source install/setup.bash && ros2 action send_goal /${ROBOT_NAMESPACE:-panther}/undock_robot nav2_msgs/action/UndockRobot \" {  dock_type: charging_dock, max_undocking_time: 15 }\""
 
