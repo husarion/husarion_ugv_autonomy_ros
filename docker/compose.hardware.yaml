@@ -14,6 +14,7 @@ services:
     <<: *common-config
     command: >
       ros2 service call /${ROBOT_NAMESPACE:-panther}/reset std_srvs/srv/Empty
+
   docking:
     # image: husarion/husarion-ugv-autonomy:jazzy-jazzy-devel
     build:
