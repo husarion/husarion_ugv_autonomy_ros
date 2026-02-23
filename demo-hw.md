@@ -124,12 +124,11 @@ In the example below for dock named `main` the position is `pose: [1.0, 1.20, 1.
 [...]
 ```
 
-If your robot is docked you can reset the odometry and make sure that the pose of the dock is set to [0.0, 0.0, 0.0] as well as the pose of the robot.
-The system provides a service that allows resetting the odometry frame.
-To reset the odometry, open a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, go to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, and run:
+If your robot is docked you can reset the odometry and make sure that the pose of the dock is set to [0.0, 0.0, 0.0] as well as the pose of the robot. To do that, reset the odometry by opening a new terminal on the **User Computer** with IP address: **`10.15.20.3/24`**, going to `~/husarion_ws/src/husarion_ugv_autonomy_ros`, and running:
 
 ```bash
-just start-hardware reset_odometry
+source docker/.env
+ros2 service call /${ROBOT_NAMESPACE:-panther}/reset std_srvs/srv/Empty
 ```
 
 After calling this service, the `odom` frame is aligned with the current `base_link` frame. Consequently, the robot’s current pose is set to: `pose: [0.0, 0.0, 0.0]`.

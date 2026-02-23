@@ -32,7 +32,7 @@ check-husarion-webui:
     fi
 
 # Start navigation on User Computer inside Husarion UGV
-start-hardware service="navigation docking reset_odometry":
+start-hardware service="navigation docking":
     #!/bin/bash
     source docker/.env
     docker compose -f docker/compose.hardware.yaml down {{service}}
