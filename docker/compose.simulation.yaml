@@ -6,7 +6,7 @@ x-common-config:
 
 services:
   gazebo:
-    image: husarion/husarion-ugv-gazebo:jazzy-2.3.1-20250701
+    image: husarion/husarion-ugv-gazebo:jazzy-add-parameter-to-disable-orientation
     container_name: gazebo
     <<: *common-config
     runtime: nvidia
@@ -19,6 +19,12 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ./config:/config
+    healthcheck:
+      test: >
+        bash -c "/ros_entrypoint.sh ros2 topic echo --timeout 0.2  --field header.frame_id /${ROBOT_NAMESPACE:-panther}/odometry/filtered | grep -q odom"
+      interval: 4s
+      timeout: 3s
+      retries: 4
     command: >
       ros2 launch husarion_ugv_gazebo simulation.launch.py
         components_config_path:=/config/components.yaml
@@ -36,6 +42,16 @@ services:
     volumes:
       - ./config:/config
       - ../husarion_ugv_docking:/ros2_ws/src/husarion_ugv_autonomy_ros/husarion_ugv_docking
+    depends_on:
+      gazebo:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test: >
+        bash -c "/ros_entrypoint.sh ros2 topic echo --timeout 0.2  --field id /${ROBOT_NAMESPACE:-panther}/bond | grep -q docking_server"
+      interval: 4s
+      timeout: 3s
+      retries: 4
     command: >
       ros2 launch husarion_ugv_docking docking.launch.py
         namespace:=${ROBOT_NAMESPACE:-panther}
@@ -57,10 +73,20 @@ services:
       - ./config:/config
       - ../maps:/maps
       - ../husarion_ugv_navigation:/ros2_ws/src/husarion_ugv_autonomy_ros/husarion_ugv_navigation
+    depends_on:
+      docking:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test: >
+        bash -c "/ros_entrypoint.sh ros2 topic echo --timeout 0.2  --field id /${ROBOT_NAMESPACE:-panther}/bond | grep -q velocity_smoother"
+      interval: 4s
+      timeout: 3s
+      retries: 4
     command: >
       ros2 launch husarion_ugv_navigation bringup_launch.py
         namespace:=${ROBOT_NAMESPACE:-panther}
-        observation_topic:=/panther/velodyne_points
+        observation_topic:=/${ROBOT_NAMESPACE:-panther}/velodyne_points
         observation_topic_type:=pointcloud
         slam:=${SLAM:-True}
         use_sim_time:=True
