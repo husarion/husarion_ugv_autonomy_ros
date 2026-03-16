@@ -1,7 +1,5 @@
 x-common-config:
   &common-config
-  network_mode: host
-  ipc: host
   env_file: .env
 
 services:

@@ -45,7 +45,7 @@ start-simulation:
     xhost +local:docker
     docker compose -f docker/compose.simulation.yaml down
     docker compose -f docker/compose.simulation.yaml build
-    docker compose -f docker/compose.simulation.yaml up
+    docker compose -f docker/compose.simulation.yaml up --remove-orphans
 
 # Configure and run Husarion WebUI
 start-visualization: check-husarion-webui
@@ -71,14 +71,14 @@ dock DOCK_NAME:
     #!/bin/bash
     source docker/.env
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /${ROBOT_NAMESPACE:-panther}/dock_robot nav2_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: true, dock_id: {{DOCK_NAME}} }\""
+     "/ros_entrypoint.sh ros2 action send_goal /${ROBOT_NAMESPACE:-panther}/dock_robot nav2_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: true, dock_id: {{DOCK_NAME}} }\""
 
 # Dock Husarion UGV to the charging dock without using navigation stack
 dock-direct DOCK_NAME:
     #!/bin/bash
     source docker/.env
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /${ROBOT_NAMESPACE:-panther}/dock_robot nav2_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: false, dock_id: {{DOCK_NAME}} }\""
+     "/ros_entrypoint.sh ros2 action send_goal /${ROBOT_NAMESPACE:-panther}/dock_robot nav2_msgs/action/DockRobot \" {  dock_type: charging_dock, navigate_to_staging_pose: false, dock_id: {{DOCK_NAME}} }\""
 
 
 # Undock Husarion UGV from the charging dock
@@ -86,7 +86,7 @@ undock:
     #!/bin/bash
     source docker/.env
     docker compose -f docker/compose.simulation.yaml exec docking bash -c \
-     "source install/setup.bash && ros2 action send_goal /${ROBOT_NAMESPACE:-panther}/undock_robot nav2_msgs/action/UndockRobot \" {  dock_type: charging_dock, max_undocking_time: 15 }\""
+     "/ros_entrypoint.sh ros2 action send_goal /${ROBOT_NAMESPACE:-panther}/undock_robot nav2_msgs/action/UndockRobot \" {  dock_type: charging_dock, max_undocking_time: 15 }\""
 
 setup-os:
     bash docker/setup_os.sh
