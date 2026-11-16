@@ -21,12 +21,15 @@ The real bringup with the map-nav arguments, against a standing fake robot (test
 - a command through the velocity smoother arrives there stamped with a live stamp;
 - an obstacle in the stop polygon (from the 3D cloud through the crop box) stops it, and so does a
   table edge at 0.8 m, below the robot's top (robot_height 0.7 m) plus 0.2 m;
-- the crop box drops the robot's own body, a DEV09 gate included, and keeps the obstacle.
+- the crop box drops the robot's own body, a DEV09 gate included, and keeps the obstacle;
+- with use_map_gateway the map gateway reports Nav2 and the collision monitor active, sends the
+  map, and its pause and resume triggers take the real Nav2 down and up (spec R2, §11.6).
 """
 
 import math
 import os
 import sys
+import tempfile
 import time
 import unittest
 
@@ -36,11 +39,18 @@ import launch_testing.actions
 import pytest
 import rclpy
 from ament_index_python.packages import get_package_share_directory
+from diagnostic_msgs.msg import DiagnosticStatus
 from geometry_msgs.msg import Point, TwistStamped
 from launch.actions import IncludeLaunchDescription, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from rclpy.qos import qos_profile_sensor_data
-from sensor_msgs.msg import PointCloud2
+from nav_msgs.msg import MapMetaData
+from rclpy.qos import (
+    DurabilityPolicy,
+    QoSProfile,
+    ReliabilityPolicy,
+    qos_profile_sensor_data,
+)
+from sensor_msgs.msg import CompressedImage, PointCloud2
 from sensor_msgs_py import point_cloud2
 from std_srvs.srv import Trigger
 
@@ -74,6 +84,8 @@ def generate_test_description():
             "scan_min_height": "0.25",
             "scan_max_height": "1.0",
             "map_update_interval": "5.0",
+            "use_map_gateway": "True",
+            "maps_directory": tempfile.mkdtemp(prefix="mapnav_launch_maps_"),
         }.items(),
     )
     return launch.LaunchDescription(
@@ -100,6 +112,26 @@ class TestMapNavStack(unittest.TestCase):
         cls.clouds = []
         cls.node.create_subscription(
             PointCloud2, f"/{NS}/points_filtered", cls.clouds.append, qos_profile_sensor_data
+        )
+        latched = QoSProfile(
+            depth=1,
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+        )
+        cls.state = {}
+        cls.node.create_subscription(
+            DiagnosticStatus,
+            f"/{NS}/cockpit/nav/state",
+            lambda m: cls.state.update({kv.key: kv.value for kv in m.values}),
+            latched,
+        )
+        cls.pngs = []
+        cls.infos = []
+        cls.node.create_subscription(
+            CompressedImage, f"/{NS}/cockpit/nav/map/png", cls.pngs.append, latched
+        )
+        cls.node.create_subscription(
+            MapMetaData, f"/{NS}/cockpit/nav/map/info", cls.infos.append, latched
         )
         cls.wait_active()
 
@@ -213,3 +245,51 @@ class TestMapNavStack(unittest.TestCase):
         obstacle = [p for p in pts if math.hypot(p[0] - 1.0, p[1]) < 0.2]
         self.assertEqual(body, [])
         self.assertGreater(len(obstacle), 10)
+
+    def wait_state(self, key, value, timeout):
+        end = time.monotonic() + timeout
+        while time.monotonic() < end and self.state.get(key) != value:
+            self.spin_for(0.2)
+        self.assertEqual(self.state.get(key), value, f"state: {self.state}")
+
+    def trigger(self, name):
+        client = self.node.create_client(Trigger, f"/{NS}/cockpit/nav/{name}")
+        self.assertTrue(client.wait_for_service(timeout_sec=10.0), f"no {name} trigger")
+        future = client.call_async(Trigger.Request())
+        rclpy.spin_until_future_complete(self.node, future, timeout_sec=30.0)
+        self.assertIsNotNone(future.result(), f"{name} did not answer")
+        return future.result()
+
+    def test_6_map_gateway(self):
+        self.wait_state("nav2", "active", 20.0)
+        self.wait_state("collision_monitor", "active", 20.0)
+        self.assertEqual(self.state.get("frame"), f"{NS}/map")
+        self.assertEqual(self.state.get("mode"), "amcl")
+        # husarion_world.yaml has no sidecar: a new epoch, not aligned
+        self.assertEqual(self.state.get("align"), "not_aligned")
+        self.assertEqual(len(self.state.get("epoch", "")), 16)
+        end = time.monotonic() + 20.0
+        while time.monotonic() < end and not (self.pngs and self.infos):
+            self.spin_for(0.2)
+        self.assertTrue(self.pngs and self.infos, "no map from the gateway")
+        self.assertEqual(self.pngs[-1].header.stamp, self.infos[-1].map_load_time)
+        self.assertLessEqual(len(self.pngs[-1].data), 190000)
+        # fromLL and toLL are not served without an alignment (waypoint_follower's /fromLL
+        # client is in the graph too, so ask for the gateway's own servers)
+        served = [
+            n
+            for n, _ in self.node.get_service_names_and_types_by_node("map_gateway", f"/{NS}")
+            if n.endswith("LL")
+        ]
+        self.assertEqual(served, [])
+        gateway_services = [
+            n for n, _ in self.node.get_service_names_and_types_by_node("map_gateway", f"/{NS}")
+        ]
+        self.assertTrue(f"/{NS}/cockpit/nav/pause" in gateway_services, gateway_services)
+        # Pause and resume through the gateway's triggers, against the real lifecycle manager.
+        self.assertTrue(self.trigger("pause").success)
+        self.wait_state("nav2", "inactive", 15.0)
+        self.wait_state("collision_monitor", "inactive", 15.0)
+        self.assertTrue(self.trigger("resume").success)
+        self.wait_state("nav2", "active", 30.0)
+        self.wait_state("collision_monitor", "active", 15.0)

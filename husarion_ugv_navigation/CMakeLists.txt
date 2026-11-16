@@ -63,6 +63,7 @@ if(BUILD_TESTING)
 
   find_package(launch_testing_ament_cmake REQUIRED)
   add_launch_test(test/test_mapnav_launch.py TIMEOUT 300)
+  add_launch_test(test/test_sidecar_roundtrip.py TIMEOUT 300)
 endif()
 
 ament_export_libraries(${plugin_libs})

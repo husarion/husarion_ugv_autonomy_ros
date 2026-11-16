@@ -43,6 +43,7 @@ from launch.substitutions import (
 )
 from launch_ros.actions import Node, PushRosNamespace
 from launch_ros.descriptions import ParameterFile
+from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 from nav2_common.launch import RewrittenYaml
 
@@ -153,8 +154,12 @@ def launch_setup(context, *args, **kwargs):
     use_sim_time = LaunchConfiguration("use_sim_time")
     use_collision_monitor = LaunchConfiguration("use_collision_monitor")
     cmd_vel_out = LaunchConfiguration("cmd_vel_out")
+    use_map_gateway = LaunchConfiguration("use_map_gateway")
+    maps_directory = LaunchConfiguration("maps_directory")
 
     params_file, mount_height, initial_pose = render_params_file(context)
+    # On a saved map the gateway runs on that pair; while mapping on none (spec §5.5).
+    gateway_map_file = "" if is_true(slam.perform(context)) else map.perform(context)
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {"use_sim_time": use_sim_time, "yaml_filename": map}
@@ -255,6 +260,23 @@ def launch_setup(context, *args, **kwargs):
                     "use_collision_monitor": use_collision_monitor,
                     "cmd_vel_out": cmd_vel_out,
                 }.items(),
+            ),
+            # The Cockpit's map gateway (SPEC-MAP-NAV-2026-11 §5): only when asked. On a saved
+            # map it runs on that pair (its sidecar gives the epoch); while mapping on none.
+            Node(
+                condition=IfCondition(use_map_gateway),
+                package="husarion_ugv_map_gateway",
+                executable="map_gateway",
+                name="map_gateway",
+                parameters=[
+                    {
+                        "map_file_name": gateway_map_file,
+                        "maps_directory": maps_directory,
+                        "use_sim_time": ParameterValue(use_sim_time, value_type=bool),
+                    }
+                ],
+                arguments=["--ros-args", "--log-level", log_level],
+                output="screen",
             ),
             Node(
                 condition=IfCondition(slam),
@@ -399,6 +421,19 @@ def generate_launch_description():
         "the map image.",
     )
 
+    declare_use_map_gateway_arg = DeclareLaunchArgument(
+        "use_map_gateway",
+        default_value="False",
+        description="Run the Cockpit's map gateway (husarion_ugv_map_gateway): the PNG map, the "
+        "pose, the plan, the GNSS alignment with fromLL/toLL, pause and resume, serialize_map.",
+    )
+    declare_maps_directory_arg = DeclareLaunchArgument(
+        "maps_directory",
+        default_value="/maps",
+        description="Where the map gateway's serialize_map writes saved pairs and where it keeps "
+        "its session file.",
+    )
+
     return LaunchDescription(
         [
             SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1"),
@@ -423,6 +458,8 @@ def generate_launch_description():
             declare_scan_max_height_arg,
             declare_map_update_interval_arg,
             declare_initial_pose_from_sidecar_arg,
+            declare_use_map_gateway_arg,
+            declare_maps_directory_arg,
             OpaqueFunction(function=launch_setup),
         ]
     )

@@ -17,6 +17,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>husarion_ugv_docking</depend>
+  <depend>husarion_ugv_map_gateway</depend>
   <depend>husarion_ugv_navigation</depend>
 
   <export>

@@ -42,6 +42,7 @@ jobs:
                 "packages-select": [
                     "husarion_ugv_autonomy",
                     "husarion_ugv_docking",
+                    "husarion_ugv_map_gateway",
                     "husarion_ugv_navigation"
                 ]
               }
