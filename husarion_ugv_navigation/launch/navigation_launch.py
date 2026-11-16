@@ -16,8 +16,14 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
+from husarion_ugv_navigation.mapnav_params import is_true, velocity_routing
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
+from launch.actions import (
+    DeclareLaunchArgument,
+    GroupAction,
+    OpaqueFunction,
+    SetEnvironmentVariable,
+)
 from launch.conditions import IfCondition
 from launch.substitutions import (
     EnvironmentVariable,
@@ -29,8 +35,7 @@ from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import RewrittenYaml
 
 
-def generate_launch_description():
-    bringup_dir = get_package_share_directory("nav2_bringup")
+def launch_setup(context, *args, **kwargs):
     husarion_dir = get_package_share_directory("husarion_ugv_navigation")
 
     namespace = LaunchConfiguration("namespace")
@@ -43,15 +48,11 @@ def generate_launch_description():
     use_respawn = LaunchConfiguration("use_respawn")
     log_level = LaunchConfiguration("log_level")
 
-    lifecycle_nodes = [
-        "controller_server",
-        "smoother_server",
-        "planner_server",
-        "behavior_server",
-        "bt_navigator",
-        "waypoint_follower",
-        "velocity_smoother",
-    ]
+    use_collision_monitor = is_true(LaunchConfiguration("use_collision_monitor").perform(context))
+    cmd_vel_out = LaunchConfiguration("cmd_vel_out").perform(context)
+    smoother_out, behavior_out, lifecycle_nodes = velocity_routing(
+        use_collision_monitor, cmd_vel_out
+    )
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {"use_sim_time": use_sim_time, "autostart": autostart}
@@ -65,48 +66,6 @@ def generate_launch_description():
         allow_substs=True,
     )
 
-    stdout_linebuf_envvar = SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1")
-
-    declare_namespace_cmd = DeclareLaunchArgument(
-        "namespace",
-        default_value=EnvironmentVariable("ROBOT_NAMESPACE", default_value=""),
-        description="Top-level namespace",
-    )
-
-    declare_use_sim_time_cmd = DeclareLaunchArgument(
-        "use_sim_time", default_value="false", description="Use simulation (Gazebo) clock if true"
-    )
-
-    declare_params_file_cmd = DeclareLaunchArgument(
-        "params_file",
-        default_value=os.path.join(bringup_dir, "params", "nav2_params.yaml"),
-        description="Path to the parameters file to use for all nav2 related nodes",
-    )
-
-    declare_autostart_cmd = DeclareLaunchArgument(
-        "autostart", default_value="true", description="Automatically startup the nav2 stack"
-    )
-
-    declare_use_composition_cmd = DeclareLaunchArgument(
-        "use_composition", default_value="False", description="Use composed bringup if True"
-    )
-
-    declare_container_name_cmd = DeclareLaunchArgument(
-        "container_name",
-        default_value="nav2_container",
-        description="the name of container that nodes will load in if use composition",
-    )
-
-    declare_use_respawn_cmd = DeclareLaunchArgument(
-        "use_respawn",
-        default_value="False",
-        description="Whether to respawn if a node crashes. Applied when composition is disabled.",
-    )
-
-    declare_log_level_cmd = DeclareLaunchArgument(
-        "log_level", default_value="info", description="log level"
-    )
-
     nav_to_pose_bt = {
         "default_nav_to_pose_bt_xml": os.path.join(
             husarion_dir, "behavior_trees", "navigate_to_pose_w_replanning_and_recovery.xml"
@@ -117,6 +76,33 @@ def generate_launch_description():
             husarion_dir, "behavior_trees", "navigate_through_poses_w_replanning_and_recovery.xml"
         )
     }
+
+    smoother_remaps = [("cmd_vel", "cmd_vel_nav"), ("cmd_vel_smoothed", smoother_out)]
+    behavior_remaps = [("cmd_vel", behavior_out)] if behavior_out != "cmd_vel" else []
+
+    collision_monitor_nodes = []
+    collision_monitor_components = []
+    if use_collision_monitor:
+        collision_monitor_nodes.append(
+            Node(
+                package="nav2_collision_monitor",
+                executable="collision_monitor",
+                name="collision_monitor",
+                output="screen",
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=["--ros-args", "--log-level", log_level],
+            )
+        )
+        collision_monitor_components.append(
+            ComposableNode(
+                package="nav2_collision_monitor",
+                plugin="nav2_collision_monitor::CollisionMonitor",
+                name="collision_monitor",
+                parameters=[configured_params],
+            )
+        )
 
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(["not ", use_composition])),
@@ -160,6 +146,7 @@ def generate_launch_description():
                 respawn_delay=2.0,
                 parameters=[configured_params],
                 arguments=["--ros-args", "--log-level", log_level],
+                remappings=behavior_remaps,
             ),
             Node(
                 package="nav2_bt_navigator",
@@ -190,8 +177,9 @@ def generate_launch_description():
                 respawn_delay=2.0,
                 parameters=[configured_params],
                 arguments=["--ros-args", "--log-level", log_level],
-                remappings=[("cmd_vel", "cmd_vel_nav"), ("cmd_vel_smoothed", "cmd_vel")],
+                remappings=smoother_remaps,
             ),
+            *collision_monitor_nodes,
             Node(
                 package="nav2_lifecycle_manager",
                 executable="lifecycle_manager",
@@ -235,6 +223,7 @@ def generate_launch_description():
                 plugin="behavior_server::BehaviorServer",
                 name="behavior_server",
                 parameters=[configured_params],
+                remappings=behavior_remaps,
             ),
             ComposableNode(
                 package="nav2_bt_navigator",
@@ -253,8 +242,9 @@ def generate_launch_description():
                 plugin="nav2_velocity_smoother::VelocitySmoother",
                 name="velocity_smoother",
                 parameters=[configured_params],
-                remappings=[("cmd_vel", "cmd_vel_nav"), ("cmd_vel_smoothed", "cmd_vel")],
+                remappings=smoother_remaps,
             ),
+            *collision_monitor_components,
             ComposableNode(
                 package="nav2_lifecycle_manager",
                 plugin="nav2_lifecycle_manager::LifecycleManager",
@@ -268,6 +258,68 @@ def generate_launch_description():
                 ],
             ),
         ],
+    )
+
+    return [load_nodes, load_composable_nodes]
+
+
+def generate_launch_description():
+    bringup_dir = get_package_share_directory("nav2_bringup")
+
+    stdout_linebuf_envvar = SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1")
+
+    declare_namespace_cmd = DeclareLaunchArgument(
+        "namespace",
+        default_value=EnvironmentVariable("ROBOT_NAMESPACE", default_value=""),
+        description="Top-level namespace",
+    )
+
+    declare_use_sim_time_cmd = DeclareLaunchArgument(
+        "use_sim_time", default_value="false", description="Use simulation (Gazebo) clock if true"
+    )
+
+    declare_params_file_cmd = DeclareLaunchArgument(
+        "params_file",
+        default_value=os.path.join(bringup_dir, "params", "nav2_params.yaml"),
+        description="Path to the parameters file to use for all nav2 related nodes",
+    )
+
+    declare_autostart_cmd = DeclareLaunchArgument(
+        "autostart", default_value="true", description="Automatically startup the nav2 stack"
+    )
+
+    declare_use_composition_cmd = DeclareLaunchArgument(
+        "use_composition", default_value="False", description="Use composed bringup if True"
+    )
+
+    declare_container_name_cmd = DeclareLaunchArgument(
+        "container_name",
+        default_value="nav2_container",
+        description="the name of container that nodes will load in if use composition",
+    )
+
+    declare_use_respawn_cmd = DeclareLaunchArgument(
+        "use_respawn",
+        default_value="False",
+        description="Whether to respawn if a node crashes. Applied when composition is disabled.",
+    )
+
+    declare_log_level_cmd = DeclareLaunchArgument(
+        "log_level", default_value="info", description="log level"
+    )
+
+    declare_use_collision_monitor_cmd = DeclareLaunchArgument(
+        "use_collision_monitor",
+        default_value="False",
+        description="Run nav2_collision_monitor between the velocity smoother and cmd_vel_out "
+        "(needs a collision_monitor block in params_file).",
+    )
+
+    declare_cmd_vel_out_cmd = DeclareLaunchArgument(
+        "cmd_vel_out",
+        default_value="cmd_vel",
+        description="Topic of the stack's final velocity output, relative to the namespace "
+        "(on a Husarion UGV OS robot: autonomous/cmd_vel).",
     )
 
     # Create the launch description and populate
@@ -285,8 +337,9 @@ def generate_launch_description():
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
+    ld.add_action(declare_use_collision_monitor_cmd)
+    ld.add_action(declare_cmd_vel_out_cmd)
     # Add the actions to launch all of the navigation nodes
-    ld.add_action(load_nodes)
-    ld.add_action(load_composable_nodes)
+    ld.add_action(OpaqueFunction(function=launch_setup))
 
     return ld

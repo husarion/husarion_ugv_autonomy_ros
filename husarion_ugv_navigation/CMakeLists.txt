@@ -21,6 +21,10 @@ foreach(PACKAGE IN ITEMS ${DEPENDENCIES})
   find_package(${PACKAGE} REQUIRED)
 endforeach()
 
+find_package(ament_cmake_python REQUIRED)
+# The launch files import husarion_ugv_navigation.mapnav_params.
+ament_python_install_package(${PROJECT_NAME})
+
 # Executables
 add_executable(map_autosaver_node src/map_autosaver_main.cpp
                                   src/map_autosaver_node.cpp)
@@ -51,6 +55,15 @@ install(
 install(DIRECTORY behavior_trees config launch map
         DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY include DESTINATION include)
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_pytest REQUIRED)
+  ament_add_pytest_test(test_mapnav_params test/test_mapnav_params.py TIMEOUT
+                        60)
+
+  find_package(launch_testing_ament_cmake REQUIRED)
+  add_launch_test(test/test_mapnav_launch.py TIMEOUT 300)
+endif()
 
 ament_export_libraries(${plugin_libs})
 ament_export_dependencies(${DEPENDENCIES})

@@ -12,12 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import tempfile
+import time
 
+from husarion_ugv_navigation.mapnav_params import (
+    apply_overlay,
+    build_overlay,
+    is_true,
+    namespace_prefix,
+    read_saved_pose,
+    render_placeholders,
+    speed_cap,
+)
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     GroupAction,
     IncludeLaunchDescription,
+    LogInfo,
+    OpaqueFunction,
     SetEnvironmentVariable,
 )
 from launch.conditions import IfCondition, UnlessCondition
@@ -31,10 +44,100 @@ from launch.substitutions import (
 from launch_ros.actions import Node, PushRosNamespace
 from launch_ros.descriptions import ParameterFile
 from launch_ros.substitutions import FindPackageShare
-from nav2_common.launch import ReplaceString, RewrittenYaml
+from nav2_common.launch import RewrittenYaml
+
+MOUNT_TF_TIMEOUT_S = 30.0
 
 
-def generate_launch_description():
+def lookup_mount_height(namespace: str, timeout_s: float = MOUNT_TF_TIMEOUT_S) -> float:
+    """Height of `<ns>/mount_link` (the rail level) above `<ns>/base_footprint`, from TF."""
+    import rclpy
+    from rclpy.executors import SingleThreadedExecutor
+    from rclpy.time import Time
+    from tf2_ros import Buffer, TransformListener
+
+    prefix = namespace_prefix(namespace)
+    target, source = f"{prefix}base_footprint", f"{prefix}mount_link"
+    context = rclpy.Context()
+    rclpy.init(context=context)
+    try:
+        node = rclpy.create_node("mapnav_mount_height_probe", context=context)
+        executor = SingleThreadedExecutor(context=context)
+        executor.add_node(node)
+        buffer = Buffer()
+        TransformListener(buffer, node, spin_thread=False)
+        deadline = time.monotonic() + timeout_s
+        while time.monotonic() < deadline:
+            executor.spin_once(timeout_sec=0.1)
+            if buffer.can_transform(target, source, Time()):
+                return buffer.lookup_transform(target, source, Time()).transform.translation.z
+        raise RuntimeError(
+            f"no transform {target} -> {source} within {timeout_s:.0f} s: is the robot's TF "
+            "visible here? Set mount_height:=<metres> to skip the lookup."
+        )
+    finally:
+        rclpy.shutdown(context=context)
+
+
+def render_params_file(context) -> str:
+    """Render the parameter file once: placeholders, the map-nav overlay, the speed cap.
+
+    Returns the rendered file's path, the mount height used and AMCL's starting pose.
+    """
+
+    def arg(name):
+        return LaunchConfiguration(name).perform(context)
+
+    namespace = arg("namespace")
+    robot_model = arg("robot_model")
+    observation_topic = arg("observation_topic")
+    observation_topic_type = arg("observation_topic_type")
+    lidar_profile = arg("lidar_profile")
+    slam = is_true(arg("slam"))
+
+    with open(arg("params_file"), encoding="utf-8") as f:
+        text = render_placeholders(
+            f.read(), namespace, robot_model, observation_topic, observation_topic_type
+        )
+
+    mount_height = None
+    if lidar_profile:
+        mount_height = (
+            float(arg("mount_height")) if arg("mount_height") else lookup_mount_height(namespace)
+        )
+
+    initial_pose = None
+    if is_true(arg("initial_pose_from_sidecar")) and not slam:
+        initial_pose = read_saved_pose(arg("map"))
+
+    overlay = build_overlay(
+        namespace=namespace,
+        robot_model=robot_model,
+        observation_topic=observation_topic,
+        observation_topic_type=observation_topic_type,
+        cmd_vel_out=arg("cmd_vel_out"),
+        use_collision_monitor=arg("use_collision_monitor"),
+        lidar_profile=lidar_profile,
+        mount_height=mount_height,
+        robot_height=arg("robot_height"),
+        scan_min_height=arg("scan_min_height"),
+        scan_max_height=arg("scan_max_height"),
+        map_update_interval=arg("map_update_interval"),
+        initial_pose=initial_pose,
+    )
+    cap = speed_cap(lidar_profile)
+    if overlay or cap is not None:
+        text = apply_overlay(text, overlay, cap)
+
+    rendered = tempfile.NamedTemporaryFile(
+        mode="w", prefix="husarion_nav2_params_", suffix=".yaml", delete=False
+    )
+    with rendered:
+        rendered.write(text)
+    return rendered.name, mount_height, initial_pose
+
+
+def launch_setup(context, *args, **kwargs):
     husarion_ugv_navigation = FindPackageShare("husarion_ugv_navigation")
     launch_dir = PathJoinSubstitution([husarion_ugv_navigation, "launch"])
 
@@ -44,149 +147,21 @@ def generate_launch_description():
     namespace = LaunchConfiguration("namespace")
     observation_topic = LaunchConfiguration("observation_topic")
     observation_topic_type = LaunchConfiguration("observation_topic_type")
-    params_file = LaunchConfiguration("params_file")
-    robot_model = LaunchConfiguration("robot_model")
     slam = LaunchConfiguration("slam")
     use_composition = LaunchConfiguration("use_composition")
     use_respawn = LaunchConfiguration("use_respawn")
     use_sim_time = LaunchConfiguration("use_sim_time")
+    use_collision_monitor = LaunchConfiguration("use_collision_monitor")
+    cmd_vel_out = LaunchConfiguration("cmd_vel_out")
 
-    declare_autostart_arg = DeclareLaunchArgument(
-        "autostart",
-        default_value="true",
-        description="Automatically startup the nav2 stack.",
-    )
-    declare_log_level_arg = DeclareLaunchArgument(
-        "log_level",
-        default_value="info",
-        description="Logging level.",
-        choices=["debug", "info", "warning", "error"],
-    )
-    declare_map_arg = DeclareLaunchArgument(
-        "map",
-        default_value="/maps/map.yaml",
-        description="Path to map yaml file to load.",
-    )
-    declare_namespace_arg = DeclareLaunchArgument(
-        "namespace",
-        default_value=EnvironmentVariable("ROBOT_NAMESPACE", default_value=""),
-        description="Add namespace to all launched nodes.",
-    )
-    declare_observation_topic_arg = DeclareLaunchArgument(
-        "observation_topic",
-        default_value="",
-        description="Topic name for LaserScan or PointCloud2 observation messages type.",
-    )
-    declare_observation_topic_type_arg = DeclareLaunchArgument(
-        "observation_topic_type",
-        default_value="pointcloud",
-        description="Observation topic type.",
-        choices=["laserscan", "pointcloud"],
-    )
-    declare_params_file_arg = DeclareLaunchArgument(
-        "params_file",
-        default_value=PathJoinSubstitution(
-            [husarion_ugv_navigation, "config", "nav2_params.yaml"]
-        ),
-        description="Path to the parameters file to use for all nav2 related nodes",
-    )
-
-    declare_robot_model_arg = DeclareLaunchArgument(
-        "robot_model",
-        default_value=EnvironmentVariable(name="ROBOT_MODEL_NAME", default_value="panther"),
-        description="Specify robot model",
-        choices=["lynx", "panther"],
-    )
-    declare_slam_arg = DeclareLaunchArgument(
-        "slam", default_value="False", description="Whether run a SLAM."
-    )
-    declare_use_composition_arg = DeclareLaunchArgument(
-        "use_composition",
-        default_value="True",
-        description="Whether to use composed bringup.",
-    )
-    declare_use_respawn_arg = DeclareLaunchArgument(
-        "use_respawn",
-        default_value="False",
-        description="Whether to respawn if a node crashes. Applied when composition is disabled.",
-    )
-    declare_use_sim_time_arg = DeclareLaunchArgument(
-        "use_sim_time",
-        default_value="false",
-        description="Use simulation (Gazebo) clock if true.",
-    )
+    params_file, mount_height, initial_pose = render_params_file(context)
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {"use_sim_time": use_sim_time, "yaml_filename": map}
 
-    namespace_ext = PythonExpression(["'", namespace, "' + '/' if '", namespace, "' else ''"])
-    scan_topic = PythonExpression(
-        [
-            "'scan' if '",
-            observation_topic_type,
-            "' == 'pointcloud' else '",
-            observation_topic,
-            "'",
-        ]
-    )
-
-    stvl_layer = PythonExpression(
-        [
-            "'stvl_pointcloud_layer' if '",
-            observation_topic_type,
-            "' == 'pointcloud' else 'stvl_laserscan_layer'",
-        ]
-    )
-
-    bb_padding = 0.03  # increase slighte footprint for safety
-    robot_bounding_box = {
-        "panther": {
-            "min_x": -0.41 - bb_padding,
-            "min_y": -0.43 - bb_padding,
-            "min_z": 0.05,
-            "max_x": 0.41 + bb_padding,
-            "max_y": 0.43 + bb_padding,
-            "max_z": 0.5,
-        },
-        "lynx": {
-            "min_x": -0.32 - bb_padding,
-            "min_y": -0.27 - bb_padding,
-            "min_z": 0.05,
-            "max_x": 0.32 + bb_padding,
-            "max_y": 0.27 + bb_padding,
-            "max_z": 0.5,
-        },
-    }
     observation_topic_filtered = PythonExpression(
         ["'", observation_topic, "_filtered'"],
     )
-
-    def override_params_file(robot_model_name):
-        bounding_box = robot_bounding_box[robot_model_name]
-        params = ReplaceString(
-            source_file=params_file,
-            replacements={
-                "<namespace>/": namespace_ext,
-                "<min_x>": str(bounding_box["min_x"]),
-                "<max_x>": str(bounding_box["max_x"]),
-                "<min_y>": str(bounding_box["min_y"]),
-                "<max_y>": str(bounding_box["max_y"]),
-                "<min_z>": str(bounding_box["min_z"]),
-                "<max_z>": str(bounding_box["max_z"]),
-                "<observation_topic>": observation_topic,
-                "<observation_topic_type>": observation_topic_type,
-                "<scan_topic>": scan_topic,
-                "<stvl_layer>": stvl_layer,
-            },
-            condition=IfCondition(
-                PythonExpression(["'", robot_model, f"' == '{robot_model_name}'"])
-            ),
-        )
-
-        return params
-
-    params_file = override_params_file("panther")
-    params_file = override_params_file("lynx")
 
     configured_params = ParameterFile(
         RewrittenYaml(
@@ -196,6 +171,12 @@ def generate_launch_description():
         ),
         allow_substs=True,
     )
+
+    notes = []
+    if mount_height is not None:
+        notes.append(LogInfo(msg=f"map-nav: mount_link is {mount_height:.3f} m above the ground"))
+    if initial_pose is not None:
+        notes.append(LogInfo(msg=f"map-nav: AMCL starts at the saved pose {initial_pose}"))
 
     bringup_cmd_group = GroupAction(
         [
@@ -271,6 +252,8 @@ def generate_launch_description():
                     "use_composition": use_composition,
                     "use_respawn": use_respawn,
                     "container_name": "nav2_container",
+                    "use_collision_monitor": use_collision_monitor,
+                    "cmd_vel_out": cmd_vel_out,
                 }.items(),
             ),
             Node(
@@ -283,6 +266,137 @@ def generate_launch_description():
                 output="screen",
             ),
         ]
+    )
+
+    return [*notes, bringup_cmd_group]
+
+
+def generate_launch_description():
+    husarion_ugv_navigation = FindPackageShare("husarion_ugv_navigation")
+
+    declare_autostart_arg = DeclareLaunchArgument(
+        "autostart",
+        default_value="true",
+        description="Automatically startup the nav2 stack.",
+    )
+    declare_log_level_arg = DeclareLaunchArgument(
+        "log_level",
+        default_value="info",
+        description="Logging level.",
+        choices=["debug", "info", "warning", "error"],
+    )
+    declare_map_arg = DeclareLaunchArgument(
+        "map",
+        default_value="/maps/map.yaml",
+        description="Path to map yaml file to load.",
+    )
+    declare_namespace_arg = DeclareLaunchArgument(
+        "namespace",
+        default_value=EnvironmentVariable("ROBOT_NAMESPACE", default_value=""),
+        description="Add namespace to all launched nodes.",
+    )
+    declare_observation_topic_arg = DeclareLaunchArgument(
+        "observation_topic",
+        default_value="",
+        description="Topic name for LaserScan or PointCloud2 observation messages type.",
+    )
+    declare_observation_topic_type_arg = DeclareLaunchArgument(
+        "observation_topic_type",
+        default_value="pointcloud",
+        description="Observation topic type.",
+        choices=["laserscan", "pointcloud"],
+    )
+    declare_params_file_arg = DeclareLaunchArgument(
+        "params_file",
+        default_value=PathJoinSubstitution(
+            [husarion_ugv_navigation, "config", "nav2_params.yaml"]
+        ),
+        description="Path to the parameters file to use for all nav2 related nodes",
+    )
+
+    declare_robot_model_arg = DeclareLaunchArgument(
+        "robot_model",
+        default_value=EnvironmentVariable(name="ROBOT_MODEL_NAME", default_value="panther"),
+        description="Specify robot model",
+        choices=["lynx", "panther"],
+    )
+    declare_slam_arg = DeclareLaunchArgument(
+        "slam", default_value="False", description="Whether run a SLAM."
+    )
+    declare_use_composition_arg = DeclareLaunchArgument(
+        "use_composition",
+        default_value="True",
+        description="Whether to use composed bringup.",
+    )
+    declare_use_respawn_arg = DeclareLaunchArgument(
+        "use_respawn",
+        default_value="False",
+        description="Whether to respawn if a node crashes. Applied when composition is disabled.",
+    )
+    declare_use_sim_time_arg = DeclareLaunchArgument(
+        "use_sim_time",
+        default_value="false",
+        description="Use simulation (Gazebo) clock if true.",
+    )
+
+    # map-nav arguments (SPEC-MAP-NAV-2026-11). Each default keeps the stack as it was.
+    declare_cmd_vel_out_arg = DeclareLaunchArgument(
+        "cmd_vel_out",
+        default_value="cmd_vel",
+        description="Topic of the stack's final velocity output, relative to the namespace. "
+        "On a Husarion UGV OS robot: autonomous/cmd_vel, the only drive input the user computer "
+        "reaches.",
+    )
+    declare_use_collision_monitor_arg = DeclareLaunchArgument(
+        "use_collision_monitor",
+        default_value="False",
+        description="Run nav2_collision_monitor between the velocity smoother and cmd_vel_out, "
+        "on the observation source.",
+    )
+    declare_lidar_profile_arg = DeclareLaunchArgument(
+        "lidar_profile",
+        default_value="",
+        description="3D LiDAR profile: the STVL frustum, the scan slice's range and, for os2_64, "
+        "a 0.3 m/s linear speed cap (its near field is blind). Empty: the parameter file as it "
+        "is.",
+        choices=["", "os0_32", "os2_64"],
+    )
+    declare_mount_height_arg = DeclareLaunchArgument(
+        "mount_height",
+        default_value="",
+        description="Height of mount_link (the rail) above base_footprint in metres, used with "
+        "lidar_profile. Empty: read from TF at launch.",
+    )
+    declare_robot_height_arg = DeclareLaunchArgument(
+        "robot_height",
+        default_value="",
+        description="Top of the robot with its payload above base_footprint in metres, used with "
+        "lidar_profile: the costmaps and the collision monitor count obstacles up to it plus "
+        "0.2 m. Empty: the rail plus the sensor.",
+    )
+    declare_scan_min_height_arg = DeclareLaunchArgument(
+        "scan_min_height",
+        default_value="",
+        description="Lower edge of the 2D scan slice above base_footprint. Empty: the crop "
+        "box's min_z.",
+    )
+    declare_scan_max_height_arg = DeclareLaunchArgument(
+        "scan_max_height",
+        default_value="",
+        description="Upper edge of the 2D scan slice above base_footprint. Empty: the crop "
+        "box's max_z.",
+    )
+    declare_map_update_interval_arg = DeclareLaunchArgument(
+        "map_update_interval",
+        default_value="",
+        description="slam_toolbox's map_update_interval in seconds. Empty: the parameter file's.",
+    )
+    declare_initial_pose_from_sidecar_arg = DeclareLaunchArgument(
+        "initial_pose_from_sidecar",
+        default_value="False",
+        description="With slam:=False, start AMCL at saved_pose from the map's sidecar "
+        "(<map stem>.georef.yaml). The launch fails if the sidecar is missing or does not match "
+        "the map image.",
     )
 
     return LaunchDescription(
@@ -300,6 +414,15 @@ def generate_launch_description():
             declare_use_composition_arg,
             declare_use_respawn_arg,
             declare_use_sim_time_arg,
-            bringup_cmd_group,
+            declare_cmd_vel_out_arg,
+            declare_use_collision_monitor_arg,
+            declare_lidar_profile_arg,
+            declare_mount_height_arg,
+            declare_robot_height_arg,
+            declare_scan_min_height_arg,
+            declare_scan_max_height_arg,
+            declare_map_update_interval_arg,
+            declare_initial_pose_from_sidecar_arg,
+            OpaqueFunction(function=launch_setup),
         ]
     )
