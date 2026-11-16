@@ -114,6 +114,7 @@ private:
   std::string map_topic_;
   std::string maps_directory_, data_dir_, session_path_;
   double pose_max_age_s_ = 1.0;
+  double fix_tf_timeout_s_ = 0.2;
   double service_timeout_s_ = 1.5;
   double lifecycle_timeout_s_ = 10.0;
   double save_timeout_s_ = 30.0;

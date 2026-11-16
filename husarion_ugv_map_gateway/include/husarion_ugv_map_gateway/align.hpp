@@ -118,6 +118,8 @@ public:
 private:
   enum class Fresh { kNone, kShort, kGood, kBad };
   Fresh FreshState() const;
+  // Whether the newest fix agrees with the fit of the pairs (not with the published numbers).
+  bool NewestFixFitsTheFit() const;
   Alignment FromFit(double now) const;
   void SetNumbers(const Alignment & next);
   double FarEdgeMove(const Alignment & a, const Alignment & b) const;
@@ -138,6 +140,7 @@ private:
 
   std::optional<double> last_fix_t_;
   FixClass last_fix_class_ = FixClass::kNone;
+  std::optional<FixInput> last_fix_;  // the newest fix with a place in the map
   std::optional<double> agree_since_;
   std::optional<double> disagree_since_;
   std::optional<Word> candidate_;

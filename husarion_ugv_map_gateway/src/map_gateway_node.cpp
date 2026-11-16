@@ -93,6 +93,7 @@ MapGatewayNode::MapGatewayNode(const rclcpp::NodeOptions & options) : Node("map_
   declare_parameter<std::string>("map_file_name", "");
 
   pose_max_age_s_ = declare_parameter<double>("pose_max_age_s", 1.0);
+  fix_tf_timeout_s_ = declare_parameter<double>("fix_tf_timeout_s", 0.2);
   service_timeout_s_ = declare_parameter<double>("service_timeout_s", 1.5);
   lifecycle_timeout_s_ = declare_parameter<double>("lifecycle_timeout_s", 10.0);
   save_timeout_s_ = declare_parameter<double>("save_timeout_s", 30.0);
@@ -505,7 +506,11 @@ void MapGatewayNode::OnFix(sensor_msgs::msg::NavSatFix::ConstSharedPtr msg)
   const std::string antenna = antenna_frame_.empty() ? base_frame_ : antenna_frame_;
   for (const std::string & frame : {antenna, base_frame_}) {
     try {
-      const auto t = tf_buffer_->lookupTransform(map_frame_, frame, msg->header.stamp);
+      // The fix can arrive before the transform for its stamp: wait a little for it (the
+      // listener has its own thread).
+      const auto t = tf_buffer_->lookupTransform(
+        map_frame_, frame, rclcpp::Time(msg->header.stamp),
+        rclcpp::Duration::from_seconds(fix_tf_timeout_s_));
       in.has_map = AllFinite(t.transform.translation.x, t.transform.translation.y);
       in.x = t.transform.translation.x;
       in.y = t.transform.translation.y;

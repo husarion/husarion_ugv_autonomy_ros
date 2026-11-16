@@ -340,3 +340,39 @@ TEST(Align, Words)
   EXPECT_TRUE(WordIsOk(Word::kHeld));
   EXPECT_FALSE(WordIsOk(Word::kPoor));
 }
+
+TEST(Align, ANewFitReplacesASidecarTheFixesDisagreeWith)
+{
+  // The sidecar is 1 m off the truth (over 3 x the 0.2 m RTK floor): held, then poor once the
+  // fixes have disagreed for 30 s, then aligned on a fit of their own, which moves the version.
+  Alignment saved;
+  const LatLon shifted = EnuToLatLon({kTruth.lat0, kTruth.lon0}, {0.0, 1.0});
+  saved.geo = {shifted.lat, shifted.lon, kTruth.yaw};
+  saved.rms_m = 0.05;
+  saved.fix = FixClass::kRtkFixed;
+  Aligner a;
+  a.SetMapBounds(0, 0, 30, 30);
+  a.Load(saved);
+  Drive d(a, 0.02, 2);
+  d.Run(0, 29, Square);
+  EXPECT_EQ(a.word(), Word::kHeld);
+  d.Run(29, 32, Square);
+  EXPECT_EQ(a.word(), Word::kPoor);
+  d.Run(32, 80, Square);
+  EXPECT_EQ(a.word(), Word::kAligned);
+  EXPECT_EQ(a.alignment()->source, Source::kFit);
+  EXPECT_EQ(a.version(), 2u);
+  EXPECT_NEAR(a.alignment()->geo.lat0, kTruth.lat0, 1e-7);
+}
+
+TEST(Align, AGoodFitDoesNotHideFixesThatJumped)
+{
+  // Aligned on a long track; then every fix jumps 5 m. The fit of all pairs still looks good
+  // (the new ones are its outliers), but the newest fixes disagree with it: poor.
+  Aligner a;
+  Drive d(a, 0.02, 2);
+  d.Run(0, 300, Square);
+  ASSERT_EQ(a.word(), Word::kAligned);
+  d.Run(300, 340, Square, 5.0);
+  EXPECT_EQ(a.word(), Word::kPoor);
+}

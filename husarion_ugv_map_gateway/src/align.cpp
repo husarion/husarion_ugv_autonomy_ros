@@ -76,6 +76,7 @@ void Aligner::Reset()
   version_ref_.reset();
   word_ = Word::kNotAligned;
   origin_.reset();
+  last_fix_.reset();
   pairs_.clear();
   fit_ = RigidFit();
   ++fit_serial_;
@@ -132,6 +133,7 @@ void Aligner::AddFix(const FixInput & fix)
   if (!fix.has_map) {
     return;
   }
+  last_fix_ = fix;
 
   if (alignment_) {
     const auto at = LatLonToMap(alignment_->geo, fix.ll);
@@ -176,6 +178,19 @@ void Aligner::AddFix(const FixInput & fix)
     fit_ = RigidFit();
   }
   ++fit_serial_;
+}
+
+bool Aligner::NewestFixFitsTheFit() const
+{
+  if (!last_fix_ || !origin_ || !fit_.valid) {
+    return false;
+  }
+  const EastNorth en = LatLonToEnu(*origin_, last_fix_->ll);
+  const double c = std::cos(fit_.yaw), s = std::sin(fit_.yaw);
+  const double off = std::hypot(
+    c * last_fix_->x - s * last_fix_->y + fit_.tx - en.e,
+    s * last_fix_->x + c * last_fix_->y + fit_.ty - en.n);
+  return off <= params_.disagree_factor * std::max(fit_.rms, ErrFloor(fit_.cls, params_.floors));
 }
 
 double Aligner::required_spread() const
@@ -276,7 +291,8 @@ void Aligner::Enter(Word word)
 {
   word_ = word;
   candidate_.reset();
-  if (word == Word::kHeld) {
+  if (word == Word::kHeld || word == Word::kAligned) {
+    // held: a new run of fixes decides; aligned: the numbers may be new, so is the judgement.
     agree_since_.reset();
     disagree_since_.reset();
   }
@@ -306,8 +322,8 @@ void Aligner::Tick(double now)
   }
 
   Word candidate;
-  if (disagreeing) {
-    candidate = Word::kPoor;
+  if (disagreeing && !(fresh == Fresh::kGood && NewestFixFitsTheFit())) {
+    candidate = Word::kPoor;  // a new fit that agrees with the newest fixes replaces the numbers
   } else if (fresh == Fresh::kGood) {
     candidate = Word::kAligned;
   } else if (fresh == Fresh::kBad) {

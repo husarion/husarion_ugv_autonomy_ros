@@ -30,7 +30,10 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 #include <tf2_ros/transform_broadcaster.h>
@@ -137,8 +140,12 @@ protected:
     t.header.stamp = helper_->now();
     t.header.frame_id = Frame("map");
     t.child_frame_id = Frame("base_link");
-    t.transform.translation.x = 1.25;
-    t.transform.translation.y = -0.5;
+    double x = 1.25, y = -0.5;
+    if (path_) {
+      std::tie(x, y) = path_(helper_->now().seconds());
+    }
+    t.transform.translation.x = x;
+    t.transform.translation.y = y;
     t.transform.rotation.z = std::sin(0.3 / 2);
     t.transform.rotation.w = std::cos(0.3 / 2);
     tf_->sendTransform(t);
@@ -224,7 +231,13 @@ protected:
     const bool ok = SpinUntil(
       [&] { return Value(key) == value; }, std::chrono::duration<double>(timeout_s));
     if (!ok) {
-      ADD_FAILURE() << key << " is '" << Value(key) << "', waited for '" << value << "'";
+      std::string all;
+      if (state_) {
+        for (const auto & kv : state_->values) {
+          all += " " + kv.key + "=" + kv.value;
+        }
+      }
+      ADD_FAILURE() << key << " is '" << Value(key) << "', waited for '" << value << "';" << all;
     }
     return ok;
   }
@@ -282,6 +295,7 @@ protected:
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_;
   rclcpp::TimerBase::SharedPtr tf_timer_;
   bool tf_on_ = true;
+  std::function<std::pair<double, double>(double)> path_;
   rclcpp::Service<Trigger>::SharedPtr is_active_srv_;
   rclcpp::Service<ManageNodes>::SharedPtr manage_srv_;
   rclcpp::Service<GetState>::SharedPtr cm_srv_;
@@ -684,4 +698,133 @@ TEST_F(GatewayTest, StateIsSpacedAndBeats)
     EXPECT_GE(gap, 0.5) << i;  // 0.6 s at the sender, less the delivery jitter
     EXPECT_LE(gap, 1.4) << i;  // the 1 s heartbeat
   }
+}
+
+namespace
+{
+
+// A saved pair with an aligned sidecar, as the gateway itself writes one.
+std::string WritePair(
+  const fs::path & dir, const std::string & epoch, const std::optional<gw::Alignment> & a)
+{
+  fs::create_directories(dir);
+  std::ofstream(dir / "map.png", std::ios::binary) << "png of " << epoch;
+  std::ofstream(dir / "map.yaml") << "image: map.png\nresolution: 0.05\n";
+  gw::Sidecar sidecar;
+  sidecar.epoch = epoch;
+  sidecar.map_sha256 = gw::Sha256Hex("png of " + epoch);
+  sidecar.alignment = a;
+  sidecar.saved_pose = gw::SavedPose{0.5, 0.25, 0.1};
+  const std::string yaml = (dir / "map.yaml").string();
+  gw::WriteSidecar(gw::SidecarPath(yaml), sidecar);
+  return yaml;
+}
+
+}  // namespace
+
+TEST_F(GatewayTest, FixesAlignTheMapAndTheSidecarFollowsTheVersion)
+{
+  // The truth, and a sidecar whose alignment is 1 m off it.
+  const gw::GeoRef truth{51.1, 17.03, 0.4};
+  gw::Alignment off;
+  const gw::LatLon shifted = gw::EnuToLatLon({truth.lat0, truth.lon0}, {0.0, 1.0});
+  off.geo = {shifted.lat, shifted.lon, truth.yaw};
+  off.rms_m = 0.05;
+  off.fix = gw::FixClass::kRtkFixed;
+  off.pairs = 30;
+  const std::string yaml = WritePair(dir_ / "maps" / "field", "fieldepoch", off);
+
+  // The robot drives a 12 m square at 4 m/s; an RTK receiver reports it 5 times a second.
+  const double t0 = helper_->now().seconds();
+  path_ = [t0](double t) -> std::pair<double, double> {
+    const double s = std::fmod(4.0 * (t - t0), 48.0);
+    if (s < 12) {
+      return {s, 0.0};
+    }
+    if (s < 24) {
+      return {12.0, s - 12};
+    }
+    if (s < 36) {
+      return {36 - s, 12.0};
+    }
+    return {0.0, 48 - s};
+  };
+  auto fix_pub = helper_->create_publisher<sensor_msgs::msg::NavSatFix>(
+    "gps/fix", rclcpp::SensorDataQoS());
+  auto fix_timer = helper_->create_wall_timer(200ms, [&] {
+    const rclcpp::Time stamp(helper_->now().nanoseconds() - 100000000LL);
+    const auto [x, y] = path_(stamp.seconds());
+    const gw::LatLon ll = gw::MapToLatLon(truth, x, y);
+    sensor_msgs::msg::NavSatFix fix;
+    fix.header.stamp = stamp;
+    fix.status.status = 2;  // GBAS: RTK
+    fix.latitude = ll.lat;
+    fix.longitude = ll.lon;
+    fix.position_covariance_type = sensor_msgs::msg::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
+    fix.position_covariance[0] = fix.position_covariance[4] = 0.0004;
+    fix_pub->publish(fix);
+  });
+
+  StartMapPublisher(Grid(Frame("map"), 7));
+  StartGateway({
+    rclcpp::Parameter("map_file_name", yaml),
+    rclcpp::Parameter("align.better_s", 1.0),
+    rclcpp::Parameter("align.worse_s", 1.0),
+    rclcpp::Parameter("align.disagree_s", 2.0),
+  });
+  ASSERT_TRUE(WaitValue("epoch", "fieldepoch"));
+  // Held from the sidecar, then the fixes disagree with it by 1 m (over 3 x 0.2 m): poor, and a
+  // fit of their own replaces it once the track is 10 m wide.
+  ASSERT_TRUE(WaitValue("align", "aligned", 40.0));
+  EXPECT_EQ(Value("source"), "fit");
+  EXPECT_EQ(Value("fix"), "rtk_fixed");
+  EXPECT_EQ(Value("epoch"), "fieldepoch");
+  EXPECT_GE(std::stoi(Value("align_version")), 2);
+  EXPECT_NEAR(std::stod(Value("lat0")), truth.lat0, 2e-7);  // about 2 cm
+  EXPECT_NEAR(std::stod(Value("lon0")), truth.lon0, 3e-7);
+  EXPECT_NEAR(std::stod(Value("yaw")), truth.yaw, 0.01);
+  EXPECT_EQ(Value("err_m"), "0.200");
+
+  // The pair it runs on now carries the new alignment, with its hash, epoch and pose kept.
+  ASSERT_TRUE(SpinUntil(
+    [&] {
+      const auto s = gw::ReadSidecar(gw::SidecarPath(yaml));
+      return s && s->alignment && std::abs(s->alignment->geo.lat0 - truth.lat0) < 2e-7;
+    },
+    5s));
+  const auto sidecar = gw::LoadMatchingSidecar(yaml);
+  ASSERT_TRUE(sidecar.has_value());
+  EXPECT_EQ(sidecar->epoch, "fieldepoch");
+  ASSERT_TRUE(sidecar->saved_pose.has_value());
+  EXPECT_DOUBLE_EQ(sidecar->saved_pose->x, 0.5);
+
+  // fromLL is served and agrees with the truth near the track.
+  auto req = std::make_shared<robot_localization::srv::FromLL::Request>();
+  const gw::LatLon ll = gw::MapToLatLon(truth, 6.0, 6.0);
+  req->ll_point.latitude = ll.lat;
+  req->ll_point.longitude = ll.lon;
+  auto res = Call<robot_localization::srv::FromLL>("base/fromLL", req);
+  ASSERT_TRUE(res);
+  EXPECT_NEAR(res->map_point.x, 6.0, 0.05);
+  EXPECT_NEAR(res->map_point.y, 6.0, 0.05);
+
+  // The fixes stop: held after 10 s, fromLL still served.
+  fix_timer->cancel();
+  ASSERT_TRUE(WaitValue("align", "held", 15.0));
+  EXPECT_EQ(state_->level, DiagnosticStatus::OK);
+}
+
+TEST_F(GatewayTest, AnotherMapFileNameIsAnotherEpoch)
+{
+  const std::string a = WritePair(dir_ / "maps" / "a", "epocha", std::nullopt);
+  const std::string b = WritePair(dir_ / "maps" / "b", "epochb", std::nullopt);
+  StartMapPublisher(Grid(Frame("map"), 1));
+  StartGateway({rclcpp::Parameter("map_file_name", a)});
+  ASSERT_TRUE(WaitValue("epoch", "epocha"));
+  EXPECT_EQ(Value("align"), "not_aligned");  // saved before any fit
+  gateway_->set_parameter(rclcpp::Parameter("map_file_name", b));
+  ASSERT_TRUE(WaitValue("epoch", "epochb"));
+  gateway_->set_parameter(rclcpp::Parameter("map_file_name", ""));
+  ASSERT_TRUE(SpinUntil([&] { return Value("epoch").size() == 16; }, 10s));
+  EXPECT_EQ(Value("mode"), "mapping");
 }
