@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>husarion_ugv_video_relay</name>
+  <version>0.1.2</version>
+  <description>Relays an H.264 ffmpeg_image_transport_msgs/FFMPEGPacket stream (the OAK's on-chip H.264 from depthai-ros) as foxglove_msgs/CompressedVideo, with no decode and no re-encode, so the airlock of Husarion UGV OS can carry it</description>
+  <maintainer email="support@husarion.com">Husarion</maintainer>
+  <license>Apache License 2.0</license>
+
+  <url type="website">https://husarion.com/</url>
+  <url type="repository">https://github.com/husarion/husarion_ugv_autonomy_ros</url>
+  <url type="bugtracker">https://github.com/husarion/husarion_ugv_autonomy_ros/issues</url>
+
+  <author email="support@husarion.com">Husarion</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>ffmpeg_image_transport_msgs</depend>
+  <depend>foxglove_msgs</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
