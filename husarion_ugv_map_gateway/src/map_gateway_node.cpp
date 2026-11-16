@@ -104,6 +104,7 @@ MapGatewayNode::MapGatewayNode(const rclcpp::NodeOptions & options) : Node("map_
   png_max_side_ = declare_parameter<int>("png_max_side", 2048);
   state_heartbeat_s_ = declare_parameter<double>("state_heartbeat_s", 1.0);
   const double pose_rate = declare_parameter<double>("pose_rate_hz", 8.0);
+  pose_period_s_ = 1.0 / pose_rate;
   const double poll_period = declare_parameter<double>("poll_period_s", 2.0);
   state_spacer_ = Spacer<diagnostic_msgs::msg::DiagnosticStatus>(
     declare_parameter<double>("state_min_gap_s", 0.6));
@@ -281,7 +282,16 @@ void MapGatewayNode::OnEpochChanged()
     aligner_->Reset();
   }
   sidecar_target_ = epoch_->on_saved_pair() ? epoch_->map_file() : "";
-  have_map_hash_ = false;  // the page clears its grid on a new epoch: send the map again
+  // The page clears its grid on a new epoch: send the map again. map_server publishes once, so
+  // the last grid received is offered again rather than waiting for the next one.
+  have_map_hash_ = false;
+  if (last_grid_) {
+    map_hash_ = GridHash(*last_grid_);
+    have_map_hash_ = true;
+    if (auto now_grid = map_spacer_.Offer(last_grid_, Now())) {
+      PublishMap(**now_grid);
+    }
+  }
   last_version_ = aligner_->version();
   last_word_ = aligner_->word();
   RCLCPP_INFO(
@@ -381,6 +391,12 @@ void MapGatewayNode::OnMap(nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg)
 {
   const uint64_t hash = GridHash(*msg);
   const double now = Now();
+  // A restarted publisher's latched grid arrives at discovery, before the 1 s GID poll: look at
+  // the publisher first, so this grid is judged as the new publisher's (same map or not).
+  if (epoch_->OnPublisher(MapPublisherGid(), now)) {
+    OnEpochChanged();
+  }
+  last_grid_ = msg;
   if (epoch_->OnGrid(hash, now)) {
     OnEpochChanged();
   }
@@ -550,7 +566,12 @@ void MapGatewayNode::PoseTick()
     pose.pose.position.y = tr.y;
     pose.pose.position.z = tr.z;
     pose.pose.orientation = q;
-    pose_pub_->publish(pose);
+    // Never two poses closer than 0.9 periods: the lane's max_hz drops the second (§5.1).
+    const double now = Now();
+    if (!last_pose_sent_ || now - *last_pose_sent_ >= 0.9 * pose_period_s_) {
+      pose_pub_->publish(pose);
+      last_pose_sent_ = now;
+    }
     pose_ok_ = true;
   } catch (const tf2::TransformException &) {
     pose_ok_ = false;

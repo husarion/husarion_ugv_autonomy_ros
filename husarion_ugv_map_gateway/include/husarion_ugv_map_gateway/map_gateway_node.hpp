@@ -135,6 +135,9 @@ private:
 
   uint64_t map_hash_ = 0;
   bool have_map_hash_ = false;
+  nav_msgs::msg::OccupancyGrid::ConstSharedPtr last_grid_;
+  double pose_period_s_ = 0.125;
+  std::optional<double> last_pose_sent_;
   std::optional<double> map_stamp_;
   bool pose_ok_ = false;
   std::optional<std::array<double, 3>> laser_;

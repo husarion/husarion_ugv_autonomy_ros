@@ -447,7 +447,7 @@ TEST_F(GatewayTest, SavedPairServesFromLLAndKeepsItsEpochAcrossAMapServerRestart
   StopMapPublisher();
   SpinFor(1.5s);
   StartMapPublisher(Grid(Frame("map"), 5));
-  SpinFor(4s);
+  SpinFor(13s);  // past same_map_wait_s (10 s): the latched grid decided it, not the wait
   EXPECT_EQ(Value("epoch"), "savedhall");
   // A publisher with another map: a new epoch, no alignment, fromLL withdrawn.
   StopMapPublisher();
@@ -827,4 +827,25 @@ TEST_F(GatewayTest, AnotherMapFileNameIsAnotherEpoch)
   gateway_->set_parameter(rclcpp::Parameter("map_file_name", ""));
   ASSERT_TRUE(SpinUntil([&] { return Value("epoch").size() == 16; }, 10s));
   EXPECT_EQ(Value("mode"), "mapping");
+}
+
+TEST_F(GatewayTest, ALatchedMapIsSentAfterTheGatewayRestartsOnItsSession)
+{
+  // map_server publishes once. A gateway that restarts on its session file still sends it.
+  StartMapPublisher(Grid(Frame("map"), 3));
+  StartGateway();
+  ASSERT_TRUE(SpinUntil([&] { return Value("epoch").size() == 16; }, 10s));
+  const std::string epoch = Value("epoch");
+  SpinFor(2.5s);  // the session file holds the publisher's GID
+  StopGateway();
+  state_.reset();
+  int pngs = 0;
+  auto sub = helper_->create_subscription<sensor_msgs::msg::CompressedImage>(
+    "cockpit/nav/map/png", rclcpp::QoS(1).reliable().transient_local(),
+    [&](sensor_msgs::msg::CompressedImage::ConstSharedPtr) { ++pngs; });
+  StartGateway();
+  ASSERT_TRUE(SpinUntil([&] { return state_.has_value() && pngs > 0; }, 15s))
+    << "state " << state_.has_value() << ", pngs " << pngs;
+  EXPECT_EQ(Value("epoch"), epoch);
+  EXPECT_EQ(Value("map_stamp"), "1003.000000000");
 }
