@@ -19,7 +19,6 @@
   <depend>husarion_ugv_docking</depend>
   <depend>husarion_ugv_map_gateway</depend>
   <depend>husarion_ugv_navigation</depend>
-  <depend>husarion_ugv_video_relay</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
