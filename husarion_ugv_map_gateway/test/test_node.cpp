@@ -22,6 +22,7 @@
 #include <gtest/gtest.h>
 #include <unistd.h>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -116,6 +117,7 @@ protected:
       [this](DiagnosticStatus::ConstSharedPtr m) {
         state_ = *m;
         state_times_.push_back(std::chrono::steady_clock::now());
+        state_log_.emplace_back(Value("epoch"), Value("map_stamp"));
       });
     tf_ = std::make_shared<tf2_ros::TransformBroadcaster>(helper_);
     tf_timer_ = helper_->create_wall_timer(50ms, [this] { BroadcastTf(); });
@@ -175,15 +177,45 @@ protected:
     gateway_.reset();
   }
 
-  void StartMapPublisher(const nav_msgs::msg::OccupancyGrid & grid)
+  // `publish` false: a publisher whose grid has not come yet (it is published later on map_pub_).
+  void StartMapPublisher(const nav_msgs::msg::OccupancyGrid & grid, bool publish = true)
   {
     StopMapPublisher();
     static int n = 0;
     map_node_ = rclcpp::Node::make_shared("fake_map_server_" + std::to_string(++n), "/" + ns_);
     map_pub_ = map_node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
       "map", rclcpp::QoS(1).reliable().transient_local());
-    map_pub_->publish(grid);
+    if (publish) {
+      map_pub_->publish(grid);
+    }
     exec_->add_node(map_node_);
+  }
+
+  // Every PNG the gateway sends, by its stamp's seconds; subscribed before the first grid.
+  void RecordPngs()
+  {
+    png_sub_ = helper_->create_subscription<sensor_msgs::msg::CompressedImage>(
+      "cockpit/nav/map/png", rclcpp::QoS(1).reliable().transient_local(),
+      [this](sensor_msgs::msg::CompressedImage::ConstSharedPtr m) {
+        png_stamps_.push_back(m->header.stamp.sec);
+      });
+  }
+
+  int PngsWithStamp(int32_t sec) const
+  {
+    return static_cast<int>(std::count(png_stamps_.begin(), png_stamps_.end(), sec));
+  }
+
+  // The map_stamp values every state of `epoch` carried.
+  std::vector<std::string> StampsOfEpoch(const std::string & epoch) const
+  {
+    std::vector<std::string> out;
+    for (const auto & [e, stamp] : state_log_) {
+      if (e == epoch) {
+        out.push_back(stamp);
+      }
+    }
+    return out;
   }
 
   void StopMapPublisher()
@@ -292,6 +324,9 @@ protected:
   rclcpp::Subscription<DiagnosticStatus>::SharedPtr state_sub_;
   std::optional<DiagnosticStatus> state_;
   std::vector<std::chrono::steady_clock::time_point> state_times_;
+  std::vector<std::pair<std::string, std::string>> state_log_;  // (epoch, map_stamp) of each state
+  rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr png_sub_;
+  std::vector<int32_t> png_stamps_;
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_;
   rclcpp::TimerBase::SharedPtr tf_timer_;
   bool tf_on_ = true;
@@ -848,4 +883,109 @@ TEST_F(GatewayTest, ALatchedMapIsSentAfterTheGatewayRestartsOnItsSession)
     << "state " << state_.has_value() << ", pngs " << pngs;
   EXPECT_EQ(Value("epoch"), epoch);
   EXPECT_EQ(Value("map_stamp"), "1003.000000000");
+}
+
+// A new epoch shows a picture only of a grid that belongs to it: the old map's PNG is never sent
+// again under it, and its state carries map_stamp 0 until the new grid comes, then names that one.
+constexpr const char * kNoStamp = "0.000000000";
+
+TEST_F(GatewayTest, ANewPublisherShowsNoOldPictureUntilItsGridComes)
+{
+  RecordPngs();
+  StartMapPublisher(Grid(Frame("map"), 1));
+  StartGateway({rclcpp::Parameter("map_min_gap_s", 0.5)});
+  ASSERT_TRUE(WaitValue("map_stamp", "1001.000000000"));
+  const std::string first = Value("epoch");
+  SpinFor(2.5s);  // the publisher is bound
+  const int old_pngs = PngsWithStamp(1001);
+  ASSERT_GE(old_pngs, 1);
+  // Another publisher (not a saved pair), seen by the GID poll before its grid.
+  StopMapPublisher();
+  SpinFor(1.5s);
+  StartMapPublisher(Grid(Frame("map"), 2), false);
+  ASSERT_TRUE(SpinUntil([&] { return Value("epoch") != first; }, 10s));
+  const std::string second = Value("epoch");
+  SpinFor(2.5s);  // several states and FlushTicks under the new epoch
+  EXPECT_EQ(PngsWithStamp(1001), old_pngs) << "the old grid was sent under the new epoch";
+  for (const auto & stamp : StampsOfEpoch(second)) {
+    EXPECT_EQ(stamp, kNoStamp) << "a state of the new epoch names a picture before its grid";
+  }
+  // The new grid comes: it is sent and named.
+  map_pub_->publish(Grid(Frame("map"), 2));
+  ASSERT_TRUE(WaitValue("map_stamp", "1002.000000000"));
+  EXPECT_EQ(Value("epoch"), second);
+  EXPECT_EQ(PngsWithStamp(1002), 1);
+  EXPECT_EQ(PngsWithStamp(1001), old_pngs);
+  for (const auto & stamp : StampsOfEpoch(second)) {
+    EXPECT_TRUE(stamp == kNoStamp || stamp == "1002.000000000") << stamp;
+  }
+}
+
+TEST_F(GatewayTest, AMapFileNameBeforeItsGridShowsNoOldPicture)
+{
+  const std::string a = WritePair(dir_ / "maps" / "a", "epocha", std::nullopt);
+  const std::string b = WritePair(dir_ / "maps" / "b", "epochb", std::nullopt);
+  RecordPngs();
+  StartMapPublisher(Grid(Frame("map"), 1));
+  StartGateway({rclcpp::Parameter("map_file_name", a), rclcpp::Parameter("map_min_gap_s", 0.5)});
+  ASSERT_TRUE(WaitValue("epoch", "epocha"));
+  ASSERT_TRUE(WaitValue("map_stamp", "1001.000000000"));
+  SpinFor(1.5s);
+  const int old_pngs = PngsWithStamp(1001);
+  // The parameter first, then map_server's grid of map b (load_map: the same publisher).
+  gateway_->set_parameter(rclcpp::Parameter("map_file_name", b));
+  ASSERT_TRUE(WaitValue("epoch", "epochb"));
+  SpinFor(2.5s);
+  EXPECT_EQ(PngsWithStamp(1001), old_pngs) << "map a's grid was sent under map b's epoch";
+  for (const auto & stamp : StampsOfEpoch("epochb")) {
+    EXPECT_EQ(stamp, kNoStamp) << "a state of map b names a picture before its grid";
+  }
+  map_pub_->publish(Grid(Frame("map"), 2));
+  ASSERT_TRUE(WaitValue("map_stamp", "1002.000000000"));
+  EXPECT_EQ(Value("epoch"), "epochb");
+  EXPECT_EQ(PngsWithStamp(1002), 1);
+  EXPECT_EQ(PngsWithStamp(1001), old_pngs);
+}
+
+TEST_F(GatewayTest, AMapFileNameAfterItsGridShowsThatGrid)
+{
+  const std::string a = WritePair(dir_ / "maps" / "a", "epocha", std::nullopt);
+  const std::string b = WritePair(dir_ / "maps" / "b", "epochb", std::nullopt);
+  RecordPngs();
+  StartMapPublisher(Grid(Frame("map"), 1));
+  StartGateway({rclcpp::Parameter("map_file_name", a), rclcpp::Parameter("map_min_gap_s", 0.5)});
+  ASSERT_TRUE(WaitValue("epoch", "epocha"));
+  ASSERT_TRUE(WaitValue("map_stamp", "1001.000000000"));
+  SpinFor(1.5s);
+  // map_server's grid of map b first (sent under map a's epoch, as it must be), then the parameter.
+  map_pub_->publish(Grid(Frame("map"), 2));
+  ASSERT_TRUE(WaitValue("map_stamp", "1002.000000000"));
+  const int old_pngs = PngsWithStamp(1001);
+  gateway_->set_parameter(rclcpp::Parameter("map_file_name", b));
+  ASSERT_TRUE(WaitValue("epoch", "epochb"));
+  ASSERT_TRUE(WaitValue("map_stamp", "1002.000000000"));
+  EXPECT_EQ(PngsWithStamp(1002), 2) << "map b's grid is sent again under its own epoch";
+  EXPECT_EQ(PngsWithStamp(1001), old_pngs);
+  for (const auto & stamp : StampsOfEpoch("epochb")) {
+    EXPECT_TRUE(stamp == kNoStamp || stamp == "1002.000000000") << stamp;
+  }
+}
+
+TEST_F(GatewayTest, AGridHeldByTheSpacerIsDroppedOnANewEpoch)
+{
+  const std::string b = WritePair(dir_ / "maps" / "b", "epochb", std::nullopt);
+  RecordPngs();
+  StartMapPublisher(Grid(Frame("map"), 1));
+  StartGateway();  // map_min_gap_s 5 s
+  ASSERT_TRUE(WaitValue("map_stamp", "1001.000000000"));
+  // slam_toolbox's next grid comes within the gap and is held back; then a map is loaded.
+  map_pub_->publish(Grid(Frame("map"), 2));
+  SpinFor(0.3s);  // it arrived before the parameter
+  gateway_->set_parameter(rclcpp::Parameter("map_file_name", b));
+  ASSERT_TRUE(WaitValue("epoch", "epochb"));
+  SpinFor(6s);  // past the gap
+  EXPECT_EQ(PngsWithStamp(1002), 0) << "the held-back grid of the mapping epoch was sent";
+  for (const auto & stamp : StampsOfEpoch("epochb")) {
+    EXPECT_EQ(stamp, kNoStamp);
+  }
 }

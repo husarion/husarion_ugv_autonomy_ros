@@ -58,6 +58,9 @@ public:
     return std::nullopt;
   }
 
+  // Forgets the held-back message, if any (it is not sent).
+  void Drop() { pending_.reset(); }
+
   bool has_pending() const { return pending_.has_value(); }
   std::optional<double> last_sent() const { return last_sent_; }
 

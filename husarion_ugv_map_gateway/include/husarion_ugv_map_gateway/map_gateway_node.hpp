@@ -75,7 +75,9 @@ private:
   std::string MapPublisherGid();
 
   void Start();
-  void OnEpochChanged();
+  // `grid_belongs`: the last grid received is the new epoch's own, so it is sent again; otherwise
+  // the epoch shows no picture until its first grid comes.
+  void OnEpochChanged(bool grid_belongs);
   void WriteSessionIfChanged(bool force = false);
   void RewriteSidecarAlignment();
   void UpdateLLServices();
@@ -136,6 +138,8 @@ private:
   uint64_t map_hash_ = 0;
   bool have_map_hash_ = false;
   nav_msgs::msg::OccupancyGrid::ConstSharedPtr last_grid_;
+  std::string last_grid_gids_;                // the map topic's publishers when the last grid came
+  std::optional<uint64_t> epoch_first_grid_;  // the hash of the first grid of this epoch
   double pose_period_s_ = 0.125;
   std::optional<double> last_pose_sent_;
   std::optional<double> map_stamp_;

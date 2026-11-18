@@ -56,6 +56,25 @@ uint64_t GridHash(const nav_msgs::msg::OccupancyGrid & grid)
   return h;
 }
 
+// Whether a grid received while the map topic's publishers were `at_grid` (MapPublisherGid's
+// sorted, comma-joined GIDs) can come from one of the publishers `now`: every publisher there now
+// was there then. None known then (a gap) means the grid came from a publisher not yet seen.
+bool GridFromCurrentPublishers(const std::string & now, const std::string & at_grid)
+{
+  if (at_grid.empty()) {
+    return true;
+  }
+  std::istringstream in(now);
+  std::string gid;
+  const std::string within = "," + at_grid + ",";
+  while (std::getline(in, gid, ',')) {
+    if (within.find("," + gid + ",") == std::string::npos) {
+      return false;
+    }
+  }
+  return true;
+}
+
 std::chrono::nanoseconds Seconds(double s)
 {
   return std::chrono::nanoseconds(static_cast<int64_t>(s * 1e9));
@@ -259,13 +278,13 @@ void MapGatewayNode::Start()
   const auto session = ReadSession(session_path_);
   epoch_->Start(map_file, loaded_sidecar_, session, Now());
   if (epoch_->decided()) {
-    OnEpochChanged();
+    OnEpochChanged(true);  // no older epoch in this process: any grid is this one's
   } else {
     RCLCPP_INFO(get_logger(), "Waiting for the map publisher to match the session file");
   }
 }
 
-void MapGatewayNode::OnEpochChanged()
+void MapGatewayNode::OnEpochChanged(bool grid_belongs)
 {
   const auto why = epoch_->why();
   if (auto restored = epoch_->TakeRestored()) {
@@ -282,12 +301,20 @@ void MapGatewayNode::OnEpochChanged()
     aligner_->Reset();
   }
   sidecar_target_ = epoch_->on_saved_pair() ? epoch_->map_file() : "";
-  // The page clears its grid on a new epoch: send the map again. map_server publishes once, so
-  // the last grid received is offered again rather than waiting for the next one.
+  // The page clears its picture on a new epoch and keeps one only when the state's map_stamp
+  // names it, so a new epoch's map_stamp names nothing (0) until one of its own grids is sent, and
+  // a grid the spacer still holds is the old epoch's and is dropped. map_server publishes once:
+  // when the last grid received is the new epoch's own, it is offered again rather than waiting
+  // for the next one. When it is the old map's, nothing is sent until the next grid, which is
+  // then sent whatever its hash.
+  map_spacer_.Drop();
+  map_stamp_.reset();
   have_map_hash_ = false;
-  if (last_grid_) {
+  epoch_first_grid_.reset();
+  if (last_grid_ && grid_belongs) {
     map_hash_ = GridHash(*last_grid_);
     have_map_hash_ = true;
+    epoch_first_grid_ = map_hash_;
     if (auto now_grid = map_spacer_.Offer(last_grid_, Now())) {
       PublishMap(**now_grid);
     }
@@ -392,13 +419,18 @@ void MapGatewayNode::OnMap(nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg)
   const uint64_t hash = GridHash(*msg);
   const double now = Now();
   // A restarted publisher's latched grid arrives at discovery, before the 1 s GID poll: look at
-  // the publisher first, so this grid is judged as the new publisher's (same map or not).
-  if (epoch_->OnPublisher(MapPublisherGid(), now)) {
-    OnEpochChanged();
-  }
+  // the publisher first, so this grid is judged as the new publisher's (same map or not). It is
+  // the last grid before the check, so a new epoch shows this grid, not the old publisher's.
   last_grid_ = msg;
+  last_grid_gids_ = MapPublisherGid();
+  if (epoch_->OnPublisher(last_grid_gids_, now)) {
+    OnEpochChanged(true);
+  }
   if (epoch_->OnGrid(hash, now)) {
-    OnEpochChanged();
+    OnEpochChanged(true);  // this grid decided it
+  }
+  if (!epoch_first_grid_) {
+    epoch_first_grid_ = hash;
   }
   const auto & info = msg->info;
   if (AllFinite(info.origin.position.x, info.origin.position.y, info.resolution)) {
@@ -595,12 +627,29 @@ void MapGatewayNode::GidTick()
     const std::string map_file = *pending_map_file_;
     pending_map_file_.reset();
     loaded_sidecar_ = map_file.empty() ? std::nullopt : LoadMatchingSidecar(map_file);
+    // The new map's grid and the parameter come in either order. The last grid is the new map's
+    // when it differs from the first grid of the old epoch: on a saved map (the old
+    // map_file_name set) map_server publishes once per map it loads, so another grid since the
+    // epoch began is the newly loaded one, and it is sent again under the new epoch. The same
+    // grid means the new map's has not come: nothing is sent until it does. On mapping (the old
+    // map_file_name empty) slam_toolbox's grid changes by itself and cannot tell: nothing is sent
+    // until its next grid. The cost: a map with the very content of the old one, loaded before
+    // the parameter, shows no picture until map_server publishes again.
+    const bool grid_belongs = !epoch_->map_file().empty() && last_grid_ && epoch_first_grid_ &&
+                              GridHash(*last_grid_) != *epoch_first_grid_;
     if (epoch_->OnMapFile(map_file, loaded_sidecar_, Now())) {
-      OnEpochChanged();
+      OnEpochChanged(grid_belongs);
     }
   }
+  // A new publisher decided here: the GID poll saw it before its grid, or a saved pair's new
+  // publisher sent no grid within same_map_wait_s. The last grid is the epoch's own only when
+  // every publisher of the new epoch was already there when that grid came (an old publisher
+  // that leaves late, after the new one's grid, still lets that grid be sent again). The first
+  // decision (a session matched, or its wait ran out) has no older epoch: any grid is its own.
+  const bool was_decided = epoch_->decided();
   if (epoch_->OnPublisher(MapPublisherGid(), Now()) || epoch_->OnTick(Now())) {
-    OnEpochChanged();
+    OnEpochChanged(
+      !was_decided || (last_grid_ && GridFromCurrentPublishers(epoch_->gid(), last_grid_gids_)));
   }
   WriteSessionIfChanged();
 }
