@@ -58,7 +58,8 @@ uint64_t GridHash(const nav_msgs::msg::OccupancyGrid & grid)
 
 // Whether a grid received while the map topic's publishers were `at_grid` (MapPublisherGid's
 // sorted, comma-joined GIDs) can come from one of the publishers `now`: every publisher there now
-// was there then. None known then (a gap) means the grid came from a publisher not yet seen.
+// was there then. None known then means the grid came within the last GID poll (GidTick fills the
+// set in at its end) from a publisher the graph did not show yet.
 bool GridFromCurrentPublishers(const std::string & now, const std::string & at_grid)
 {
   if (at_grid.empty()) {
@@ -650,6 +651,11 @@ void MapGatewayNode::GidTick()
   if (epoch_->OnPublisher(MapPublisherGid(), Now()) || epoch_->OnTick(Now())) {
     OnEpochChanged(
       !was_decided || (last_grid_ && GridFromCurrentPublishers(epoch_->gid(), last_grid_gids_)));
+  }
+  // A grid that came while the graph showed no publisher: its publishers are the ones seen now,
+  // so the unknown lasts one poll and never lets a later publisher change resend it.
+  if (last_grid_ && last_grid_gids_.empty()) {
+    last_grid_gids_ = MapPublisherGid();
   }
   WriteSessionIfChanged();
 }
