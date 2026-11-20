@@ -208,10 +208,13 @@
             clear_after_reading: true
             max_z: 7.0
             min_z: 0.1
-            vertical_fov_angle: 0.8745
-            horizontal_fov_angle: 1.048
+            # a 360 deg 2D LiDAR's clearing frustum (model_type 1): the whole circle, a thin
+            # slab around the scan plane, not a depth camera's 60 deg cone
+            vertical_fov_angle: 0.01
+            vertical_fov_padding: 0.05
+            horizontal_fov_angle: 6.29
             decay_acceleration: 15.0
-            model_type: 0
+            model_type: 1
 
 
   global_costmap:
@@ -298,10 +301,13 @@
             clear_after_reading: true
             max_z: 7.0
             min_z: 0.1
-            vertical_fov_angle: 0.8745
-            horizontal_fov_angle: 1.048
+            # a 360 deg 2D LiDAR's clearing frustum (model_type 1): the whole circle, a thin
+            # slab around the scan plane, not a depth camera's 60 deg cone
+            vertical_fov_angle: 0.01
+            vertical_fov_padding: 0.05
+            horizontal_fov_angle: 6.29
             decay_acceleration: 15.0
-            model_type: 0
+            model_type: 1
 
 
   planner_server:

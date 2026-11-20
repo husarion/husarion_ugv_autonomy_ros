@@ -183,6 +183,24 @@ def test_collision_monitor_on_a_laserscan_source():
     assert cm["cloud"] == {"type": "scan", "topic": "/panther/scan", "enabled": True}
 
 
+def test_laserscan_source_clears_the_whole_circle():
+    # a 2D LiDAR sees 360 deg: STVL clears with a 3D LiDAR's frustum, not a depth camera's cone
+    kwargs = dict(
+        MAPNAV,
+        observation_topic="/panther/scan",
+        observation_topic_type="laserscan",
+        lidar_profile="",
+    )
+    tree = rendered(**kwargs)
+    for costmap in ("local_costmap", "global_costmap"):
+        stvl = params(tree, costmap, costmap)["stvl_layer"]
+        assert stvl["observation_sources"] == "laserscan"
+        scan = stvl["laserscan"]
+        assert scan["model_type"] == 1
+        assert scan["horizontal_fov_angle"] == pytest.approx(6.29)
+        assert scan["topic"] == "/panther/scan"
+
+
 def test_os2_64_caps_speed_at_all_times():
     tree = rendered(**dict(MAPNAV, lidar_profile="os2_64"))
     follow = params(tree, "controller_server")["FollowPath"]
