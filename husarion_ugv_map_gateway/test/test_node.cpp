@@ -18,8 +18,8 @@
 // GID, restored when the gateway restarts alone, the sidecar's across a map_server restart on the
 // same map; fromLL and toLL not advertised without an alignment; the save step and its name rule;
 // the map, pose and plan products; clock_offset_s; the spacing of `state`; the local costmap
-// (R26): nothing without its transform, then placed in the map frame, at most 1 Hz, only on a
-// change.
+// (R26): nothing without its transform, then placed in the map frame, at most 1 Hz on a change
+// and every 2 s when still.
 
 #include <gtest/gtest.h>
 #include <unistd.h>
@@ -1061,12 +1061,19 @@ TEST_F(GatewayTest, LocalCostmapInTheMapFrameAtOneHzOnChange)
   EXPECT_TRUE(pngs.empty());
   EXPECT_TRUE(infos.empty());
 
-  // With the transform: one window, placed in the map frame, then nothing while it is the same.
+  // With the transform: the window, placed in the map frame; while it stays the same, sent again
+  // every 2 s (costmap_resend_s), not faster.
   odom_on_ = true;
   SpinFor(0.3s);
-  stream(4.0, false);
-  ASSERT_EQ(pngs.size(), 1u);
-  ASSERT_EQ(infos.size(), 1u);
+  stream(5.0, false);
+  ASSERT_GE(pngs.size(), 2u);
+  EXPECT_LE(pngs.size(), 3u);
+  for (size_t i = 1; i < pngs.size(); ++i) {
+    EXPECT_GE(std::chrono::duration<double>(pngs[i].at - pngs[i - 1].at).count(), 1.9);
+    EXPECT_GT(
+      rclcpp::Time(pngs[i].png.header.stamp), rclcpp::Time(pngs[i - 1].png.header.stamp));
+  }
+  ASSERT_EQ(infos.size(), pngs.size());
   const auto & png = pngs[0].png;
   const auto & info = infos[0];
   EXPECT_EQ(png.format, "png");

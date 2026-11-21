@@ -270,6 +270,27 @@ TEST(CostmapGate, AtMostOncePerGap)
   EXPECT_TRUE(gate.Due(11.0));
 }
 
+TEST(CostmapGate, AStillSceneIsSentEvery2sAndAChangeWithinTheSpacing)
+{
+  CostmapGate gate(1.0, 0.005, 2.0);
+  const Pose2 at{-4.0, -4.0, 0.0};
+  ASSERT_TRUE(gate.ShouldSend(10.0, 42, at, 11.3));
+  gate.Sent(10.0, 42, at);
+  // Nav2's 2 Hz windows, all the same: the next goes out 2 s later, not sooner.
+  for (double t = 10.5; t < 12.0; t += 0.5) {
+    EXPECT_FALSE(gate.ShouldSend(t, 42, at, 11.3)) << t;
+  }
+  EXPECT_TRUE(gate.ShouldSend(12.0, 42, at, 11.3));
+  gate.Sent(12.0, 42, at);
+  // A change 0.5 s later waits for the 1 s spacing, then goes at once.
+  EXPECT_FALSE(gate.ShouldSend(12.5, 43, at, 11.3));
+  EXPECT_TRUE(gate.ShouldSend(13.0, 43, at, 11.3));
+  gate.Sent(13.0, 43, at);
+  // Still again: 2 s after the change, not after the resend before it.
+  EXPECT_FALSE(gate.ShouldSend(14.5, 43, at, 11.3));
+  EXPECT_TRUE(gate.ShouldSend(15.0, 43, at, 11.3));
+}
+
 TEST(CostmapGate, OnlyOnAChangeOfTheCellsOrThePlace)
 {
   CostmapGate gate(1.0, 0.005);

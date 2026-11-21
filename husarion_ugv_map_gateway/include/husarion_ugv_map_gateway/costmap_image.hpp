@@ -73,22 +73,32 @@ struct Pose2
 Pose2 Compose(const Pose2 & frame, const Pose2 & local);
 
 // When to send the costmap (§5.1 "below the caps", R26): no sooner than `min_gap` seconds after
-// the last one sent, and only when the cells or the window's place in the map frame changed
-// since then. The place changed when the origin moved by more than `move_tolerance` metres or
-// the window's far corner turned by more than that.
+// the last one sent; then at once when the cells or the window's place in the map frame changed
+// since then, and otherwise again `resend` seconds after the last one, so a page opened on a
+// still scene gets a picture. The place changed when the origin moved by more than
+// `move_tolerance` metres or the window's far corner turned by more than that.
 class CostmapGate
 {
 public:
-  CostmapGate(double min_gap, double move_tolerance) : min_gap_(min_gap), tol_(move_tolerance) {}
+  CostmapGate(double min_gap, double move_tolerance, double resend = 2.0)
+  : min_gap_(min_gap), tol_(move_tolerance), resend_(resend)
+  {
+  }
 
   bool Due(double now) const { return !last_sent_ || now - *last_sent_ >= min_gap_; }
   // `extent`: the window's diagonal in metres, the lever of a turn.
   bool Changed(uint64_t cells_hash, const Pose2 & origin, double extent) const;
+  // Due, and either changed or due for its resend.
+  bool ShouldSend(double now, uint64_t cells_hash, const Pose2 & origin, double extent) const
+  {
+    return Due(now) && (Changed(cells_hash, origin, extent) || now - *last_sent_ >= resend_);
+  }
   void Sent(double now, uint64_t cells_hash, const Pose2 & origin);
 
 private:
   double min_gap_;
   double tol_;
+  double resend_;
   std::optional<double> last_sent_;
   uint64_t hash_ = 0;
   Pose2 origin_;

@@ -143,8 +143,11 @@ MapGatewayNode::MapGatewayNode(const rclcpp::NodeOptions & options) : Node("map_
       get_logger(), "costmap_rate_hz %.2f is at or over the lane's cap of 2 Hz: samples will drop",
       costmap_rate);
   }
+  const double costmap_move_tolerance =
+    declare_parameter<double>("costmap_move_tolerance_m", 0.005);
   costmap_gate_ = CostmapGate(
-    1.0 / costmap_rate, declare_parameter<double>("costmap_move_tolerance_m", 0.005));
+    1.0 / costmap_rate, costmap_move_tolerance,
+    declare_parameter<double>("costmap_resend_s", 2.0));
   costmap_tf_wait_s_ = declare_parameter<double>("costmap_tf_wait_s", 0.5);
   costmap_cap_ = declare_parameter<int>("costmap_cap_bytes", 32768);
   costmap_max_side_ = declare_parameter<int>("costmap_max_side", 400);
@@ -659,7 +662,10 @@ void MapGatewayNode::CostmapTick(double now)
   const double meta[] = {double(info.width), double(info.height), info.resolution};
   const uint64_t hash = Fnv1a64(grid->data.data(), grid->data.size(), Fnv1a64(meta, sizeof(meta)));
   const double extent = std::hypot(double(info.width), double(info.height)) * info.resolution;
-  if (!costmap_gate_.Changed(hash, origin, extent)) {
+  // An unchanged window is sent again every costmap_resend_s. The resend is always the newest
+  // grid Nav2 published, with its own stamp and its own transform: Nav2 republishes at 2 Hz, so
+  // nothing old is resent, and a costmap that stops stops the resends too.
+  if (!costmap_gate_.ShouldSend(now, hash, origin, extent)) {
     return;
   }
   CostGrid cells;
