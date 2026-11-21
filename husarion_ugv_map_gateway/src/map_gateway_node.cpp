@@ -88,6 +88,8 @@ MapGatewayNode::MapGatewayNode(const rclcpp::NodeOptions & options) : Node("map_
   map_topic_ = declare_parameter<std::string>("map_topic", "map");
   const auto plan_topic = declare_parameter<std::string>("plan_topic", "plan");
   const auto fix_topic = declare_parameter<std::string>("fix_topic", "gps/fix");
+  const auto costmap_topic = declare_parameter<std::string>(
+    "local_costmap_topic", "local_costmap/costmap");
   const auto status_topic = declare_parameter<std::string>(
     "nav_status_topic", "navigate_to_pose/_action/status");
   map_frame_ = Frame(declare_parameter<std::string>("map_frame", ""), "map");
@@ -131,6 +133,21 @@ MapGatewayNode::MapGatewayNode(const rclcpp::NodeOptions & options) : Node("map_
   plan_spacer_ = Spacer<nav_msgs::msg::Path>(declare_parameter<double>("plan_min_gap_s", 1.25));
   map_spacer_ = Spacer<nav_msgs::msg::OccupancyGrid::ConstSharedPtr>(
     declare_parameter<double>("map_min_gap_s", 5.0));
+  // R26: 1 Hz under the lane's max_hz of 2 (§5.1 "below the caps").
+  double costmap_rate = declare_parameter<double>("costmap_rate_hz", 1.0);
+  if (!(costmap_rate > 0.0) || !std::isfinite(costmap_rate)) {
+    RCLCPP_WARN(get_logger(), "costmap_rate_hz must be above 0; using 1.0");
+    costmap_rate = 1.0;
+  } else if (costmap_rate >= 2.0) {
+    RCLCPP_WARN(
+      get_logger(), "costmap_rate_hz %.2f is at or over the lane's cap of 2 Hz: samples will drop",
+      costmap_rate);
+  }
+  costmap_gate_ = CostmapGate(
+    1.0 / costmap_rate, declare_parameter<double>("costmap_move_tolerance_m", 0.005));
+  costmap_tf_wait_s_ = declare_parameter<double>("costmap_tf_wait_s", 0.5);
+  costmap_cap_ = declare_parameter<int>("costmap_cap_bytes", 32768);
+  costmap_max_side_ = declare_parameter<int>("costmap_max_side", 400);
 
   AlignParams ap;
   ap.min_pairs = declare_parameter<int>("align.min_pairs", ap.min_pairs);
@@ -169,6 +186,10 @@ MapGatewayNode::MapGatewayNode(const rclcpp::NodeOptions & options) : Node("map_
   pose_pub_ = create_publisher<geometry_msgs::msg::PoseStamped>(
     "cockpit/nav/pose", rclcpp::QoS(1).best_effort());
   plan_pub_ = create_publisher<nav_msgs::msg::Path>("cockpit/nav/plan", rclcpp::QoS(1).reliable());
+  costmap_png_pub_ = create_publisher<sensor_msgs::msg::CompressedImage>(
+    "cockpit/nav/costmap/png", rclcpp::QoS(1).best_effort());
+  costmap_info_pub_ = create_publisher<nav_msgs::msg::MapMetaData>(
+    "cockpit/nav/costmap/info", rclcpp::QoS(1).best_effort());
 
   map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
     map_topic_, latched, [this](nav_msgs::msg::OccupancyGrid::ConstSharedPtr m) { OnMap(m); });
@@ -181,6 +202,11 @@ MapGatewayNode::MapGatewayNode(const rclcpp::NodeOptions & options) : Node("map_
   fix_sub_ = create_subscription<sensor_msgs::msg::NavSatFix>(
     fix_topic, rclcpp::SensorDataQoS(),
     [this](sensor_msgs::msg::NavSatFix::ConstSharedPtr m) { OnFix(m); });
+  // Best effort matches Nav2's reliable publisher and any other; a lost window is replaced by
+  // the next one (Nav2 publishes at 2 Hz, the gateway sends at 1).
+  costmap_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
+    costmap_topic, rclcpp::QoS(1).best_effort(),
+    [this](nav_msgs::msg::OccupancyGrid::ConstSharedPtr m) { OnCostmap(m); });
 
   is_active_client_ = create_client<Trigger>(lifecycle_manager + "/is_active");
   manage_client_ = create_client<ManageNodes>(lifecycle_manager + "/manage_nodes");
@@ -581,6 +607,94 @@ void MapGatewayNode::OnFix(sensor_msgs::msg::NavSatFix::ConstSharedPtr msg)
   aligner_->AddFix(in);
 }
 
+void MapGatewayNode::OnCostmap(nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg)
+{
+  pending_costmap_ = msg;  // only the newest waits
+  pending_costmap_since_ = Now();
+}
+
+void MapGatewayNode::CostmapTick(double now)
+{
+  if (!pending_costmap_ || !costmap_gate_.Due(now)) {
+    return;
+  }
+  const auto grid = pending_costmap_;
+  const auto & info = grid->info;
+  const auto & o = info.origin;
+  if (
+    !AllFinite(
+      info.resolution, o.position.x, o.position.y, o.orientation.x, o.orientation.y,
+      o.orientation.z, o.orientation.w) ||
+    info.resolution <= 0.0 || grid->header.frame_id.empty()) {
+    pending_costmap_.reset();
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), 10000, "A local costmap with no frame or non-finite metadata");
+    return;
+  }
+  geometry_msgs::msg::TransformStamped t;
+  try {
+    // The window is in odom: place it in the map frame as it was at the grid's stamp. Nav2
+    // stamps it about now, so the transform may come a little later: retry on the next ticks.
+    t = tf_buffer_->lookupTransform(
+      map_frame_, grid->header.frame_id, rclcpp::Time(grid->header.stamp),
+      rclcpp::Duration::from_seconds(0.0));
+  } catch (const tf2::TransformException & e) {
+    if (now - pending_costmap_since_ >= costmap_tf_wait_s_) {
+      pending_costmap_.reset();
+      ++costmap_no_tf_;
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *get_clock(), 10000,
+        "No transform %s -> %s at the local costmap's stamp, so it is not sent (%zu so far): %s",
+        grid->header.frame_id.c_str(), map_frame_.c_str(), costmap_no_tf_, e.what());
+    }
+    return;
+  }
+  pending_costmap_.reset();
+  const Pose2 frame{
+    t.transform.translation.x, t.transform.translation.y, YawOf(t.transform.rotation)};
+  const Pose2 origin = Compose(frame, {o.position.x, o.position.y, YawOf(o.orientation)});
+  if (!AllFinite(origin.x, origin.y, origin.yaw)) {
+    return;  // every float published is finite (§5.1)
+  }
+  const double meta[] = {double(info.width), double(info.height), info.resolution};
+  const uint64_t hash = Fnv1a64(grid->data.data(), grid->data.size(), Fnv1a64(meta, sizeof(meta)));
+  const double extent = std::hypot(double(info.width), double(info.height)) * info.resolution;
+  if (!costmap_gate_.Changed(hash, origin, extent)) {
+    return;
+  }
+  CostGrid cells;
+  cells.width = info.width;
+  cells.height = info.height;
+  cells.resolution = info.resolution;
+  cells.cells = grid->data;
+  const auto png = EncodeCostmap(cells, costmap_max_side_, costmap_cap_);
+  if (!png) {
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), 10000, "A local costmap that fits no PNG under %zu B",
+      costmap_cap_);
+    return;
+  }
+  sensor_msgs::msg::CompressedImage image;
+  image.header.stamp = grid->header.stamp;
+  image.header.frame_id = map_frame_;
+  image.format = "png";
+  image.data.assign(png->png.begin(), png->png.end());
+
+  nav_msgs::msg::MapMetaData out;
+  out.map_load_time = grid->header.stamp;  // pairs the info with the PNG (§5.1)
+  out.resolution = static_cast<float>(png->resolution);
+  out.width = png->width;
+  out.height = png->height;
+  out.origin.position.x = origin.x;
+  out.origin.position.y = origin.y;
+  out.origin.orientation.z = std::sin(origin.yaw / 2.0);
+  out.origin.orientation.w = std::cos(origin.yaw / 2.0);
+
+  costmap_png_pub_->publish(image);
+  costmap_info_pub_->publish(out);
+  costmap_gate_.Sent(now, hash, origin);
+}
+
 void MapGatewayNode::PoseTick()
 {
   try {
@@ -760,6 +874,7 @@ void MapGatewayNode::PublishState(const std::vector<std::pair<std::string, std::
 void MapGatewayNode::FlushTick()
 {
   const double now = Now();
+  CostmapTick(now);
   if (auto grid = map_spacer_.Poll(now)) {
     PublishMap(**grid);
   }

@@ -17,7 +17,9 @@
 // RESUME (2), nothing else, each answering with Nav2's success; the epoch on a changed publisher
 // GID, restored when the gateway restarts alone, the sidecar's across a map_server restart on the
 // same map; fromLL and toLL not advertised without an alignment; the save step and its name rule;
-// the map, pose and plan products; clock_offset_s; the spacing of `state`.
+// the map, pose and plan products; clock_offset_s; the spacing of `state`; the local costmap
+// (R26): nothing without its transform, then placed in the map frame, at most 1 Hz, only on a
+// change.
 
 #include <gtest/gtest.h>
 #include <unistd.h>
@@ -151,6 +153,15 @@ protected:
     t.transform.rotation.z = std::sin(0.3 / 2);
     t.transform.rotation.w = std::cos(0.3 / 2);
     tf_->sendTransform(t);
+    if (odom_on_) {
+      // map -> odom for the local costmap (R26): odom at (2, 1), turned by 0.5 rad.
+      t.child_frame_id = Frame("odom");
+      t.transform.translation.x = 2.0;
+      t.transform.translation.y = 1.0;
+      t.transform.rotation.z = std::sin(0.5 / 2);
+      t.transform.rotation.w = std::cos(0.5 / 2);
+      tf_->sendTransform(t);
+    }
   }
 
   void StartGateway(std::vector<rclcpp::Parameter> extra = {})
@@ -330,6 +341,7 @@ protected:
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_;
   rclcpp::TimerBase::SharedPtr tf_timer_;
   bool tf_on_ = true;
+  bool odom_on_ = false;
   std::function<std::pair<double, double>(double)> path_;
   rclcpp::Service<Trigger>::SharedPtr is_active_srv_;
   rclcpp::Service<ManageNodes>::SharedPtr manage_srv_;
@@ -988,4 +1000,122 @@ TEST_F(GatewayTest, AGridHeldByTheSpacerIsDroppedOnANewEpoch)
   for (const auto & stamp : StampsOfEpoch("epochb")) {
     EXPECT_EQ(stamp, kNoStamp);
   }
+}
+
+TEST_F(GatewayTest, LocalCostmapInTheMapFrameAtOneHzOnChange)
+{
+  struct Got
+  {
+    sensor_msgs::msg::CompressedImage png;
+    std::chrono::steady_clock::time_point at;
+  };
+  std::vector<Got> pngs;
+  std::vector<nav_msgs::msg::MapMetaData> infos;
+  auto s1 = helper_->create_subscription<sensor_msgs::msg::CompressedImage>(
+    "cockpit/nav/costmap/png", rclcpp::QoS(10).best_effort(),
+    [&](sensor_msgs::msg::CompressedImage::ConstSharedPtr m) {
+      pngs.push_back({*m, std::chrono::steady_clock::now()});
+    });
+  auto s2 = helper_->create_subscription<nav_msgs::msg::MapMetaData>(
+    "cockpit/nav/costmap/info", rclcpp::QoS(10).best_effort(),
+    [&](nav_msgs::msg::MapMetaData::ConstSharedPtr m) { infos.push_back(*m); });
+  // As Nav2's costmap publisher: reliable, transient local.
+  auto costmap_pub = helper_->create_publisher<nav_msgs::msg::OccupancyGrid>(
+    "local_costmap/costmap", rclcpp::QoS(1).reliable().transient_local());
+
+  int marker = 0;
+  double origin_x = -1.5;
+  auto window = [&] {
+    nav_msgs::msg::OccupancyGrid g;
+    g.header.frame_id = Frame("odom");
+    g.header.stamp = helper_->now();
+    g.info.resolution = 0.05f;
+    g.info.width = 60;
+    g.info.height = 40;
+    g.info.origin.position.x = origin_x;
+    g.info.origin.position.y = -1.0;
+    g.info.origin.orientation.w = 1.0;
+    g.data.assign(60 * 40, 0);
+    g.data[39 * 60 + 0] = 100;  // lethal at the top-left of the picture
+    g.data[39 * 60 + 1] = 99;
+    g.data[39 * 60 + 2] = -1;
+    g.data[0] = 40;  // inflation at the bottom-left
+    g.data[100 + marker % 50] = 7;
+    return g;
+  };
+  // Nav2's 2 Hz for `seconds`, `change` a new marker each time.
+  auto stream = [&](double seconds, bool change) {
+    const auto end = std::chrono::steady_clock::now() + std::chrono::duration<double>(seconds);
+    while (std::chrono::steady_clock::now() < end) {
+      if (change) {
+        ++marker;
+      }
+      costmap_pub->publish(window());
+      SpinFor(0.5s);
+    }
+  };
+
+  StartGateway();
+  // No map -> odom: nothing is sent.
+  stream(2.5, true);
+  EXPECT_TRUE(pngs.empty());
+  EXPECT_TRUE(infos.empty());
+
+  // With the transform: one window, placed in the map frame, then nothing while it is the same.
+  odom_on_ = true;
+  SpinFor(0.3s);
+  stream(4.0, false);
+  ASSERT_EQ(pngs.size(), 1u);
+  ASSERT_EQ(infos.size(), 1u);
+  const auto & png = pngs[0].png;
+  const auto & info = infos[0];
+  EXPECT_EQ(png.format, "png");
+  EXPECT_EQ(png.header.frame_id, Frame("map"));
+  EXPECT_EQ(png.header.stamp, info.map_load_time);  // the pairing rule
+  EXPECT_NE(png.header.stamp.sec, 0);
+  EXPECT_LE(png.data.size(), 32768u);
+  EXPECT_EQ(info.width, 60u);
+  EXPECT_EQ(info.height, 40u);
+  EXPECT_FLOAT_EQ(info.resolution, 0.05f);
+  // (-1.5, -1) in odom, odom at (2, 1) turned by 0.5 rad.
+  EXPECT_NEAR(info.origin.position.x, 2.0 + std::cos(0.5) * -1.5 - std::sin(0.5) * -1.0, 1e-6);
+  EXPECT_NEAR(info.origin.position.y, 1.0 + std::sin(0.5) * -1.5 + std::cos(0.5) * -1.0, 1e-6);
+  EXPECT_NEAR(2.0 * std::atan2(info.origin.orientation.z, info.origin.orientation.w), 0.5, 1e-6);
+  const auto image = gw::DecodeGreyPng(std::string(png.data.begin(), png.data.end()));
+  ASSERT_TRUE(image.has_value());
+  EXPECT_EQ(image->pixels[0], 100);  // PNG row 0 is the top (the largest y)
+  EXPECT_EQ(image->pixels[1], 99);
+  EXPECT_EQ(image->pixels[2], 255);  // unknown
+  EXPECT_EQ(image->pixels[3], 0);
+  EXPECT_EQ(image->pixels[39 * 60], 40);
+
+  // Changing windows at 2 Hz: sent at most once a second.
+  pngs.clear();
+  infos.clear();
+  stream(4.2, true);
+  EXPECT_GE(pngs.size(), 3u);
+  EXPECT_LE(pngs.size(), 5u);
+  for (size_t i = 1; i < pngs.size(); ++i) {
+    EXPECT_GE(std::chrono::duration<double>(pngs[i].at - pngs[i - 1].at).count(), 0.9);
+  }
+  for (size_t i = 0; i < std::min(pngs.size(), infos.size()); ++i) {
+    EXPECT_EQ(pngs[i].png.header.stamp, infos[i].map_load_time);
+  }
+
+  // The same cells, rolled by one cell: the place changed, so it is sent.
+  SpinFor(1.2s);
+  pngs.clear();
+  origin_x += 0.05;
+  stream(1.5, false);
+  ASSERT_GE(pngs.size(), 1u);
+  ASSERT_FALSE(infos.empty());
+  EXPECT_NEAR(
+    infos.back().origin.position.x, 2.0 + std::cos(0.5) * origin_x - std::sin(0.5) * -1.0, 1e-6);
+
+  // The transform goes away: nothing more is sent.
+  odom_on_ = false;
+  SpinFor(0.5s);
+  pngs.clear();
+  stream(2.5, true);
+  EXPECT_TRUE(pngs.empty());
 }

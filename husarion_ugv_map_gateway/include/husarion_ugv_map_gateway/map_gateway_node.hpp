@@ -44,6 +44,7 @@
 #include <std_srvs/srv/trigger.hpp>
 
 #include "husarion_ugv_map_gateway/align.hpp"
+#include "husarion_ugv_map_gateway/costmap_image.hpp"
 #include "husarion_ugv_map_gateway/epoch.hpp"
 #include "husarion_ugv_map_gateway/files.hpp"
 #include "husarion_ugv_map_gateway/products.hpp"
@@ -87,6 +88,10 @@ private:
   void OnPlan(nav_msgs::msg::Path::ConstSharedPtr msg);
   void OnGoalStatus(action_msgs::msg::GoalStatusArray::ConstSharedPtr msg);
   void OnFix(sensor_msgs::msg::NavSatFix::ConstSharedPtr msg);
+  void OnCostmap(nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg);
+  // R26: the newest local costmap, once its spacing allows and its transform to the map frame
+  // at its stamp is known; sent only when its cells or its place changed.
+  void CostmapTick(double now);
 
   void PoseTick();
   void GidTick();
@@ -125,6 +130,9 @@ private:
   size_t png_budget_ = 190000, png_cap_ = 200000;
   uint32_t png_max_side_ = 2048;
   double state_heartbeat_s_ = 1.0;
+  double costmap_tf_wait_s_ = 0.5;
+  size_t costmap_cap_ = 32768;
+  uint32_t costmap_max_side_ = 400;
 
   // State.
   std::unique_ptr<Aligner> aligner_;
@@ -154,6 +162,10 @@ private:
   Spacer<nav_msgs::msg::Path> plan_spacer_{1.25};
   Spacer<nav_msgs::msg::OccupancyGrid::ConstSharedPtr> map_spacer_{5.0};
   std::vector<std::pair<std::string, std::string>> last_values_;
+  CostmapGate costmap_gate_{1.0, 0.005};
+  nav_msgs::msg::OccupancyGrid::ConstSharedPtr pending_costmap_;
+  double pending_costmap_since_ = 0.0;
+  size_t costmap_no_tf_ = 0;  // costmaps dropped for want of a transform (logged, not in state)
   std::optional<double> last_state_sent_;
 
   // ROS.
@@ -164,6 +176,9 @@ private:
   rclcpp::Publisher<nav_msgs::msg::MapMetaData>::SharedPtr info_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr plan_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr costmap_png_pub_;
+  rclcpp::Publisher<nav_msgs::msg::MapMetaData>::SharedPtr costmap_info_pub_;
+  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_sub_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
   rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr plan_sub_;
   rclcpp::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr status_sub_;

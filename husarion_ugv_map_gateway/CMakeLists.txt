@@ -39,6 +39,7 @@ add_library(
   ${PROJECT_NAME}_core STATIC
   src/align.cpp
   src/codec.cpp
+  src/costmap_image.cpp
   src/epoch.cpp
   src/files.cpp
   src/geo.cpp
@@ -70,6 +71,10 @@ if(BUILD_TESTING)
 
   ament_add_gtest(${PROJECT_NAME}_test_map_image test/test_map_image.cpp)
   target_link_libraries(${PROJECT_NAME}_test_map_image ${PROJECT_NAME}_core)
+
+  ament_add_gtest(${PROJECT_NAME}_test_costmap_image
+                  test/test_costmap_image.cpp)
+  target_link_libraries(${PROJECT_NAME}_test_costmap_image ${PROJECT_NAME}_core)
 
   ament_add_gtest(${PROJECT_NAME}_test_geo test/test_geo.cpp)
   target_link_libraries(${PROJECT_NAME}_test_geo ${PROJECT_NAME}_core)
