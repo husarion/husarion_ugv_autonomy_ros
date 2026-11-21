@@ -19,7 +19,8 @@
 // same map; fromLL and toLL not advertised without an alignment; the save step and its name rule;
 // the map, pose and plan products; clock_offset_s; the spacing of `state`; the local costmap
 // (R26): nothing without its transform, then placed in the map frame, at most 1 Hz on a change
-// and every 2 s when still.
+// and every 2 s when still; the scan (M2a): at most 720 finite ranges at about 4 Hz, the
+// nearest obstacle kept, state's laser keys placing the scan's own frame.
 
 #include <gtest/gtest.h>
 #include <unistd.h>
@@ -31,6 +32,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
@@ -52,9 +54,11 @@
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nav_msgs/msg/path.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/serialization.hpp>
 #include <robot_localization/srv/from_ll.hpp>
 #include <robot_localization/srv/to_ll.hpp>
 #include <sensor_msgs/msg/compressed_image.hpp>
+#include <sensor_msgs/msg/laser_scan.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <slam_toolbox/srv/serialize_pose_graph.hpp>
 #include <std_srvs/srv/trigger.hpp>
@@ -153,6 +157,18 @@ protected:
     t.transform.rotation.z = std::sin(0.3 / 2);
     t.transform.rotation.w = std::cos(0.3 / 2);
     tf_->sendTransform(t);
+    if (scan_frame_on_) {
+      // base_link -> the scan's frame: 0.2 m ahead, 0.1 m left, turned by pi.
+      geometry_msgs::msg::TransformStamped l;
+      l.header.stamp = t.header.stamp;
+      l.header.frame_id = Frame("base_link");
+      l.child_frame_id = Frame("scan_frame");
+      l.transform.translation.x = 0.2;
+      l.transform.translation.y = 0.1;
+      l.transform.rotation.z = 1.0;
+      l.transform.rotation.w = 0.0;
+      tf_->sendTransform(l);
+    }
     if (odom_on_) {
       // map -> odom for the local costmap (R26): odom at (2, 1), turned by 0.5 rad.
       t.child_frame_id = Frame("odom");
@@ -342,6 +358,7 @@ protected:
   rclcpp::TimerBase::SharedPtr tf_timer_;
   bool tf_on_ = true;
   bool odom_on_ = false;
+  bool scan_frame_on_ = false;
   std::function<std::pair<double, double>(double)> path_;
   rclcpp::Service<Trigger>::SharedPtr is_active_srv_;
   rclcpp::Service<ManageNodes>::SharedPtr manage_srv_;
@@ -1070,8 +1087,7 @@ TEST_F(GatewayTest, LocalCostmapInTheMapFrameAtOneHzOnChange)
   EXPECT_LE(pngs.size(), 3u);
   for (size_t i = 1; i < pngs.size(); ++i) {
     EXPECT_GE(std::chrono::duration<double>(pngs[i].at - pngs[i - 1].at).count(), 1.9);
-    EXPECT_GT(
-      rclcpp::Time(pngs[i].png.header.stamp), rclcpp::Time(pngs[i - 1].png.header.stamp));
+    EXPECT_GT(rclcpp::Time(pngs[i].png.header.stamp), rclcpp::Time(pngs[i - 1].png.header.stamp));
   }
   ASSERT_EQ(infos.size(), pngs.size());
   const auto & png = pngs[0].png;
@@ -1125,4 +1141,89 @@ TEST_F(GatewayTest, LocalCostmapInTheMapFrameAtOneHzOnChange)
   pngs.clear();
   stream(2.5, true);
   EXPECT_TRUE(pngs.empty());
+}
+
+TEST_F(GatewayTest, ScanAt4HzWithAtMost720FiniteRanges)
+{
+  struct Got
+  {
+    sensor_msgs::msg::LaserScan scan;
+    std::chrono::steady_clock::time_point at;
+  };
+  std::vector<Got> got;
+  auto sub = helper_->create_subscription<sensor_msgs::msg::LaserScan>(
+    "cockpit/nav/scan", rclcpp::QoS(10).best_effort(),
+    [&](sensor_msgs::msg::LaserScan::ConstSharedPtr m) {
+      got.push_back({*m, std::chrono::steady_clock::now()});
+    });
+  auto scan_pub = helper_->create_publisher<sensor_msgs::msg::LaserScan>(
+    "scan", rclcpp::SensorDataQoS());
+  auto scan = [&](bool bad = false) {
+    sensor_msgs::msg::LaserScan m;
+    m.header.frame_id = Frame("scan_frame");
+    m.header.stamp = helper_->now();
+    m.angle_min = -3.14159f;
+    m.angle_increment = 2 * 3.14159f / 2048;
+    m.angle_max = m.angle_min + m.angle_increment * 2047;
+    m.time_increment = 0.1f / 2048;
+    m.scan_time = 0.1f;
+    m.range_min = 0.3f;
+    m.range_max = 30.0f;
+    m.ranges.assign(2048, std::numeric_limits<float>::infinity());
+    for (size_t i = 0; i < 2048; i += 7) {
+      m.ranges[i] = 6.0f;
+    }
+    m.ranges[1001] = 0.9f;  // a pole one beam wide
+    m.ranges[5] = std::nanf("");
+    m.intensities.assign(2048, 100.0f);
+    if (bad) {
+      m.scan_time = std::nanf("");
+    }
+    return m;
+  };
+  scan_frame_on_ = true;
+  StartGateway();
+  // The slice's 10 Hz for 3 s.
+  const auto end = std::chrono::steady_clock::now() + 3s;
+  while (std::chrono::steady_clock::now() < end) {
+    scan_pub->publish(scan());
+    SpinFor(0.1s);
+  }
+  SpinFor(0.4s);
+  ASSERT_GE(got.size(), 9u);  // about 4 Hz: 3 s at 0.25 to 0.3 s
+  EXPECT_LE(got.size(), 14u);
+  for (size_t i = 1; i < got.size(); ++i) {
+    EXPECT_GE(std::chrono::duration<double>(got[i].at - got[i - 1].at).count(), 0.2);
+  }
+  const auto & out = got.back().scan;
+  EXPECT_EQ(out.header.frame_id, Frame("scan_frame"));
+  EXPECT_LE(out.ranges.size(), 720u);
+  EXPECT_EQ(out.ranges.size(), 683u);  // 2048 at stride 3
+  EXPECT_TRUE(out.intensities.empty());
+  EXPECT_FLOAT_EQ(out.ranges[1001 / 3], 0.9f);
+  for (float r : out.ranges) {
+    ASSERT_TRUE(std::isfinite(r));
+    EXPECT_TRUE(r == 31.0f || r == 6.0f || r == 0.9f) << r;
+  }
+  EXPECT_NEAR(out.angle_increment, 3 * 2 * 3.14159f / 2048, 1e-6);
+  EXPECT_NEAR(out.angle_min, -3.14159f + 2 * 3.14159f / 2048, 1e-6);  // the run's middle
+  EXPECT_NEAR(out.angle_max, out.angle_min + out.angle_increment * 682, 1e-4);
+  rclcpp::Serialization<sensor_msgs::msg::LaserScan> serializer;
+  rclcpp::SerializedMessage wire;
+  serializer.serialize_message(&out, &wire);
+  EXPECT_LE(wire.size(), 8192u);
+  RecordProperty("scan_bytes", int(wire.size()));
+  // state places the scan's own frame on the base.
+  ASSERT_TRUE(WaitValue("laser_x", "0.200"));
+  EXPECT_EQ(Value("laser_y"), "0.100");
+  EXPECT_EQ(Value("laser_yaw"), "3.1416");
+  // A scan with a non-finite field is not sent.
+  SpinFor(0.5s);
+  got.clear();
+  for (int i = 0; i < 10; ++i) {
+    scan_pub->publish(scan(true));
+    SpinFor(0.1s);
+  }
+  SpinFor(0.4s);
+  EXPECT_TRUE(got.empty());
 }

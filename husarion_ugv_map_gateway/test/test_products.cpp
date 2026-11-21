@@ -18,6 +18,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <regex>
@@ -105,18 +106,75 @@ TEST(Finite, ScanClamp)
   ranges[0] = inf;
   ranges[2] = nan;
   ranges[4] = -inf;
-  const ScanOut out = ClampScan(ranges, 20.0f, 720);
+  ranges[6] = inf;
+  ranges[7] = nan;
+  ranges[8] = 0.1f;   // below range_min: not a reading
+  ranges[9] = 25.0f;  // above range_max
+  const ScanOut out = ClampScan(ranges, 0.5f, 20.0f, 720);
   EXPECT_LE(out.ranges.size(), 720u);
   EXPECT_EQ(out.stride, 2);
   for (float r : out.ranges) {
     EXPECT_TRUE(std::isfinite(r));
   }
-  EXPECT_FLOAT_EQ(out.ranges[0], 21.0f);
-  EXPECT_FLOAT_EQ(out.ranges[1], 21.0f);
-  EXPECT_FLOAT_EQ(out.ranges[2], 21.0f);
-  EXPECT_FLOAT_EQ(out.ranges[3], 5.0f);
+  EXPECT_FLOAT_EQ(out.ranges[0], 5.0f);   // inf beside a reading: the reading
+  EXPECT_FLOAT_EQ(out.ranges[1], 5.0f);   // NaN beside a reading
+  EXPECT_FLOAT_EQ(out.ranges[3], 21.0f);  // inf and NaN: range_max + 1
+  EXPECT_FLOAT_EQ(out.ranges[4], 21.0f);  // nothing in range
+  EXPECT_FLOAT_EQ(out.ranges[5], 5.0f);
   EXPECT_TRUE(AllFinite(1.0, 2.0f, 3));
   EXPECT_FALSE(AllFinite(1.0, std::numeric_limits<double>::quiet_NaN()));
+}
+
+TEST(Scan, DecimationKeepsTheNearestObstacle)
+{
+  // 2048 beams (an Ouster's 2048 x 10 slice) to at most 720: stride 3. A one-beam pole at 0.9 m
+  // in the middle of a run survives; so does each run's own minimum.
+  std::vector<float> ranges(2048, 8.0f);
+  ranges[1001] = 0.9f;
+  for (size_t i = 0; i < 300; i += 3) {
+    ranges[i + 2] = 3.0f;
+  }
+  const ScanOut out = ClampScan(ranges, 0.3f, 30.0f, 720);
+  EXPECT_EQ(out.stride, 3);
+  EXPECT_EQ(out.ranges.size(), 683u);
+  EXPECT_LE(out.ranges.size(), 720u);
+  EXPECT_FLOAT_EQ(out.ranges[1001 / 3], 0.9f);
+  EXPECT_EQ(std::count(out.ranges.begin(), out.ranges.end(), 0.9f), 1);
+  for (size_t k = 0; k < 100; ++k) {
+    EXPECT_FLOAT_EQ(out.ranges[k], 3.0f) << k;
+  }
+  // Under the limit, nothing is merged.
+  const ScanOut same = ClampScan(std::vector<float>(628, 4.0f), 0.7f, 20.0f, 720);
+  EXPECT_EQ(same.stride, 1);
+  EXPECT_EQ(same.ranges.size(), 628u);
+  // Never more than the limit, whatever the count.
+  for (size_t n : {719u, 720u, 721u, 1440u, 1441u, 4096u}) {
+    EXPECT_LE(ClampScan(std::vector<float>(n, 1.0f), 0.1f, 10.0f, 720).ranges.size(), 720u) << n;
+  }
+}
+
+TEST(Spacer, ScanAt4HzUnderTheCapOf5)
+{
+  // The slice at 10 Hz for 5 s; the gateway offers each one and polls every 50 ms.
+  Spacer<int> s(0.25);
+  std::vector<double> sent;
+  int n = 0;
+  for (int tick = 0; tick <= 100; ++tick) {
+    const double now = 100.0 + tick * 0.05;
+    if (tick % 2 == 0) {
+      if (s.Offer(n++, now)) {
+        sent.push_back(now);
+      }
+    }
+    if (s.Poll(now)) {
+      sent.push_back(now);
+    }
+  }
+  for (size_t i = 1; i < sent.size(); ++i) {
+    EXPECT_GE(sent[i] - sent[i - 1], 0.25 - 1e-9);  // never two inside the lane's 0.2 s
+  }
+  EXPECT_GE(sent.size(), 16u);  // about 4 Hz: 5 s at 0.25 to 0.3 s
+  EXPECT_LE(sent.size(), 21u);
 }
 
 TEST(Clock, Offset)

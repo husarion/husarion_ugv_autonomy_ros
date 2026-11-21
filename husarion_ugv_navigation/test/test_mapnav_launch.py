@@ -25,7 +25,9 @@ The real bringup with the map-nav arguments, against a standing fake robot (test
 - with use_map_gateway the map gateway reports Nav2 and the collision monitor active, sends the
   map, and its pause and resume triggers take the real Nav2 down and up (spec R2, §11.6);
 - the gateway sends the real local costmap, placed in the map frame through AMCL's map -> odom, as
-  a PNG under 32 768 B with its paired info (spec R26).
+  a PNG under 32 768 B with its paired info (spec R26);
+- the gateway sends the slice's scan at about 4 Hz, at most 720 finite ranges and no intensities,
+  under 8192 B, in the slice's own frame (M2a).
 """
 
 import math
@@ -52,7 +54,8 @@ from rclpy.qos import (
     ReliabilityPolicy,
     qos_profile_sensor_data,
 )
-from sensor_msgs.msg import CompressedImage, PointCloud2
+from rclpy.serialization import serialize_message
+from sensor_msgs.msg import CompressedImage, LaserScan, PointCloud2
 from sensor_msgs_py import point_cloud2
 from std_srvs.srv import Trigger
 
@@ -137,6 +140,13 @@ class TestMapNavStack(unittest.TestCase):
         )
         cls.costmap_pngs = []
         cls.costmap_infos = []
+        cls.scans = []
+        cls.node.create_subscription(
+            LaserScan,
+            f"/{NS}/cockpit/nav/scan",
+            lambda m: cls.scans.append((time.monotonic(), m)),
+            qos_profile_sensor_data,
+        )
         cls.node.create_subscription(
             CompressedImage,
             f"/{NS}/cockpit/nav/costmap/png",
@@ -345,4 +355,25 @@ class TestMapNavStack(unittest.TestCase):
             f"local costmap: {info.width} x {info.height} at {info.resolution:.3f} m, "
             f"{len(png.data)} B, origin ({info.origin.position.x:.2f}, "
             f"{info.origin.position.y:.2f})"
+        )
+
+    def test_8_scan(self):
+        self.spin_for(1.0)
+        self.scans.clear()
+        self.spin_for(4.0)
+        self.assertTrue(self.scans, "no scan from the gateway")
+        times = [t for t, _ in self.scans]
+        rate = (len(times) - 1) / (times[-1] - times[0]) if len(times) > 1 else 0.0
+        self.assertGreater(rate, 2.5)
+        self.assertLess(rate, 5.0)
+        scan = self.scans[-1][1]
+        size = len(serialize_message(scan))
+        self.assertEqual(scan.header.frame_id, f"{NS}/base_footprint")  # the slice's target_frame
+        self.assertLessEqual(len(scan.ranges), 720)
+        self.assertEqual(list(scan.intensities), [])
+        self.assertTrue(all(math.isfinite(r) for r in scan.ranges))
+        self.assertLessEqual(size, 8192)
+        print(
+            f"scan: {len(scan.ranges)} ranges in {scan.header.frame_id}, {size} B, "
+            f"{rate:.1f} Hz"
         )

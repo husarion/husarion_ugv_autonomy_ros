@@ -39,6 +39,7 @@
 #include <robot_localization/srv/from_ll.hpp>
 #include <robot_localization/srv/to_ll.hpp>
 #include <sensor_msgs/msg/compressed_image.hpp>
+#include <sensor_msgs/msg/laser_scan.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <slam_toolbox/srv/serialize_pose_graph.hpp>
 #include <std_srvs/srv/trigger.hpp>
@@ -89,6 +90,8 @@ private:
   void OnGoalStatus(action_msgs::msg::GoalStatusArray::ConstSharedPtr msg);
   void OnFix(sensor_msgs::msg::NavSatFix::ConstSharedPtr msg);
   void OnCostmap(nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg);
+  // M2a: the stack's 2D scan, at most scan_max_ranges ranges, every float finite, at 4 Hz.
+  void OnScan(sensor_msgs::msg::LaserScan::ConstSharedPtr msg);
   // R26: the newest local costmap, once its spacing allows and its transform to the map frame
   // at its stamp is known; sent only when its cells or its place changed.
   void CostmapTick(double now);
@@ -133,6 +136,7 @@ private:
   double costmap_tf_wait_s_ = 0.5;
   size_t costmap_cap_ = 32768;
   uint32_t costmap_max_side_ = 400;
+  size_t scan_max_ranges_ = 720, scan_cap_ = 8192;
 
   // State.
   std::unique_ptr<Aligner> aligner_;
@@ -160,6 +164,7 @@ private:
 
   Spacer<diagnostic_msgs::msg::DiagnosticStatus> state_spacer_{0.6};
   Spacer<nav_msgs::msg::Path> plan_spacer_{1.25};
+  Spacer<sensor_msgs::msg::LaserScan> scan_spacer_{0.25};
   Spacer<nav_msgs::msg::OccupancyGrid::ConstSharedPtr> map_spacer_{5.0};
   std::vector<std::pair<std::string, std::string>> last_values_;
   CostmapGate costmap_gate_{1.0, 0.005};
@@ -179,6 +184,8 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr costmap_png_pub_;
   rclcpp::Publisher<nav_msgs::msg::MapMetaData>::SharedPtr costmap_info_pub_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_sub_;
+  rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan_sub_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
   rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr plan_sub_;
   rclcpp::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr status_sub_;

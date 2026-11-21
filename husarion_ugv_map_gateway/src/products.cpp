@@ -87,7 +87,8 @@ std::vector<size_t> SimplifyPath(
   return kept;
 }
 
-ScanOut ClampScan(const std::vector<float> & ranges, float range_max, size_t max_ranges)
+ScanOut ClampScan(
+  const std::vector<float> & ranges, float range_min, float range_max, size_t max_ranges)
 {
   ScanOut out;
   if (max_ranges == 0) {
@@ -97,7 +98,14 @@ ScanOut ClampScan(const std::vector<float> & ranges, float range_max, size_t max
   out.stride = std::max(out.stride, 1);
   const float beyond = std::isfinite(range_max) ? range_max + 1.0f : 1.0e6f;
   for (size_t i = 0; i < ranges.size(); i += out.stride) {
-    out.ranges.push_back(std::isfinite(ranges[i]) ? ranges[i] : beyond);
+    float nearest = beyond;
+    for (size_t j = i; j < std::min(ranges.size(), i + size_t(out.stride)); ++j) {
+      const float r = ranges[j];
+      if (std::isfinite(r) && r >= range_min && r <= range_max && r < nearest) {
+        nearest = r;
+      }
+    }
+    out.ranges.push_back(nearest);
   }
   return out;
 }

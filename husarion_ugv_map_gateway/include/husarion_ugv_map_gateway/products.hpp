@@ -91,14 +91,18 @@ bool AllFinite(Ts... values)
   return (std::isfinite(static_cast<double>(values)) && ...);
 }
 
-// The scan rule (phase 2, M2a publishes it): at most `max_ranges` ranges (every k-th), and a
-// range of inf or NaN becomes range_max + 1, out of range by the message's own rule.
+// The scan rule (§5.1, M2a): at most `max_ranges` ranges. Each run of `stride` neighbouring
+// beams becomes one, the nearest of its ranges within [range_min, range_max], so the nearest
+// obstacle survives; a run with none (inf, NaN or out of range) becomes range_max + 1, out of
+// range by the message's own rule, so every range is finite. The kept beam's angle is the run's
+// middle: angle_min moves by (stride - 1) / 2 increments and the increment grows by `stride`.
 struct ScanOut
 {
   std::vector<float> ranges;
   int stride = 1;
 };
-ScanOut ClampScan(const std::vector<float> & ranges, float range_max, size_t max_ranges = 720);
+ScanOut ClampScan(
+  const std::vector<float> & ranges, float range_min, float range_max, size_t max_ranges = 720);
 
 // `clock_offset_s` (§5.2, §6): this computer's clock minus the Pi's stamp on the newest fixes.
 // The smallest (local - stamp) over the last few samples, which removes most of the transport

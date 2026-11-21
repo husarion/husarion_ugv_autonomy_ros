@@ -24,6 +24,7 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <lifecycle_msgs/msg/state.hpp>
+#include <rclcpp/serialization.hpp>
 
 #include "husarion_ugv_map_gateway/codec.hpp"
 #include "husarion_ugv_map_gateway/map_image.hpp"
@@ -88,6 +89,7 @@ MapGatewayNode::MapGatewayNode(const rclcpp::NodeOptions & options) : Node("map_
   map_topic_ = declare_parameter<std::string>("map_topic", "map");
   const auto plan_topic = declare_parameter<std::string>("plan_topic", "plan");
   const auto fix_topic = declare_parameter<std::string>("fix_topic", "gps/fix");
+  const auto scan_topic = declare_parameter<std::string>("scan_topic", "scan");
   const auto costmap_topic = declare_parameter<std::string>(
     "local_costmap_topic", "local_costmap/costmap");
   const auto status_topic = declare_parameter<std::string>(
@@ -143,12 +145,24 @@ MapGatewayNode::MapGatewayNode(const rclcpp::NodeOptions & options) : Node("map_
       get_logger(), "costmap_rate_hz %.2f is at or over the lane's cap of 2 Hz: samples will drop",
       costmap_rate);
   }
-  const double costmap_move_tolerance =
-    declare_parameter<double>("costmap_move_tolerance_m", 0.005);
+  const double costmap_move_tolerance = declare_parameter<double>(
+    "costmap_move_tolerance_m", 0.005);
   costmap_gate_ = CostmapGate(
-    1.0 / costmap_rate, costmap_move_tolerance,
-    declare_parameter<double>("costmap_resend_s", 2.0));
+    1.0 / costmap_rate, costmap_move_tolerance, declare_parameter<double>("costmap_resend_s", 2.0));
   costmap_tf_wait_s_ = declare_parameter<double>("costmap_tf_wait_s", 0.5);
+  // M2a: 4 Hz under the scan lane's max_hz of 5 (§5.1 "below the caps"), held back, never early.
+  double scan_rate = declare_parameter<double>("scan_rate_hz", 4.0);
+  if (!(scan_rate > 0.0) || !std::isfinite(scan_rate)) {
+    RCLCPP_WARN(get_logger(), "scan_rate_hz must be above 0; using 4.0");
+    scan_rate = 4.0;
+  } else if (scan_rate >= 5.0) {
+    RCLCPP_WARN(
+      get_logger(), "scan_rate_hz %.2f is at or over the lane's cap of 5 Hz: samples will drop",
+      scan_rate);
+  }
+  scan_spacer_ = Spacer<sensor_msgs::msg::LaserScan>(1.0 / scan_rate);
+  scan_max_ranges_ = declare_parameter<int>("scan_max_ranges", 720);
+  scan_cap_ = declare_parameter<int>("scan_cap_bytes", 8192);
   costmap_cap_ = declare_parameter<int>("costmap_cap_bytes", 32768);
   costmap_max_side_ = declare_parameter<int>("costmap_max_side", 400);
 
@@ -193,6 +207,8 @@ MapGatewayNode::MapGatewayNode(const rclcpp::NodeOptions & options) : Node("map_
     "cockpit/nav/costmap/png", rclcpp::QoS(1).best_effort());
   costmap_info_pub_ = create_publisher<nav_msgs::msg::MapMetaData>(
     "cockpit/nav/costmap/info", rclcpp::QoS(1).best_effort());
+  scan_pub_ = create_publisher<sensor_msgs::msg::LaserScan>(
+    "cockpit/nav/scan", rclcpp::QoS(1).best_effort());
 
   map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
     map_topic_, latched, [this](nav_msgs::msg::OccupancyGrid::ConstSharedPtr m) { OnMap(m); });
@@ -207,6 +223,9 @@ MapGatewayNode::MapGatewayNode(const rclcpp::NodeOptions & options) : Node("map_
     [this](sensor_msgs::msg::NavSatFix::ConstSharedPtr m) { OnFix(m); });
   // Best effort matches Nav2's reliable publisher and any other; a lost window is replaced by
   // the next one (Nav2 publishes at 2 Hz, the gateway sends at 1).
+  scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>(
+    scan_topic, rclcpp::SensorDataQoS(),
+    [this](sensor_msgs::msg::LaserScan::ConstSharedPtr m) { OnScan(m); });
   costmap_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
     costmap_topic, rclcpp::QoS(1).best_effort(),
     [this](nav_msgs::msg::OccupancyGrid::ConstSharedPtr m) { OnCostmap(m); });
@@ -610,6 +629,55 @@ void MapGatewayNode::OnFix(sensor_msgs::msg::NavSatFix::ConstSharedPtr msg)
   aligner_->AddFix(in);
 }
 
+void MapGatewayNode::OnScan(sensor_msgs::msg::LaserScan::ConstSharedPtr msg)
+{
+  if (
+    !AllFinite(
+      msg->angle_min, msg->angle_max, msg->angle_increment, msg->time_increment, msg->scan_time,
+      msg->range_min, msg->range_max) ||
+    msg->header.frame_id.empty() || msg->ranges.empty()) {
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), 10000, "A scan with no frame, no ranges or a non-finite field");
+    return;
+  }
+  // state's laser_x, laser_y and laser_yaw place the frame the published scan is in (§5.2), so
+  // they follow the scan's own frame (the slice's is base_footprint, not the LiDAR's).
+  if (msg->header.frame_id != laser_frame_) {
+    RCLCPP_INFO(
+      get_logger(), "The scan is in %s: state's laser keys now place that frame, not %s",
+      msg->header.frame_id.c_str(), laser_frame_.c_str());
+    laser_frame_ = msg->header.frame_id;
+    laser_.reset();
+  }
+  const ScanOut kept = ClampScan(msg->ranges, msg->range_min, msg->range_max, scan_max_ranges_);
+  sensor_msgs::msg::LaserScan out;
+  out.header = msg->header;
+  const float k = static_cast<float>(kept.stride);
+  out.angle_increment = msg->angle_increment * k;
+  out.angle_min = msg->angle_min + msg->angle_increment * (k - 1.0f) / 2.0f;
+  out.angle_max = out.angle_min + out.angle_increment * float(kept.ranges.size() - 1);
+  out.time_increment = msg->time_increment * k;
+  out.scan_time = msg->scan_time;
+  out.range_min = msg->range_min;
+  out.range_max = msg->range_max;
+  out.ranges = kept.ranges;  // no intensities
+  if (!AllFinite(out.angle_min, out.angle_max, out.angle_increment, out.time_increment)) {
+    return;
+  }
+  static const rclcpp::Serialization<sensor_msgs::msg::LaserScan> serializer;
+  rclcpp::SerializedMessage wire;
+  serializer.serialize_message(&out, &wire);
+  if (wire.size() > scan_cap_) {
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), 10000, "A scan of %zu B is over the lane's %zu B: not sent",
+      wire.size(), scan_cap_);
+    return;
+  }
+  if (auto now_scan = scan_spacer_.Offer(std::move(out), Now())) {
+    scan_pub_->publish(*now_scan);
+  }
+}
+
 void MapGatewayNode::OnCostmap(nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg)
 {
   pending_costmap_ = msg;  // only the newest waits
@@ -886,6 +954,9 @@ void MapGatewayNode::FlushTick()
   }
   if (auto plan = plan_spacer_.Poll(now)) {
     plan_pub_->publish(*plan);
+  }
+  if (auto scan = scan_spacer_.Poll(now)) {
+    scan_pub_->publish(*scan);
   }
   if (!epoch_->decided()) {
     return;  // no state before the epoch is known: a state must always carry a valid epoch
