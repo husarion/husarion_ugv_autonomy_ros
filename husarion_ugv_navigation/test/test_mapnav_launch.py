@@ -23,7 +23,9 @@ The real bringup with the map-nav arguments, against a standing fake robot (test
   table edge at 0.8 m, below the robot's top (robot_height 0.7 m) plus 0.2 m;
 - the crop box drops the robot's own body, a DEV09 gate included, and keeps the obstacle;
 - with use_map_gateway the map gateway reports Nav2 and the collision monitor active, sends the
-  map, and its pause and resume triggers take the real Nav2 down and up (spec R2, §11.6).
+  map, and its pause and resume triggers take the real Nav2 down and up (spec R2, §11.6);
+- the gateway sends the real local costmap, placed in the map frame through AMCL's map -> odom, as
+  a PNG under 32 768 B with its paired info (spec R26).
 """
 
 import math
@@ -132,6 +134,20 @@ class TestMapNavStack(unittest.TestCase):
         )
         cls.node.create_subscription(
             MapMetaData, f"/{NS}/cockpit/nav/map/info", cls.infos.append, latched
+        )
+        cls.costmap_pngs = []
+        cls.costmap_infos = []
+        cls.node.create_subscription(
+            CompressedImage,
+            f"/{NS}/cockpit/nav/costmap/png",
+            cls.costmap_pngs.append,
+            qos_profile_sensor_data,
+        )
+        cls.node.create_subscription(
+            MapMetaData,
+            f"/{NS}/cockpit/nav/costmap/info",
+            cls.costmap_infos.append,
+            qos_profile_sensor_data,
         )
         cls.wait_active()
 
@@ -293,3 +309,40 @@ class TestMapNavStack(unittest.TestCase):
         self.assertTrue(self.trigger("resume").success)
         self.wait_state("nav2", "active", 30.0)
         self.wait_state("collision_monitor", "active", 15.0)
+
+    def test_7_local_costmap(self):
+        end = time.monotonic() + 30.0
+        while time.monotonic() < end and not (self.costmap_pngs and self.costmap_infos):
+            self.spin_for(0.2)
+        self.assertTrue(
+            self.costmap_pngs and self.costmap_infos, "no local costmap from the gateway"
+        )
+        png = self.costmap_pngs[-1]
+        stamps = [i.map_load_time for i in self.costmap_infos]
+        self.assertTrue(png.header.stamp in stamps)  # the pairing rule
+        info = next(i for i in self.costmap_infos if i.map_load_time == png.header.stamp)
+        self.assertEqual(png.format, "png")
+        self.assertEqual(png.header.frame_id, f"{NS}/map")
+        self.assertLessEqual(len(png.data), 32768)
+        self.assertEqual(bytes(png.data[:8]), b"\x89PNG\r\n\x1a\n")
+        # nav2_params.yaml: 8 m at 2 cm, so 400 x 400 unless pooled
+        self.assertLessEqual(max(info.width, info.height), 400)
+        self.assertGreater(info.width, 0)
+        for v in (
+            info.resolution,
+            info.origin.position.x,
+            info.origin.position.y,
+            info.origin.orientation.z,
+            info.origin.orientation.w,
+        ):
+            self.assertTrue(math.isfinite(v))
+        # the robot stands at the window's centre: the origin is about half the window away
+        half = info.width * info.resolution / 2.0
+        self.assertLess(
+            math.hypot(info.origin.position.x, info.origin.position.y), 1.5 * half + 0.5
+        )
+        print(
+            f"local costmap: {info.width} x {info.height} at {info.resolution:.3f} m, "
+            f"{len(png.data)} B, origin ({info.origin.position.x:.2f}, "
+            f"{info.origin.position.y:.2f})"
+        )
