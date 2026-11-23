@@ -4,6 +4,7 @@ ARG PREFIX=
 FROM husarnet/ros:${PREFIX}${ROS_DISTRO}-ros-core
 
 ARG PREFIX
+ARG ROS_DISTRO
 
 WORKDIR /ros2_ws
 
@@ -14,7 +15,7 @@ RUN MYDISTRO=${PREFIX:-ros}; MYDISTRO=${MYDISTRO//-/} && \
     apt upgrade -y && \
     apt-get install -y \
         ros-dev-tools && \
-    vcs import src < src/husarion_ugv_autonomy_ros/husarion_ugv_autonomy/docking_deps.repos && \
+    vcs import src < src/husarion_ugv_autonomy_ros/husarion_ugv_autonomy/autonomy_deps.repos && \
     # Remove unnecessary packages
     find src/husarion_ugv_ros/ -maxdepth 1 -mindepth 1 \
         ! -name 'husarion_ugv_description' \
@@ -29,7 +30,11 @@ RUN MYDISTRO=${PREFIX:-ros}; MYDISTRO=${MYDISTRO//-/} && \
     rosdep install -i --from-path src --rosdistro $ROS_DISTRO -y && \
     # Build
     source /opt/ros/$ROS_DISTRO/setup.bash && \
-    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release && \
+    colcon build \
+        --symlink-install \
+        --cmake-args \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=OFF && \
     # Save version
     echo $(cat /ros2_ws/src/husarion_ugv_autonomy_ros/husarion_ugv_autonomy/package.xml | grep '<version>' | sed -r 's/.*<version>([0-9]+.[0-9]+.[0-9]+)<\/version>/\1/g') >> /version.txt && \
     # Size optimization

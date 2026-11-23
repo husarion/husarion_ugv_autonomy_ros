@@ -14,15 +14,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # libgoogle-glog-dev (nav2 dependency) needs libunwind-dev, which the preinstalled LLVM
+      # libunwind-<N>-dev blocks on the ubuntu-22.04 runner image.
+      - name: Remove LLVM libunwind dev packages
+        run: |
+          dpkg -l | grep -i libunwind || true
+          sudo apt-get remove -y 'libunwind-[0-9]*-dev' || true
+          sudo apt-get update
+          apt-get install -s libunwind-dev
+
       - name: Setup ROS
         uses: ros-tooling/setup-ros@v0.7
-        with:
-          use-ros2-testing: true
 
       - name: Build and test
         uses: ros-tooling/action-ros-ci@v0.3
         with:
-          vcs-repo-file-url: ${{ github.workspace }}/husarion_ugv_autonomy/docking_deps.repos
+          vcs-repo-file-url: ${{ github.workspace }}/husarion_ugv_autonomy/autonomy_deps.repos
           target-ros2-distro: humble
           colcon-defaults: |
             {
