@@ -35,6 +35,7 @@ foreach(node ${exec_nodes})
 endforeach()
 
 install(TARGETS ${exec_nodes} DESTINATION lib/${PROJECT_NAME})
+install(PROGRAMS scripts/autonomy_preflight DESTINATION lib/${PROJECT_NAME})
 
 # Libraries
 add_library(is_estop SHARED src/plugins/condition/is_estop.cpp)
@@ -60,6 +61,7 @@ if(BUILD_TESTING)
   find_package(ament_cmake_pytest REQUIRED)
   ament_add_pytest_test(test_mapnav_params test/test_mapnav_params.py TIMEOUT
                         60)
+  ament_add_pytest_test(test_preflight test/test_preflight.py TIMEOUT 60)
 
   find_package(launch_testing_ament_cmake REQUIRED)
   add_launch_test(test/test_mapnav_launch.py TIMEOUT 300)
