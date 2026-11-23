@@ -290,6 +290,13 @@ def test_slice_defaults_to_the_crop_box():
     assert (slice_["min_height"], slice_["max_height"]) == (0.05, 0.5)
 
 
+def test_scan_heights_default_per_type_and_explicit_values_win():
+    assert mp.scan_heights("laserscan", "", "") == ("0.05", "2.0")
+    assert mp.scan_heights("pointcloud", "", "") == ("0.25", "1.0")
+    assert mp.scan_heights("pointcloud", "0.3", "") == ("0.3", "1.0")
+    assert mp.scan_heights("laserscan", "", "1.5") == ("0.05", "1.5")
+
+
 def test_lidar_profile_needs_the_mount_height():
     with pytest.raises(ValueError):
         mp.build_overlay(**dict(MAPNAV, mount_height=None))

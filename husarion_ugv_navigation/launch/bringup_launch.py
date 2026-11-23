@@ -22,6 +22,7 @@ from husarion_ugv_navigation.mapnav_params import (
     is_true,
     read_saved_pose,
     render_placeholders,
+    scan_heights,
     speed_cap,
 )
 from launch import LaunchDescription
@@ -75,6 +76,10 @@ def render_params_file(context, measured_mount_height=None) -> str:
     if lidar_profile:
         mount_height = float(arg("mount_height")) if arg("mount_height") else measured_mount_height
 
+    scan_min_height, scan_max_height = scan_heights(
+        observation_topic_type, arg("scan_min_height"), arg("scan_max_height")
+    )
+
     initial_pose = None
     if is_true(arg("initial_pose_from_sidecar")) and not slam:
         initial_pose = read_saved_pose(arg("map"))
@@ -89,8 +94,8 @@ def render_params_file(context, measured_mount_height=None) -> str:
         lidar_profile=lidar_profile,
         mount_height=mount_height,
         robot_height=arg("robot_height"),
-        scan_min_height=arg("scan_min_height"),
-        scan_max_height=arg("scan_max_height"),
+        scan_min_height=scan_min_height,
+        scan_max_height=scan_max_height,
         map_update_interval=arg("map_update_interval"),
         initial_pose=initial_pose,
     )
@@ -426,14 +431,14 @@ def generate_launch_description():
     declare_scan_min_height_arg = DeclareLaunchArgument(
         "scan_min_height",
         default_value="",
-        description="Lower edge of the 2D scan slice above base_footprint. Empty: the crop "
-        "box's min_z.",
+        description="Lower edge of the 2D scan slice above base_footprint. Empty: 0.05 for a "
+        "laserscan, 0.25 for a pointcloud.",
     )
     declare_scan_max_height_arg = DeclareLaunchArgument(
         "scan_max_height",
         default_value="",
-        description="Upper edge of the 2D scan slice above base_footprint. Empty: the crop "
-        "box's max_z.",
+        description="Upper edge of the 2D scan slice above base_footprint. Empty: 2.0 for a "
+        "laserscan, 1.0 for a pointcloud.",
     )
     declare_map_update_interval_arg = DeclareLaunchArgument(
         "map_update_interval",

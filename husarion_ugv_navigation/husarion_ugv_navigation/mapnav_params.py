@@ -64,6 +64,8 @@ ABOVE_ROBOT_TOP = 0.2  # m: obstacles count up to the robot's top plus this
 CROP_ABOVE_TOP = 0.05  # m: the crop box reaches the robot's top plus this
 SCAN_BINS = 1024  # one LaserScan bin per Ouster column (lidar_mode 1024x10)
 SCAN_RANGE_MAX = 20.0
+# m above base_footprint, (min, max) of the 2D scan slice per observation type
+SCAN_HEIGHTS = {"laserscan": ("0.05", "2.0"), "pointcloud": ("0.25", "1.0")}
 STOP_MARGIN = 0.15  # m: the stop polygon is the footprint plus this
 SLOWDOWN_MARGIN = 0.6  # m: the slowdown polygon is the footprint plus this
 SLOWDOWN_RATIO = 0.5
@@ -81,6 +83,12 @@ LIFECYCLE_NODES = [
     "waypoint_follower",
     "velocity_smoother",
 ]
+
+
+def scan_heights(observation_topic_type: str, scan_min_height: str, scan_max_height: str):
+    """The 2D scan slice's (min, max) launch strings: explicit values, else the type's."""
+    default_min, default_max = SCAN_HEIGHTS.get(observation_topic_type, ("", ""))
+    return scan_min_height or default_min, scan_max_height or default_max
 
 
 def velocity_routing(use_collision_monitor: bool, cmd_vel_out: str):
