@@ -19,7 +19,8 @@ Publishes, under the namespace given as the first argument:
 - static TF base_link -> base_footprint, mount_link and the Ouster's os_lidar (180 deg yaw, as the
   Ouster driver publishes it), prefixed `<ns>/`, on /tf_static;
 - odom -> base_link (identity) on /tf and `odometry/filtered`, 20 Hz;
-- a subscriber on `autonomous/cmd_vel`, as the robot's airlock has (the preflight checks it);
+- a subscriber on `autonomous/cmd_vel` created only once a publisher appears there, as the
+  robot's airlock does (the preflight checks it);
 - a PointCloud2 on `points` in `<ns>/os_lidar`, 10 Hz, best effort: a ring wall at 6 m between
   0.2 m and 1.2 m, a few points on the robot's own body, and an obstacle column whose place in
   base_footprint is set by `fake_obstacle` (geometry_msgs/Point; x <= -100 removes it; z > 0 makes
@@ -83,7 +84,8 @@ class FakeRobot(Node):
         self.odom_pub = self.create_publisher(Odometry, "odometry/filtered", QoSProfile(depth=10))
         self.cloud_pub = self.create_publisher(PointCloud2, "points", qos_profile_sensor_data)
         self.create_subscription(Point, "fake_obstacle", self.on_obstacle, 10)
-        self.create_subscription(TwistStamped, "autonomous/cmd_vel", lambda _: None, 10)
+        self.cmd_vel_sink = None
+        self.create_timer(0.5, self.on_cmd_vel_discovery)
         self.create_timer(0.05, self.on_odom)
         self.create_timer(0.1, self.on_cloud)
         self.wall = [
@@ -102,6 +104,12 @@ class FakeRobot(Node):
             for z in (0.05, 0.1, 0.15, 0.2, 0.25)
         ]
         self.body += [(x / 10.0, y, 0.6) for x in range(-2, 3) for y in (-0.12, 0.12)]
+
+    def on_cmd_vel_discovery(self):
+        if self.cmd_vel_sink is None and self.count_publishers("autonomous/cmd_vel"):
+            self.cmd_vel_sink = self.create_subscription(
+                TwistStamped, "autonomous/cmd_vel", lambda _: None, 10
+            )
 
     def on_obstacle(self, msg):
         self.obstacle = None if msg.x <= -100.0 else (msg.x, msg.y, msg.z)
