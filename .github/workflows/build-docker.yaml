@@ -147,9 +147,12 @@ jobs:
 
       - name: Create and push the multi-arch tags
         working-directory: /tmp/digests
+        env:
+          # github.ref_name is "<pr>/merge" when release.yaml calls this on a pull_request event
+          BRANCH_NAME: ${{ inputs.branch_name || github.ref_name }}
         run: |
           distro="${{ inputs.target_distro || 'jazzy' }}"
-          branch="$(echo '${{ github.ref_name }}' | tr '/' '-')"
+          branch="$(echo "$BRANCH_NAME" | tr '/' '-')"
           sha7="$(echo '${{ github.sha }}' | cut -c1-7)"
           tag="${{ env.REGISTRY_IMAGE }}:${distro}-${branch}-${sha7}"
           docker buildx imagetools create -t "$tag" -t "${{ env.REGISTRY_IMAGE }}:${distro}-${branch}" \
