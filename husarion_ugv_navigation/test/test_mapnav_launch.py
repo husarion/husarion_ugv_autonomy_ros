@@ -95,9 +95,9 @@ def generate_test_description():
     )
     return launch.LaunchDescription(
         [
-            fake_robot,
-            # the TF lookup in the bringup blocks the launch loop; start the fake robot first
-            TimerAction(period=3.0, actions=[bringup]),
+            # the robot comes up after the bringup, as after a shared boot: the preflight waits
+            bringup,
+            TimerAction(period=5.0, actions=[fake_robot]),
             launch_testing.actions.ReadyToTest(),
         ]
     )

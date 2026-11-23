@@ -1,6 +1,8 @@
 x-common-config:
   &common-config
   env_file: .env
+  # ros2 launch as PID 1 ignores docker's SIGTERM, so `docker stop` waited 10 s and killed it
+  stop_signal: SIGINT
 
 services:
   gazebo:

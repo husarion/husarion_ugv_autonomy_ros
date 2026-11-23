@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+import os
 import tempfile
-import time
 
 from husarion_ugv_navigation.mapnav_params import (
     apply_overlay,
     build_overlay,
     is_true,
-    namespace_prefix,
     read_saved_pose,
     render_placeholders,
     speed_cap,
@@ -31,9 +31,11 @@ from launch.actions import (
     IncludeLaunchDescription,
     LogInfo,
     OpaqueFunction,
+    RegisterEventHandler,
     SetEnvironmentVariable,
 )
 from launch.conditions import IfCondition, UnlessCondition
+from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     EnvironmentVariable,
@@ -47,40 +49,8 @@ from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 from nav2_common.launch import RewrittenYaml
 
-MOUNT_TF_TIMEOUT_S = 30.0
 
-
-def lookup_mount_height(namespace: str, timeout_s: float = MOUNT_TF_TIMEOUT_S) -> float:
-    """Height of `<ns>/mount_link` (the rail level) above `<ns>/base_footprint`, from TF."""
-    import rclpy
-    from rclpy.executors import SingleThreadedExecutor
-    from rclpy.time import Time
-    from tf2_ros import Buffer, TransformListener
-
-    prefix = namespace_prefix(namespace)
-    target, source = f"{prefix}base_footprint", f"{prefix}mount_link"
-    context = rclpy.Context()
-    rclpy.init(context=context)
-    try:
-        node = rclpy.create_node("mapnav_mount_height_probe", context=context)
-        executor = SingleThreadedExecutor(context=context)
-        executor.add_node(node)
-        buffer = Buffer()
-        TransformListener(buffer, node, spin_thread=False)
-        deadline = time.monotonic() + timeout_s
-        while time.monotonic() < deadline:
-            executor.spin_once(timeout_sec=0.1)
-            if buffer.can_transform(target, source, Time()):
-                return buffer.lookup_transform(target, source, Time()).transform.translation.z
-        raise RuntimeError(
-            f"no transform {target} -> {source} within {timeout_s:.0f} s: is the robot's TF "
-            "visible here? Set mount_height:=<metres> to skip the lookup."
-        )
-    finally:
-        rclpy.shutdown(context=context)
-
-
-def render_params_file(context) -> str:
+def render_params_file(context, measured_mount_height=None) -> str:
     """Render the parameter file once: placeholders, the map-nav overlay, the speed cap.
 
     Returns the rendered file's path, the mount height used and AMCL's starting pose.
@@ -103,9 +73,7 @@ def render_params_file(context) -> str:
 
     mount_height = None
     if lidar_profile:
-        mount_height = (
-            float(arg("mount_height")) if arg("mount_height") else lookup_mount_height(namespace)
-        )
+        mount_height = float(arg("mount_height")) if arg("mount_height") else measured_mount_height
 
     initial_pose = None
     if is_true(arg("initial_pose_from_sidecar")) and not slam:
@@ -138,7 +106,7 @@ def render_params_file(context) -> str:
     return rendered.name, mount_height, initial_pose
 
 
-def launch_setup(context, *args, **kwargs):
+def launch_setup(context, mount_height=None):
     husarion_ugv_navigation = FindPackageShare("husarion_ugv_navigation")
     launch_dir = PathJoinSubstitution([husarion_ugv_navigation, "launch"])
 
@@ -157,7 +125,7 @@ def launch_setup(context, *args, **kwargs):
     use_map_gateway = LaunchConfiguration("use_map_gateway")
     maps_directory = LaunchConfiguration("maps_directory")
 
-    params_file, mount_height, initial_pose = render_params_file(context)
+    params_file, mount_height, initial_pose = render_params_file(context, mount_height)
     # On a saved map the gateway runs on that pair; while mapping on none (spec §5.5).
     gateway_map_file = "" if is_true(slam.perform(context)) else map.perform(context)
 
@@ -293,6 +261,65 @@ def launch_setup(context, *args, **kwargs):
     return [*notes, bringup_cmd_group]
 
 
+def preflight_gate(context):
+    """Start Nav2 only once the robot is here and set up for it (husarion_ugv_navigation.preflight).
+
+    The wait runs in its own process so the launch keeps answering a stop while the robot boots.
+    """
+
+    def arg(name):
+        return LaunchConfiguration(name).perform(context)
+
+    need_mount = bool(arg("lidar_profile")) and not arg("mount_height")
+    checks = is_true(arg("preflight"))
+    if not need_mount and not checks:
+        return [OpaqueFunction(function=launch_setup)]
+
+    namespace = arg("namespace")
+    cmd_vel_out = arg("cmd_vel_out")
+    if not cmd_vel_out.startswith("/"):
+        cmd_vel_out = "/" + "/".join(p for p in (namespace.strip("/"), cmd_vel_out) if p)
+    fd, result_file = tempfile.mkstemp(prefix="mapnav_preflight_", suffix=".json")
+    os.close(fd)
+    preflight = Node(
+        package="husarion_ugv_navigation",
+        executable="autonomy_preflight",
+        name="autonomy_preflight",
+        arguments=[
+            "--namespace",
+            namespace,
+            "--observation-topic",
+            arg("observation_topic"),
+            "--observation-topic-type",
+            arg("observation_topic_type"),
+            "--cmd-vel-topic",
+            cmd_vel_out,
+            "--timeout",
+            arg("preflight_timeout"),
+            "--result-file",
+            result_file,
+            *(["--mount"] if need_mount else []),
+            *([] if checks else ["--skip-checks"]),
+        ],
+        output="screen",
+    )
+
+    def on_exit(event, exit_context):
+        if exit_context.is_shutdown:
+            return None
+        if event.returncode != 0:
+            raise RuntimeError("map-nav preflight failed (see its report above): Nav2 not started")
+        with open(result_file, encoding="utf-8") as f:
+            mount_height = json.load(f)["mount_height"]
+        os.unlink(result_file)
+        return [OpaqueFunction(function=launch_setup, kwargs={"mount_height": mount_height})]
+
+    return [
+        preflight,
+        RegisterEventHandler(OnProcessExit(target_action=preflight, on_exit=on_exit)),
+    ]
+
+
 def generate_launch_description():
     husarion_ugv_navigation = FindPackageShare("husarion_ugv_navigation")
 
@@ -421,6 +448,19 @@ def generate_launch_description():
         "the map image.",
     )
 
+    declare_preflight_arg = DeclareLaunchArgument(
+        "preflight",
+        default_value="True",
+        description="Before Nav2: wait for the robot with no deadline, then check its TF, the "
+        "LiDAR and the velocity sink, and stop with a report if one fails. False skips the checks; "
+        "the launch still waits for the robot when it reads mount_height from TF.",
+    )
+    declare_preflight_timeout_arg = DeclareLaunchArgument(
+        "preflight_timeout",
+        default_value="30.0",
+        description="Seconds each preflight check waits once the robot is here.",
+    )
+
     declare_use_map_gateway_arg = DeclareLaunchArgument(
         "use_map_gateway",
         default_value="False",
@@ -460,6 +500,8 @@ def generate_launch_description():
             declare_initial_pose_from_sidecar_arg,
             declare_use_map_gateway_arg,
             declare_maps_directory_arg,
-            OpaqueFunction(function=launch_setup),
+            declare_preflight_arg,
+            declare_preflight_timeout_arg,
+            OpaqueFunction(function=preflight_gate),
         ]
     )

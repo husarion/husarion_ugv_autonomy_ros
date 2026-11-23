@@ -19,6 +19,7 @@ Publishes, under the namespace given as the first argument:
 - static TF base_link -> base_footprint, mount_link and the Ouster's os_lidar (180 deg yaw, as the
   Ouster driver publishes it), prefixed `<ns>/`, on /tf_static;
 - odom -> base_link (identity) on /tf and `odometry/filtered`, 20 Hz;
+- a subscriber on `autonomous/cmd_vel`, as the robot's airlock has (the preflight checks it);
 - a PointCloud2 on `points` in `<ns>/os_lidar`, 10 Hz, best effort: a ring wall at 6 m between
   0.2 m and 1.2 m, a few points on the robot's own body, and an obstacle column whose place in
   base_footprint is set by `fake_obstacle` (geometry_msgs/Point; x <= -100 removes it; z > 0 makes
@@ -29,7 +30,7 @@ import math
 import sys
 
 import rclpy
-from geometry_msgs.msg import Point, TransformStamped
+from geometry_msgs.msg import Point, TransformStamped, TwistStamped
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, qos_profile_sensor_data
@@ -82,6 +83,7 @@ class FakeRobot(Node):
         self.odom_pub = self.create_publisher(Odometry, "odometry/filtered", QoSProfile(depth=10))
         self.cloud_pub = self.create_publisher(PointCloud2, "points", qos_profile_sensor_data)
         self.create_subscription(Point, "fake_obstacle", self.on_obstacle, 10)
+        self.create_subscription(TwistStamped, "autonomous/cmd_vel", lambda _: None, 10)
         self.create_timer(0.05, self.on_odom)
         self.create_timer(0.1, self.on_cloud)
         self.wall = [
