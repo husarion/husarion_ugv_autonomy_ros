@@ -24,8 +24,10 @@ Runs before Nav2 in `bringup_launch.py` (`preflight:=True`, the default) and in 
    wait unnoticed.
 2. **Check what Nav2 needs, `preflight_timeout` seconds each (30 s by default).** The
    `mount_link` height (with `lidar_profile` and no `mount_height`), the LiDAR's messages, the
-   LiDAR's frame on the robot and a subscriber on Nav2's velocity output. A failure prints a report
-   with the fix and ends the launch with an error. Nav2 is not started.
+   LiDAR's frame on the robot and a subscriber on Nav2's velocity output. For that check it holds
+   a publisher on the topic that sends nothing: on Husarion UGV OS the robot's bridge subscribes to
+   a topic only once it has a publisher. A failure prints a report with the fix and ends the launch
+   with an error. Nav2 is not started.
 
 ```text
 map-nav preflight: namespace lynx_d6b2, timeout 30 s

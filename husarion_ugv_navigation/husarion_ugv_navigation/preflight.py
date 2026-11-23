@@ -226,10 +226,19 @@ class Preflight:
 
     def check_cmd_vel_sink(self) -> Check:
         topic = self.cmd_vel_topic
-        ok = self._spin_until(
-            lambda: bool(self.node.get_subscriptions_info_by_topic(topic)),
-            time.monotonic() + QUICK_CHECK_S,
-        )
+        # On a Husarion UGV OS robot the fleet half of the airlock bridge subscribes to a
+        # fleet topic only once a publisher appears on it. A publisher that sends nothing
+        # makes it subscribe for real, and an unshared topic still has no subscriber.
+        from geometry_msgs.msg import TwistStamped
+
+        probe = self.node.create_publisher(TwistStamped, topic, 1)
+        try:
+            ok = self._spin_until(
+                lambda: bool(self.node.get_subscriptions_info_by_topic(topic)),
+                time.monotonic() + max(QUICK_CHECK_S, self.timeout),
+            )
+        finally:
+            self.node.destroy_publisher(probe)
         if ok:
             return Check("velocity sink", True, f"the robot listens on {topic}")
         return Check(

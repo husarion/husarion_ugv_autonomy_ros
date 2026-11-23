@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import threading
 import time
 
@@ -90,3 +91,40 @@ def test_the_wait_has_no_deadline_and_ends_when_the_robot_appears():
     assert waited >= 1.5
     assert any("waiting for robot late" in line for line in logs)
     assert logs[-1].startswith("preflight: the robot is here after")
+
+
+def _lazy_bridge(topic, done):
+    """Subscribes to `topic` only once a publisher appears on it, like the robot's airlock."""
+    from geometry_msgs.msg import TwistStamped
+
+    context = rclpy.Context()
+    rclpy.init(context=context)
+    node = rclpy.create_node("preflight_test_lazy_bridge", context=context)
+    sub = None
+    while not done.is_set():
+        if sub is None and node.count_publishers(topic) > 0:
+            sub = node.create_subscription(TwistStamped, topic, lambda _m: None, 1)
+        time.sleep(0.1)
+    node.destroy_node()
+    rclpy.shutdown(context=context)
+
+
+def test_velocity_sink_probes_a_lazy_bridge_and_fails_with_no_listener():
+    suffix = f"{os.getpid()}_{int(time.monotonic() * 1000)}"
+    lazy_topic = f"/preflight_test_{suffix}/lazy/cmd_vel"
+    none_topic = f"/preflight_test_{suffix}/none/cmd_vel"
+    done = threading.Event()
+    bridge = threading.Thread(target=_lazy_bridge, args=(lazy_topic, done))
+    bridge.start()
+    lazy = Preflight("lazy", "", "pointcloud", lazy_topic, timeout=1.0)
+    none = Preflight("none", "", "pointcloud", none_topic, timeout=1.0)
+    try:
+        behind = lazy.check_cmd_vel_sink()
+        bare = none.check_cmd_vel_sink()
+    finally:
+        lazy.close()
+        none.close()
+        done.set()
+        bridge.join()
+    assert behind.ok, behind.detail
+    assert not bare.ok and "nothing subscribes" in bare.detail
