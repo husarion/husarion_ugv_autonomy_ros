@@ -16,6 +16,8 @@
 """Wait for the robot, then check what the map-nav Nav2 stack needs from it.
 
 Exits 0 when every check passes, 1 when one fails (the report says which and how to fix it).
+--list-observation-topics and --checks observation serve the Cockpit's project form: one JSON
+line on stdout, the log on stderr.
 """
 
 import argparse
@@ -31,12 +33,19 @@ def main() -> int:
     parser.add_argument("--namespace", default="")
     parser.add_argument("--observation-topic", default="", help="the LiDAR's topic; empty: skip")
     parser.add_argument(
-        "--observation-topic-type", default="pointcloud", choices=["pointcloud", "laserscan"]
+        "--observation-topic-type",
+        default="pointcloud",
+        choices=["pointcloud", "laserscan", "auto"],
+        help="auto: the topic's type in the ROS graph (--checks observation only)",
     )
     parser.add_argument(
         "--cmd-vel-topic", default="", help="Nav2's velocity output, absolute; empty: skip"
     )
-    parser.add_argument("--timeout", type=float, default=30.0, help="per check, in seconds")
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        help="per check, in seconds (default 30; with --list-observation-topics: discovery, 3)",
+    )
     parser.add_argument(
         "--mount", action="store_true", help="read mount_link's height above base_footprint"
     )
@@ -44,7 +53,30 @@ def main() -> int:
         "--skip-checks", action="store_true", help="only wait for the robot (and --mount)"
     )
     parser.add_argument("--result-file", help="write {mount_height} here as JSON on success")
+    parser.add_argument(
+        "--list-observation-topics",
+        action="store_true",
+        help="print the LaserScan and PointCloud2 topics as JSON; no robot wait",
+    )
+    parser.add_argument(
+        "--checks",
+        choices=["observation"],
+        help="observation: only the observation topic's type, data and frame; the robot wait "
+        "ends after --timeout",
+    )
+    parser.add_argument("--json", action="store_true", help="with --checks: the result as JSON")
     args, _ = parser.parse_known_args()
+    if args.observation_topic_type == "auto" and args.checks != "observation":
+        parser.error("--observation-topic-type auto needs --checks observation")
+    if args.checks == "observation" and not args.observation_topic:
+        parser.error("--checks observation needs --observation-topic")
+
+    if args.list_observation_topics:
+        return list_observation_topics(args)
+    if args.checks == "observation":
+        return check_observation(args)
+    if args.timeout is None:
+        args.timeout = 30.0
 
     preflight = Preflight(
         args.namespace,
@@ -68,6 +100,50 @@ def main() -> int:
         with open(args.result_file, "w", encoding="utf-8") as f:
             json.dump({"mount_height": mount_height_of(checks)}, f)
     return 0 if ok else 1
+
+
+def list_observation_topics(args) -> int:
+    preflight = Preflight(
+        args.namespace,
+        "",
+        "pointcloud",
+        "",
+        3.0 if args.timeout is None else args.timeout,
+        log=functools.partial(print, file=sys.stderr, flush=True),
+    )
+    try:
+        topics = preflight.observation_topics()
+    except KeyboardInterrupt:
+        return 130
+    finally:
+        preflight.close()
+    print(json.dumps({"topics": topics}), flush=True)
+    return 0
+
+
+def check_observation(args) -> int:
+    timeout = 30.0 if args.timeout is None else args.timeout
+    log = functools.partial(print, file=sys.stderr if args.json else sys.stdout, flush=True)
+    preflight = Preflight(
+        args.namespace,
+        args.observation_topic,
+        args.observation_topic_type,
+        "",
+        timeout,
+        log=log,
+    )
+    try:
+        checks = preflight.run_observation(args.observation_topic_type)
+        summary = preflight.observation_summary(checks)
+    except KeyboardInterrupt:
+        return 130
+    finally:
+        preflight.close()
+    if args.json:
+        print(json.dumps(summary), flush=True)
+    else:
+        print(report(checks, args.namespace, timeout), flush=True)
+    return 0 if summary["ok"] else 1
 
 
 if __name__ == "__main__":

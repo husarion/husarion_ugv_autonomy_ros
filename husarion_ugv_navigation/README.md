@@ -48,6 +48,28 @@ ros2 run husarion_ugv_navigation autonomy_preflight --namespace lynx_d6b2 --moun
 `preflight:=False` skips the checks of phase 2. The launch still waits for the robot when it reads
 `mount_height` from TF.
 
+Two more modes serve the Cockpit's project form on the user computer. Each prints one JSON line on
+stdout and logs to stderr:
+
+- `--list-observation-topics [--timeout S]` discovers the ROS graph for S seconds (3 by default)
+  and lists the LaserScan and PointCloud2 topics, sorted by name. It does not wait for the robot
+  and always exits 0.
+
+  ```json
+  {"topics": [{"name": "/lynx/points", "type": "pointcloud"}, {"name": "/user/scan", "type": "laserscan"}]}
+  ```
+
+- `--observation-topic T --observation-topic-type auto|laserscan|pointcloud --checks observation
+  --json [--timeout S]` checks only the observation topic: its type (`auto` reads it from the
+  graph), its messages with the rate over the S-second window, and its frame on
+  `<ns>/base_link`. It waits for the robot at most S seconds and then reports `robot not visible`.
+  It exits 0 when every check passes and 1 otherwise. A failed check carries its `fix`.
+
+  ```json
+  {"ok": true, "type": "pointcloud", "frame_id": "lynx/os_lidar", "rate_hz": 10.0,
+   "checks": [{"name": "type", "ok": true, "detail": "/lynx/points carries a pointcloud", "fix": null}, ...]}
+  ```
+
 ### is_estop
 
 A BehaviorTree plugin responsible for chancing the e-stop status and cancel navigation action if e-stop is activated.

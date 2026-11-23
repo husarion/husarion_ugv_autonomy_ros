@@ -23,12 +23,16 @@ check of phase 2 has a timeout and a failure names the problem and its fix.
 
 import time
 from dataclasses import dataclass
-from typing import Callable, Iterable, List, Optional, Set
+from typing import Callable, Dict, Iterable, List, Optional, Set
 
 from husarion_ugv_navigation.mapnav_params import namespace_prefix
 
 WAIT_LOG_PERIOD_S = 10.0
 QUICK_CHECK_S = 5.0
+OBSERVATION_TYPES = {
+    "sensor_msgs/msg/LaserScan": "laserscan",
+    "sensor_msgs/msg/PointCloud2": "pointcloud",
+}
 
 
 @dataclass
@@ -86,8 +90,7 @@ class Preflight:
     ):
         import rclpy
         from rclpy.executors import SingleThreadedExecutor
-        from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
-        from sensor_msgs.msg import LaserScan, PointCloud2
+        from rclpy.qos import DurabilityPolicy, QoSProfile
         from tf2_msgs.msg import TFMessage
         from tf2_ros import Buffer, TransformListener
 
@@ -98,7 +101,10 @@ class Preflight:
         self.observation_topic = observation_topic
         self.cmd_vel_topic = cmd_vel_topic
         self.frames: Set[str] = set()
+        self.observation_type: Optional[str] = None
         self.observation_frame: Optional[str] = None
+        self.observation_since = 0.0
+        self.observation_times: List[float] = []
 
         self.context = rclpy.Context()
         rclpy.init(context=self.context)
@@ -110,11 +116,19 @@ class Preflight:
         self.node.create_subscription(TFMessage, "/tf", self._on_tf, 100)
         static = QoSProfile(depth=100, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.node.create_subscription(TFMessage, "/tf_static", self._on_tf, static)
-        if observation_topic:
-            msg_type = PointCloud2 if observation_topic_type == "pointcloud" else LaserScan
-            self.node.create_subscription(
-                msg_type, observation_topic, self._on_observation, qos_profile_sensor_data
-            )
+        if observation_topic and observation_topic_type != "auto":
+            self._subscribe_observation(observation_topic_type)
+
+    def _subscribe_observation(self, observation_type: str) -> None:
+        from rclpy.qos import qos_profile_sensor_data
+        from sensor_msgs.msg import LaserScan, PointCloud2
+
+        msg_type = PointCloud2 if observation_type == "pointcloud" else LaserScan
+        self.node.create_subscription(
+            msg_type, self.observation_topic, self._on_observation, qos_profile_sensor_data
+        )
+        self.observation_type = observation_type
+        self.observation_since = time.monotonic()
 
     def close(self):
         import rclpy
@@ -130,6 +144,7 @@ class Preflight:
 
     def _on_observation(self, msg):
         self.observation_frame = msg.header.frame_id
+        self.observation_times.append(time.monotonic())
 
     def _spin_until(self, predicate, deadline: Optional[float]) -> bool:
         while deadline is None or time.monotonic() < deadline:
@@ -146,14 +161,26 @@ class Preflight:
 
         return self.buffer.can_transform(target, source, Time())
 
-    def wait_for_robot(self, log_period_s: float = WAIT_LOG_PERIOD_S) -> None:
-        """Phase 1: block until the robot's driver publishes odom -> base_link. No deadline."""
+    def wait_for_robot(
+        self, log_period_s: float = WAIT_LOG_PERIOD_S, deadline: Optional[float] = None
+    ) -> bool:
+        """Phase 1: block until the robot's driver publishes odom -> base_link.
+
+        No deadline unless one is given; False when it passes first.
+        """
         odom, base = f"{self.prefix}odom", f"{self.prefix}base_link"
         start = next_log = time.monotonic()
         while not self._spin_until(
-            lambda: self._can_transform(odom, base), next_log + log_period_s
+            lambda: self._can_transform(odom, base),
+            (
+                next_log + log_period_s
+                if deadline is None
+                else min(next_log + log_period_s, deadline)
+            ),
         ):
             next_log = time.monotonic()
+            if deadline is not None and next_log >= deadline:
+                return False
             self.log(
                 waiting_message(
                     self.namespace, next_log - start, other_robots(self.frames, self.prefix)
@@ -162,6 +189,7 @@ class Preflight:
         waited = time.monotonic() - start
         if waited >= log_period_s:
             self.log(f"preflight: the robot is here after {waited:.0f} s")
+        return True
 
     def check_mount(self) -> Check:
         target, source = f"{self.prefix}base_footprint", f"{self.prefix}mount_link"
@@ -249,6 +277,110 @@ class Preflight:
             "drives through <namespace>/autonomous/cmd_vel (cmd_vel_out:=autonomous/cmd_vel); "
             "check that the robot shares it with this computer (Manage > ROS networking).",
         )
+
+    def observation_topics(self) -> List[Dict[str, str]]:
+        """LaserScan and PointCloud2 topics in the graph after `timeout` s of discovery."""
+        self._spin_until(lambda: False, time.monotonic() + self.timeout)
+        return [
+            {"name": name, "type": OBSERVATION_TYPES[t]}
+            for name, types in sorted(self.node.get_topic_names_and_types())
+            for t in types
+            if t in OBSERVATION_TYPES
+        ]
+
+    def check_observation_type(self, wanted: str) -> Check:
+        """The topic's type from the graph; subscribes to the topic when it fits."""
+        topic = self.observation_topic
+
+        def graph_types() -> List[str]:
+            return next((t for n, t in self.node.get_topic_names_and_types() if n == topic), [])
+
+        self._spin_until(lambda: bool(graph_types()), time.monotonic() + self.timeout)
+        types = graph_types()
+        found = next((OBSERVATION_TYPES[t] for t in types if t in OBSERVATION_TYPES), None)
+        if found is None and not types:
+            return Check(
+                "type",
+                False,
+                f"nothing publishes {topic}",
+                "No program on this network publishes this topic. Start the sensor's driver, "
+                "check the topic's name, and check that this computer and the sensor's computer "
+                "use the same ROS network settings (ROS_DOMAIN_ID, the DDS configuration).",
+            )
+        if found is None:
+            return Check(
+                "type",
+                False,
+                f"{topic} carries {', '.join(types)}",
+                "Navigation reads a sensor_msgs/LaserScan or a sensor_msgs/PointCloud2 topic. "
+                "Pick the topic of the LiDAR or depth camera itself.",
+            )
+        if wanted not in ("auto", found):
+            return Check(
+                "type",
+                False,
+                f"{topic} carries a {found}, not a {wanted}",
+                f"Set the observation type to {found}.",
+            )
+        if self.observation_type is None:
+            self._subscribe_observation(found)
+        return Check("type", True, f"{topic} carries a {found}")
+
+    def check_robot_visible(self) -> Check:
+        odom, base = f"{self.prefix}odom", f"{self.prefix}base_link"
+        if self.wait_for_robot(deadline=time.monotonic() + self.timeout):
+            return Check("robot", True, f"{odom} -> {base} is available")
+        others = other_robots(self.frames, self.prefix)
+        fix = (
+            "This computer does not see the robot's driver. Check that the robot is on, that "
+            "this computer shares its ROS network (Manage > ROS networking) and that the "
+            "project's namespace is the robot's."
+        )
+        if others:
+            fix += f" TF carries another robot: {', '.join(sorted(others))}."
+        return Check(
+            "robot",
+            False,
+            f"robot not visible: no {odom} -> {base} in {self.timeout:.0f} s",
+            fix,
+        )
+
+    def observation_rate(self) -> Optional[float]:
+        """Messages per second over the window, from the first message to the last."""
+        self._spin_until(lambda: False, self.observation_since + self.timeout)
+        times = self.observation_times
+        if len(times) < 2 or times[-1] <= times[0]:
+            return None
+        return (len(times) - 1) / (times[-1] - times[0])
+
+    def run_observation(self, wanted_type: str) -> List[Check]:
+        """The user computer's check of an observation topic, before Nav2 is installed."""
+        results = [self.check_observation_type(wanted_type)]
+        robot = self.check_robot_visible()
+        results.append(robot)
+        if results[0].ok:
+            data = self.check_observation()
+            results.append(data)
+            if data.ok:
+                data.value = self.observation_rate()
+                if data.value is not None:
+                    data.detail += f", {data.value:.1f} Hz"
+                if robot.ok:
+                    results.append(self.check_observation_frame())
+        return results
+
+    def observation_summary(self, checks: List[Check]) -> dict:
+        rate = next((c.value for c in checks if c.name == "lidar" and c.ok), None)
+        return {
+            "ok": all(c.ok for c in checks),
+            "type": self.observation_type,
+            "frame_id": self.observation_frame,
+            "rate_hz": None if rate is None else round(rate, 1),
+            "checks": [
+                {"name": c.name, "ok": c.ok, "detail": c.detail, "fix": None if c.ok else c.fix}
+                for c in checks
+            ],
+        }
 
     def run(self, need_mount: bool, checks: bool) -> List[Check]:
         self.wait_for_robot()

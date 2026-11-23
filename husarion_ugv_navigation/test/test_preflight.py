@@ -26,6 +26,9 @@ from husarion_ugv_navigation.preflight import (
     report,
     waiting_message,
 )
+from rclpy.executors import SingleThreadedExecutor
+from sensor_msgs.msg import LaserScan, PointCloud2
+from std_msgs.msg import String
 from tf2_ros import StaticTransformBroadcaster
 
 
@@ -128,3 +131,118 @@ def test_velocity_sink_probes_a_lazy_bridge_and_fails_with_no_listener():
         bridge.join()
     assert behind.ok, behind.detail
     assert not bare.ok and "nothing subscribes" in bare.detail
+
+
+def sensor(ns, done, robot=True, placed=True):
+    """A LaserScan at 10 Hz on /<ns>/scan in <ns>/laser, a silent cloud and a string topic."""
+    context = rclpy.Context()
+    rclpy.init(context=context)
+    node = rclpy.create_node("sensor", context=context)
+    static = []
+    for parent, child, wanted in (
+        (f"{ns}/odom", f"{ns}/base_link", robot),
+        (f"{ns}/base_link", f"{ns}/laser", placed),
+    ):
+        if wanted:
+            t = TransformStamped()
+            t.header.frame_id, t.child_frame_id = parent, child
+            t.transform.rotation.w = 1.0
+            static.append(t)
+    if static:
+        StaticTransformBroadcaster(node).sendTransform(static)
+    scan_pub = node.create_publisher(LaserScan, f"/{ns}/scan", 10)
+    node.create_publisher(PointCloud2, f"/{ns}/points", 10)
+    node.create_publisher(String, f"/{ns}/other", 10)
+    scan = LaserScan()
+    scan.header.frame_id = f"{ns}/laser"
+    node.create_timer(0.1, lambda: scan_pub.publish(scan))
+    executor = SingleThreadedExecutor(context=context)
+    executor.add_node(node)
+    while not done.is_set():
+        executor.spin_once(timeout_sec=0.05)
+    node.destroy_node()
+    rclpy.shutdown(context=context)
+
+
+def with_sensor(ns, run, **kwargs):
+    done = threading.Event()
+    thread = threading.Thread(target=sensor, args=(ns, done), kwargs=kwargs)
+    thread.start()
+    try:
+        return run()
+    finally:
+        done.set()
+        thread.join()
+
+
+def observation_check(ns, topic, wanted, timeout=2.0):
+    preflight = Preflight(ns, topic, wanted, "", timeout=timeout)
+    try:
+        return preflight.observation_summary(preflight.run_observation(wanted))
+    finally:
+        preflight.close()
+
+
+def test_list_observation_topics_keeps_scans_and_clouds_sorted():
+    def run():
+        preflight = Preflight("", "", "pointcloud", "", timeout=2.0)
+        try:
+            return preflight.observation_topics()
+        finally:
+            preflight.close()
+
+    topics = [t for t in with_sensor("lst", run) if t["name"].startswith("/lst/")]
+    assert topics == [
+        {"name": "/lst/points", "type": "pointcloud"},
+        {"name": "/lst/scan", "type": "laserscan"},
+    ]
+
+
+def test_observation_check_takes_the_type_from_the_graph_and_measures_the_rate():
+    result = with_sensor("obs", lambda: observation_check("obs", "/obs/scan", "auto"))
+    assert result["ok"], result
+    assert (result["type"], result["frame_id"]) == ("laserscan", "obs/laser")
+    assert 7.0 < result["rate_hz"] < 13.0
+    assert [c["name"] for c in result["checks"]] == ["type", "robot", "lidar", "lidar TF"]
+    assert all(c["fix"] is None for c in result["checks"])
+
+
+def test_observation_check_fails_on_a_wrong_or_missing_topic():
+    def run():
+        return (
+            observation_check("bad", "/bad/scan", "pointcloud"),
+            observation_check("bad", "/bad/other", "auto"),
+            observation_check("bad", "/bad/none", "auto"),
+        )
+
+    wrong_type, not_a_sensor, missing = with_sensor("bad", run)
+    for result in (wrong_type, not_a_sensor, missing):
+        assert not result["ok"]
+        assert result["checks"][0]["name"] == "type" and not result["checks"][0]["ok"]
+        assert result["checks"][0]["fix"]
+    assert "not a pointcloud" in wrong_type["checks"][0]["detail"]
+    assert "std_msgs/msg/String" in not_a_sensor["checks"][0]["detail"]
+    assert missing["type"] is None and "nothing publishes" in missing["checks"][0]["detail"]
+
+
+def test_observation_check_reports_a_missing_robot_instead_of_waiting():
+    def run():
+        start = time.monotonic()
+        result = observation_check("gone", "/gone/scan", "auto")
+        return result, time.monotonic() - start
+
+    result, took = with_sensor("gone", run, robot=False)
+    assert not result["ok"]
+    robot = next(c for c in result["checks"] if c["name"] == "robot")
+    assert not robot["ok"] and "robot not visible" in robot["detail"] and robot["fix"]
+    assert result["type"] == "laserscan" and result["rate_hz"] is not None
+    assert took < 10.0
+
+
+def test_observation_check_fails_on_a_frame_not_on_the_robot():
+    result = with_sensor(
+        "loose", lambda: observation_check("loose", "/loose/scan", "auto"), placed=False
+    )
+    assert not result["ok"]
+    frame = result["checks"][-1]
+    assert frame["name"] == "lidar TF" and not frame["ok"] and "components.yaml" in frame["fix"]
