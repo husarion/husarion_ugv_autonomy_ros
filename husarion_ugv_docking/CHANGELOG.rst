@@ -1,5 +1,5 @@
-Forthcoming
------------
+0.1.3 (2026-11-23)
+------------------
 * Merge branch 'ros2' into fix_estop_node
 * Contributors: BOOTCFG
 

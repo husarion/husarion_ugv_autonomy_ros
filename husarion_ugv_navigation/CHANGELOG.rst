@@ -1,5 +1,5 @@
-Forthcoming
------------
+0.1.3 (2026-11-23)
+------------------
 * Merge pull request `#52 <https://github.com/husarion/husarion_ugv_autonomy_ros/issues/52>`_ from husarion/fix_estop_node
 * Contributors: Stefan
 
