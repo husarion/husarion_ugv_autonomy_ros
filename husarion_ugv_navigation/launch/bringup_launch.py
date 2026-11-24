@@ -138,6 +138,19 @@ def generate_launch_description():
         ]
     )
 
+    collision_monitor_source_type = PythonExpression(
+        ["'pointcloud' if '", observation_topic_type, "' == 'pointcloud' else 'scan'"]
+    )
+    collision_monitor_source_topic = PythonExpression(
+        [
+            "'",
+            observation_topic,
+            "' + ('_filtered' if '",
+            observation_topic_type,
+            "' == 'pointcloud' else '')",
+        ]
+    )
+
     robot_bounding_box = {
         "panther": {
             "min_x": -0.41,
@@ -176,6 +189,8 @@ def generate_launch_description():
                 "<observation_topic_type>": observation_topic_type,
                 "<scan_topic>": scan_topic,
                 "<stvl_layer>": stvl_layer,
+                "<collision_monitor_source_type>": collision_monitor_source_type,
+                "<collision_monitor_source_topic>": collision_monitor_source_topic,
             },
             condition=IfCondition(
                 PythonExpression(["'", robot_model, f"' == '{robot_model_name}'"])
