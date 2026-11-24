@@ -11,6 +11,15 @@ This package contains:
 - `navigation_launch.py`: Responsible for running navigation-related nodes.
 - `slam_launch.py`: Responsible for running slam-related nodes (including `slam_toolbox`).
 
+## Velocity Chain
+
+`controller_server` → `cmd_vel_nav` → `velocity_smoother` → `cmd_vel_smoothed` → `collision_monitor` → `cmd_vel`
+
+`collision_monitor` (nav2_collision_monitor) simulates the commanded motion of the bare robot footprint against the observation source (the cropped point cloud, or the laser scan) and slows the robot down so that contact stays at least 1 s ahead, down to a full stop. If the source stops publishing for 1 s, it stops the robot.
+
+- `collision_monitor_state` [*nav2_msgs/CollisionMonitorState*]: Current action and the polygon that triggered it.
+- `collision_monitor_footprint` [*geometry_msgs/PolygonStamped*]: Footprint used by the monitor, for visualization.
+
 ## Executables
 
 ### is_estop

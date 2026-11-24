@@ -138,22 +138,34 @@ def generate_launch_description():
         ]
     )
 
-    bb_padding = 0.03  # increase slighte footprint for safety
+    collision_monitor_source_type = PythonExpression(
+        ["'pointcloud' if '", observation_topic_type, "' == 'pointcloud' else 'scan'"]
+    )
+    collision_monitor_source_topic = PythonExpression(
+        [
+            "'",
+            observation_topic,
+            "' + ('_filtered' if '",
+            observation_topic_type,
+            "' == 'pointcloud' else '')",
+        ]
+    )
+
     robot_bounding_box = {
         "panther": {
-            "min_x": -0.41 - bb_padding,
-            "min_y": -0.43 - bb_padding,
+            "min_x": -0.41,
+            "min_y": -0.43,
             "min_z": 0.05,
-            "max_x": 0.41 + bb_padding,
-            "max_y": 0.43 + bb_padding,
+            "max_x": 0.41,
+            "max_y": 0.43,
             "max_z": 0.5,
         },
         "lynx": {
-            "min_x": -0.32 - bb_padding,
-            "min_y": -0.27 - bb_padding,
+            "min_x": -0.32,
+            "min_y": -0.27,
             "min_z": 0.05,
-            "max_x": 0.32 + bb_padding,
-            "max_y": 0.27 + bb_padding,
+            "max_x": 0.32,
+            "max_y": 0.27,
             "max_z": 0.5,
         },
     }
@@ -177,6 +189,8 @@ def generate_launch_description():
                 "<observation_topic_type>": observation_topic_type,
                 "<scan_topic>": scan_topic,
                 "<stvl_layer>": stvl_layer,
+                "<collision_monitor_source_type>": collision_monitor_source_type,
+                "<collision_monitor_source_topic>": collision_monitor_source_topic,
             },
             condition=IfCondition(
                 PythonExpression(["'", robot_model, f"' == '{robot_model_name}'"])
