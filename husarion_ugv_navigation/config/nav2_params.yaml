@@ -148,6 +148,8 @@
         rolling_window: true
 
         footprint: '[[<min_x>, <min_y>], [<min_x>, <max_y>], [<max_x>, <max_y>], [<max_x>, <min_y>]]'
+        # Crop box uses the bare robot dimensions; pad only the footprint so walls next to the robot stay in the costmap.
+        footprint_padding: 0.04
 
         plugins: [stvl_layer, inflation_layer]
         inflation_layer:
@@ -232,6 +234,8 @@
         track_unknown_space: true # if false, treats unknown space as free space, else as unknown space
 
         footprint: '[[<min_x>, <min_y>], [<min_x>, <max_y>], [<max_x>, <max_y>], [<max_x>, <min_y>]]'
+        # Crop box uses the bare robot dimensions; pad only the footprint so walls next to the robot stay in the costmap.
+        footprint_padding: 0.04
 
         plugins: [static_layer, stvl_layer, inflation_layer]
         inflation_layer:
