@@ -470,12 +470,12 @@ def generate_launch_description():
         "use_map_gateway",
         default_value="False",
         description="Run the Cockpit's map gateway (husarion_ugv_map_gateway): the PNG map, the "
-        "pose, the plan, the GNSS alignment with fromLL/toLL, pause and resume, serialize_map.",
+        "pose, the plan, the GNSS alignment with fromLL/toLL, pause and resume, serialize_map and save_map.",
     )
     declare_maps_directory_arg = DeclareLaunchArgument(
         "maps_directory",
         default_value="/maps",
-        description="Where the map gateway's serialize_map writes saved pairs and where it keeps "
+        description="Where the map gateway's map saves write the pairs and where it keeps "
         "its session file.",
     )
 

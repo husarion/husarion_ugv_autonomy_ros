@@ -611,6 +611,47 @@ TEST_F(GatewayTest, SaveWritesThePairAndConfinesTheName)
   EXPECT_FALSE(fs::exists(dir_ / "maps" / "hall_2" / "map.yaml"));
 }
 
+TEST_F(GatewayTest, SaveMapIsTheSameSaveAsNav2SaveMap)
+{
+  auto saver = helper_->create_service<SaveMap>(
+    "map_saver/save_map",
+    [&](const std::shared_ptr<SaveMap::Request> req, std::shared_ptr<SaveMap::Response> res) {
+      std::ofstream(req->map_url + ".png", std::ios::binary) << "image";
+      std::ofstream(req->map_url + ".yaml")
+        << "image: " << fs::path(req->map_url).filename().string() << ".png\n";
+      res->result = true;
+    });
+  auto slam = helper_->create_service<SerializePoseGraph>(
+    "slam_toolbox/serialize_map", [&](
+                                    const std::shared_ptr<SerializePoseGraph::Request>,
+                                    std::shared_ptr<SerializePoseGraph::Response> res) {
+      res->result = SerializePoseGraph::Response::RESULT_SUCCESS;
+    });
+  StartMapPublisher(Grid(Frame("map"), 1));
+  StartGateway();
+  ASSERT_TRUE(WaitValue("pose", "ok"));
+  const std::string service = "map_gateway/save_map";
+
+  auto req = std::make_shared<SaveMap::Request>();
+  req->map_url = "../escape";
+  auto res = Call<SaveMap>(service, req);
+  ASSERT_TRUE(res);
+  EXPECT_FALSE(res->result);
+  EXPECT_TRUE(fs::is_empty(dir_ / "maps"));
+
+  req->map_url = "yard";
+  res = Call<SaveMap>(service, req);
+  ASSERT_TRUE(res);
+  EXPECT_TRUE(res->result);
+  const fs::path yaml = dir_ / "maps" / "yard" / "map.yaml";
+  ASSERT_TRUE(fs::exists(yaml));
+  EXPECT_TRUE(gw::LoadMatchingSidecar(yaml.string()).has_value());
+
+  res = Call<SaveMap>(service, req);
+  ASSERT_TRUE(res);
+  EXPECT_FALSE(res->result);
+}
+
 TEST_F(GatewayTest, MapPoseAndPlanProducts)
 {
   std::vector<sensor_msgs::msg::CompressedImage> pngs;

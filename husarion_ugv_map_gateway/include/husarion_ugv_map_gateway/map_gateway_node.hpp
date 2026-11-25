@@ -108,9 +108,8 @@ private:
   void OnLifecycleTrigger(
     uint8_t command, std::shared_ptr<rclcpp::Service<Trigger>> service,
     std::shared_ptr<rmw_request_id_t> header);
-  void OnSerialize(
-    std::shared_ptr<rclcpp::Service<SerializePoseGraph>> service,
-    std::shared_ptr<rmw_request_id_t> header, std::shared_ptr<SerializePoseGraph::Request> request);
+  // Saves `maps/<name>/` (map, sidecar, pose graph); `reply(true)` once the pair is complete.
+  void SaveNamed(const std::string & name, std::function<void(bool)> reply);
 
   // A service call that always ends: `done` gets the response, or nullptr when the service is not
   // there or does not answer within `timeout_s`.
@@ -192,6 +191,7 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr fix_sub_;
   rclcpp::Service<Trigger>::SharedPtr pause_srv_, resume_srv_;
   rclcpp::Service<SerializePoseGraph>::SharedPtr serialize_srv_;
+  rclcpp::Service<SaveMap>::SharedPtr save_srv_;
   rclcpp::Service<FromLL>::SharedPtr fromll_srv_;
   rclcpp::Service<ToLL>::SharedPtr toll_srv_;
   std::string fromll_name_, toll_name_;

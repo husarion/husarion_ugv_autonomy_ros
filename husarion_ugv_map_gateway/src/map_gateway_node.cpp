@@ -253,7 +253,27 @@ MapGatewayNode::MapGatewayNode(const rclcpp::NodeOptions & options) : Node("map_
     "~/serialize_map",
     [this](
       std::shared_ptr<rclcpp::Service<SerializePoseGraph>> s, std::shared_ptr<rmw_request_id_t> h,
-      std::shared_ptr<SerializePoseGraph::Request> r) { OnSerialize(s, h, r); });
+      std::shared_ptr<SerializePoseGraph::Request> r) {
+      SaveNamed(r->filename, [s, h](bool ok) {
+        SerializePoseGraph::Response out;
+        out.result = ok ? SerializePoseGraph::Response::RESULT_SUCCESS
+                        : SerializePoseGraph::Response::RESULT_FAILED_TO_WRITE_FILE;
+        s->send_response(*h, out);
+      });
+    });
+  // The same save typed as nav2_msgs/SaveMap (`map_url` is the name, the other fields are
+  // ignored): a browser bridge without slam_toolbox's types can call it.
+  save_srv_ = create_service<SaveMap>(
+    "~/save_map",
+    [this](
+      std::shared_ptr<rclcpp::Service<SaveMap>> s, std::shared_ptr<rmw_request_id_t> h,
+      std::shared_ptr<SaveMap::Request> r) {
+      SaveNamed(r->map_url, [s, h](bool ok) {
+        SaveMap::Response out;
+        out.result = ok;
+        s->send_response(*h, out);
+      });
+    });
 
   Start();
 
@@ -1051,17 +1071,12 @@ void MapGatewayNode::OnLifecycleTrigger(
     });
 }
 
-void MapGatewayNode::OnSerialize(
-  std::shared_ptr<rclcpp::Service<SerializePoseGraph>> service,
-  std::shared_ptr<rmw_request_id_t> header, std::shared_ptr<SerializePoseGraph::Request> request)
+void MapGatewayNode::SaveNamed(const std::string & name, std::function<void(bool)> reply)
 {
-  auto fail = [this, service, header](const std::string & why) {
-    RCLCPP_WARN(get_logger(), "serialize_map refused: %s", why.c_str());
-    SerializePoseGraph::Response out;
-    out.result = SerializePoseGraph::Response::RESULT_FAILED_TO_WRITE_FILE;
-    service->send_response(*header, out);
+  auto fail = [this, reply](const std::string & why) {
+    RCLCPP_WARN(get_logger(), "map save refused: %s", why.c_str());
+    reply(false);
   };
-  const std::string name = request->filename;
   // The name is confined (§5.5, [06] m14): one path component, under the maps directory.
   if (!ValidSaveName(name)) {
     fail("the name must be 1 to 64 characters of A-Z, a-z, 0-9, _ and -");
@@ -1114,8 +1129,7 @@ void MapGatewayNode::OnSerialize(
   RCLCPP_INFO(get_logger(), "Saving the map pair %s", dir.string().c_str());
   CallAsync<SaveMap>(
     save_map_client_, save, save_timeout_s_,
-    [this, service, header, dir, map_yaml, epoch, alignment, pose,
-     fail](SaveMap::Response::SharedPtr res) {
+    [this, reply, dir, map_yaml, epoch, alignment, pose, fail](SaveMap::Response::SharedPtr res) {
       if (!res || !res->result) {
         saving_ = false;
         fail(
@@ -1149,7 +1163,7 @@ void MapGatewayNode::OnSerialize(
       graph->filename = (dir / "map").string();
       CallAsync<SerializePoseGraph>(
         slam_serialize_client_, graph, save_timeout_s_,
-        [this, service, header](SerializePoseGraph::Response::SharedPtr gres) {
+        [this, reply](SerializePoseGraph::Response::SharedPtr gres) {
           if (!gres || gres->result != SerializePoseGraph::Response::RESULT_SUCCESS) {
             RCLCPP_WARN(
               get_logger(),
@@ -1157,9 +1171,7 @@ void MapGatewayNode::OnSerialize(
               gres ? "failed" : "is not available");
           }
           saving_ = false;
-          SerializePoseGraph::Response out;
-          out.result = SerializePoseGraph::Response::RESULT_SUCCESS;
-          service->send_response(*header, out);
+          reply(true);
         });
     });
 }
