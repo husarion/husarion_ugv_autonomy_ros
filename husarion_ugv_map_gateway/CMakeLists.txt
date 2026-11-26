@@ -44,6 +44,7 @@ add_library(
   src/files.cpp
   src/geo.cpp
   src/map_image.cpp
+  src/preview.cpp
   src/products.cpp
   src/state.cpp)
 set_target_properties(${PROJECT_NAME}_core PROPERTIES POSITION_INDEPENDENT_CODE
@@ -71,6 +72,9 @@ if(BUILD_TESTING)
 
   ament_add_gtest(${PROJECT_NAME}_test_map_image test/test_map_image.cpp)
   target_link_libraries(${PROJECT_NAME}_test_map_image ${PROJECT_NAME}_core)
+
+  ament_add_gtest(${PROJECT_NAME}_test_preview test/test_preview.cpp)
+  target_link_libraries(${PROJECT_NAME}_test_preview ${PROJECT_NAME}_core)
 
   ament_add_gtest(${PROJECT_NAME}_test_costmap_image
                   test/test_costmap_image.cpp)

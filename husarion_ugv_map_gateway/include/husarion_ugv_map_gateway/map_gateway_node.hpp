@@ -30,6 +30,7 @@
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <lifecycle_msgs/srv/get_state.hpp>
+#include <nav2_msgs/srv/load_map.hpp>
 #include <nav2_msgs/srv/manage_lifecycle_nodes.hpp>
 #include <nav2_msgs/srv/save_map.hpp>
 #include <nav_msgs/msg/map_meta_data.hpp>
@@ -68,6 +69,7 @@ private:
   using ManageNodes = nav2_msgs::srv::ManageLifecycleNodes;
   using GetState = lifecycle_msgs::srv::GetState;
   using SaveMap = nav2_msgs::srv::SaveMap;
+  using LoadMap = nav2_msgs::srv::LoadMap;
   using SerializePoseGraph = slam_toolbox::srv::SerializePoseGraph;
   using FromLL = robot_localization::srv::FromLL;
   using ToLL = robot_localization::srv::ToLL;
@@ -192,6 +194,8 @@ private:
   rclcpp::Service<Trigger>::SharedPtr pause_srv_, resume_srv_;
   rclcpp::Service<SerializePoseGraph>::SharedPtr serialize_srv_;
   rclcpp::Service<SaveMap>::SharedPtr save_srv_;
+  rclcpp::Service<LoadMap>::SharedPtr preview_srv_;
+  uint32_t preview_max_side_ = 320;
   rclcpp::Service<FromLL>::SharedPtr fromll_srv_;
   rclcpp::Service<ToLL>::SharedPtr toll_srv_;
   std::string fromll_name_, toll_name_;

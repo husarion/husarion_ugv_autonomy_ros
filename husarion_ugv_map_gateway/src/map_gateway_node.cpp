@@ -28,6 +28,7 @@
 
 #include "husarion_ugv_map_gateway/codec.hpp"
 #include "husarion_ugv_map_gateway/map_image.hpp"
+#include "husarion_ugv_map_gateway/preview.hpp"
 
 namespace husarion_ugv_map_gateway
 {
@@ -264,15 +265,48 @@ MapGatewayNode::MapGatewayNode(const rclcpp::NodeOptions & options) : Node("map_
   // The same save typed as nav2_msgs/SaveMap (`map_url` is the name, the other fields are
   // ignored): a browser bridge without slam_toolbox's types can call it.
   save_srv_ = create_service<SaveMap>(
-    "~/save_map",
-    [this](
-      std::shared_ptr<rclcpp::Service<SaveMap>> s, std::shared_ptr<rmw_request_id_t> h,
-      std::shared_ptr<SaveMap::Request> r) {
+    "~/save_map", [this](
+                    std::shared_ptr<rclcpp::Service<SaveMap>> s,
+                    std::shared_ptr<rmw_request_id_t> h, std::shared_ptr<SaveMap::Request> r) {
       SaveNamed(r->map_url, [s, h](bool ok) {
         SaveMap::Response out;
         out.result = ok;
         s->send_response(*h, out);
       });
+    });
+
+  // A saved pair's grid, shrunk to preview_max_side cells a side, for a client that picks a
+  // saved map (LoadMap typed: `map_url` is the name; nothing is loaded into Nav2).
+  preview_max_side_ = declare_parameter<int>("preview_max_side", 320);
+  preview_srv_ = create_service<LoadMap>(
+    "~/map_preview",
+    [this](const std::shared_ptr<LoadMap::Request> r, std::shared_ptr<LoadMap::Response> out) {
+      out->result = LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST;
+      if (!ValidSaveName(r->map_url)) {
+        return;
+      }
+      const auto saved =
+        LoadSavedMap((fs::path(maps_directory_) / r->map_url / "map.yaml").string());
+      if (!saved) {
+        return;
+      }
+      const GreyGrid grid = ShrinkToSide(saved->grid, preview_max_side_);
+      auto & map = out->map;
+      map.header.stamp = now();
+      map.header.frame_id = "map";
+      map.info.resolution = grid.resolution;
+      map.info.width = grid.width;
+      map.info.height = grid.height;
+      map.info.origin.position.x = saved->origin_x;
+      map.info.origin.position.y = saved->origin_y;
+      map.info.origin.orientation.z = std::sin(saved->origin_yaw / 2.0);
+      map.info.origin.orientation.w = std::cos(saved->origin_yaw / 2.0);
+      map.data.resize(grid.cells.size());
+      for (size_t i = 0; i < grid.cells.size(); ++i) {
+        const uint8_t c = grid.cells[i];
+        map.data[i] = c == kOccupied ? 100 : c == kFree ? 0 : -1;
+      }
+      out->result = LoadMap::Response::RESULT_SUCCESS;
     });
 
   Start();
