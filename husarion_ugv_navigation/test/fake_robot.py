@@ -104,6 +104,10 @@ class FakeRobot(Node):
             for z in (0.05, 0.1, 0.15, 0.2, 0.25)
         ]
         self.body += [(x / 10.0, y, 0.6) for x in range(-2, 3) for y in (-0.12, 0.12)]
+        # a cable 4 cm past the robot's side (panther: y 0.43), inside the crop box's 5 cm margin
+        self.body += [(x, 0.47, 0.3) for x in (-0.2, 0.0, 0.2)]
+        # a wall 6 cm past the margin, beside the robot: the crop box must keep it
+        self.side_wall = [(x / 10.0, 0.54, z) for x in range(-3, 4) for z in (0.2, 0.3)]
 
     def on_cmd_vel_discovery(self):
         if self.cmd_vel_sink is None and self.count_publishers("autonomous/cmd_vel"):
@@ -127,7 +131,7 @@ class FakeRobot(Node):
         self.odom_pub.publish(odom)
 
     def on_cloud(self):
-        points = list(self.wall) + list(self.body)
+        points = list(self.wall) + list(self.body) + list(self.side_wall)
         if self.obstacle:
             ox, oy, oz = self.obstacle
             heights = (oz,) if oz > 0.0 else (0.15, 0.3, 0.45)

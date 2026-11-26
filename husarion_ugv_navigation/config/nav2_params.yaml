@@ -148,7 +148,7 @@
         rolling_window: true
 
         footprint: '[[<min_x>, <min_y>], [<min_x>, <max_y>], [<max_x>, <max_y>], [<max_x>, <min_y>]]'
-        # Crop box uses the bare robot dimensions; pad only the footprint so walls next to the robot stay in the costmap.
+        # The footprint is the bare robot box (mapnav_params.py); the crop box has its own margin.
         footprint_padding: 0.04
 
         plugins: [stvl_layer, inflation_layer]
@@ -237,7 +237,7 @@
         track_unknown_space: true # if false, treats unknown space as free space, else as unknown space
 
         footprint: '[[<min_x>, <min_y>], [<min_x>, <max_y>], [<max_x>, <max_y>], [<max_x>, <min_y>]]'
-        # Crop box uses the bare robot dimensions; pad only the footprint so walls next to the robot stay in the costmap.
+        # The footprint is the bare robot box (mapnav_params.py); the crop box has its own margin.
         footprint_padding: 0.04
 
         plugins: [static_layer, stvl_layer, inflation_layer]
@@ -393,42 +393,6 @@
       odom_duration: 0.1
       deadband_velocity: [0.0, 0.0, 0.0]
       velocity_timeout: 1.0
-
-  collision_monitor:
-    ros__parameters:
-      use_sim_time: True
-      base_frame_id: <namespace>/base_footprint
-      odom_frame_id: <namespace>/odom
-      cmd_vel_in_topic: cmd_vel_smoothed
-      cmd_vel_out_topic: cmd_vel
-      enable_stamped_cmd_vel: true
-      state_topic: collision_monitor_state
-      transform_tolerance: 0.5
-      source_timeout: 1.0
-      base_shift_correction: True
-      stop_pub_timeout: 2.0
-      polygons: [FootprintApproach]
-      # Simulates the commanded motion (incl. rotation) and slows down so contact stays at least
-      # time_before_collision ahead. Bare footprint on purpose: in narrow corridors any padding
-      # would already overlap the walls.
-      FootprintApproach:
-        type: polygon
-        action_type: approach
-        points: '[[<min_x>, <min_y>], [<min_x>, <max_y>], [<max_x>, <max_y>], [<max_x>, <min_y>]]'
-        time_before_collision: 1.0
-        simulation_time_step: 0.02
-        min_points: 4
-        visualize: True
-        polygon_pub_topic: collision_monitor_footprint
-        enabled: True
-      observation_sources: [observation]
-      observation:
-        type: <collision_monitor_source_type>
-        topic: <collision_monitor_source_topic>
-        min_height: <min_z>
-        max_height: <max_z>
-        use_global_height: False
-        enabled: True
 
   ### LOCALIZATION ###
 
@@ -608,10 +572,10 @@
       crop_boxes_names: [robot_box]
       crop_boxes:
         robot_box:
-          min_x: <min_x>
-          max_x: <max_x>
-          min_y: <min_y>
-          max_y: <max_y>
+          min_x: <crop_min_x>
+          max_x: <crop_max_x>
+          min_y: <crop_min_y>
+          max_y: <crop_max_y>
           min_z: <min_z>
           max_z: <max_z>
       negative: true

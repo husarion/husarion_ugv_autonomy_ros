@@ -51,6 +51,11 @@ STAMPED_NODES = [
 
 
 def rendered(**kwargs):
+    # as bringup_launch.py does: a laserscan becomes a cloud before anything reads it
+    topic, _, planar = mp.observation_path(
+        kwargs["namespace"], kwargs["observation_topic"], kwargs["observation_topic_type"]
+    )
+    kwargs = dict(kwargs, observation_topic=topic, observation_topic_type="pointcloud")
     with open(PARAMS_FILE, encoding="utf-8") as f:
         text = mp.render_placeholders(
             f.read(),
@@ -59,7 +64,7 @@ def rendered(**kwargs):
             kwargs["observation_topic"],
             kwargs["observation_topic_type"],
         )
-    overlay = mp.build_overlay(**kwargs)
+    overlay = mp.build_overlay(**kwargs, planar=planar)
     cap = mp.speed_cap(kwargs.get("lidar_profile", ""))
     if overlay or cap is not None:
         text = mp.apply_overlay(text, overlay, cap)
@@ -113,10 +118,16 @@ def test_crop_box_uses_the_named_box_schema():
     )
     crop = params(tree, "pointcloud_crop_box")
     box = mp.ROBOT_BOUNDING_BOX["panther"]
+    robot_box = crop["crop_boxes"]["robot_box"]
     assert crop["crop_boxes_names"] == ["robot_box"]
-    assert crop["crop_boxes"]["robot_box"] == {k: box[k] for k in crop["crop_boxes"]["robot_box"]}
-    assert set(crop["crop_boxes"]["robot_box"]) == set(box)
+    assert set(robot_box) == set(box)
     assert crop["negative"] is True
+    # the crop box is the robot plus a margin past its sides, the height is the robot's
+    for key in ("min_x", "min_y"):
+        assert robot_box[key] == pytest.approx(box[key] - mp.CROP_MARGIN)
+    for key in ("max_x", "max_y"):
+        assert robot_box[key] == pytest.approx(box[key] + mp.CROP_MARGIN)
+    assert (robot_box["min_z"], robot_box["max_z"]) == (box["min_z"], box["max_z"])
     assert not {"min_x", "max_x", "min_z", "max_z"} & set(crop)
 
 
@@ -154,11 +165,25 @@ def test_collision_monitor_params():
     assert cm["cloud"]["min_height"] == pytest.approx(0.1)
     top = 0.354 + mp.SENSOR_HEIGHT_ABOVE_RAIL
     assert cm["cloud"]["max_height"] == pytest.approx(top + 0.2)
-    assert cm["polygons"] == ["FootprintStop", "Slowdown"]
-    assert cm["FootprintStop"]["action_type"] == "stop"
-    for name in cm["polygons"]:
-        points = yaml.safe_load(cm[name]["points"])
-        assert len(points) == 4
+    assert cm["polygons"] == ["FootprintApproach"]
+    approach = cm["FootprintApproach"]
+    assert approach["action_type"] == "approach"
+    assert approach["time_before_collision"] == pytest.approx(1.0)
+    # the bare footprint: any padding would already overlap a narrow corridor's walls
+    box = mp.ROBOT_BOUNDING_BOX["panther"]
+    xs, ys = zip(*yaml.safe_load(approach["points"]))
+    assert (min(xs), max(xs)) == pytest.approx((box["min_x"], box["max_x"]))
+    assert (min(ys), max(ys)) == pytest.approx((box["min_y"], box["max_y"]))
+
+
+def test_costmaps_pad_the_bare_footprint():
+    tree = rendered(**MAPNAV)
+    box = mp.ROBOT_BOUNDING_BOX["panther"]
+    for costmap in ("local_costmap", "global_costmap"):
+        p = params(tree, costmap, costmap)
+        assert p["footprint_padding"] == pytest.approx(0.04)
+        xs, _ = zip(*yaml.safe_load(p["footprint"]))
+        assert max(xs) == pytest.approx(box["max_x"])
 
 
 def test_robot_height_sets_the_obstacle_ceiling():
@@ -172,33 +197,68 @@ def test_robot_height_sets_the_obstacle_ceiling():
     assert crop["max_z"] == pytest.approx(0.75)
 
 
-def test_collision_monitor_on_a_laserscan_source():
-    kwargs = dict(
-        MAPNAV,
-        observation_topic="/panther/scan",
-        observation_topic_type="laserscan",
-        lidar_profile="",
+SCAN = dict(
+    MAPNAV,
+    observation_topic="/panther/scan",
+    observation_topic_type="laserscan",
+    lidar_profile="",
+    scan_min_height="0.05",
+    scan_max_height="2.0",
+)
+SCAN_CLOUD = f"/{NS}/observation/scan_cloud"
+
+
+def test_a_laserscan_becomes_a_cloud_first():
+    assert mp.observation_path(NS, "/panther/scan", "laserscan") == (
+        SCAN_CLOUD,
+        "/panther/scan",
+        True,
     )
-    cm = params(rendered(**kwargs), "collision_monitor")
-    assert cm["cloud"] == {"type": "scan", "topic": "/panther/scan", "enabled": True}
+    assert mp.observation_path("", "/scan", "laserscan")[0] == "/observation/scan_cloud"
+    assert mp.observation_path(NS, CLOUD, "pointcloud") == (CLOUD, None, False)
+
+
+def test_a_laserscan_takes_the_crop_box():
+    tree = rendered(**SCAN)
+    assert params(tree, "pointcloud_crop_box")["input_topic"] == SCAN_CLOUD
+    assert params(tree, "pointcloud_crop_box")["output_topic"] == f"{SCAN_CLOUD}_filtered"
+    cm = params(tree, "collision_monitor")
+    assert cm["cloud"]["type"] == "pointcloud"
+    assert cm["cloud"]["topic"] == f"{SCAN_CLOUD}_filtered"
+    for costmap in ("local_costmap", "global_costmap"):
+        stvl = params(tree, costmap, costmap)["stvl_layer"]
+        assert stvl["pointcloud"]["topic"] == f"{SCAN_CLOUD}_filtered"
 
 
 def test_laserscan_source_clears_the_whole_circle():
-    # a 2D LiDAR sees 360 deg: STVL clears with a 3D LiDAR's frustum, not a depth camera's cone
-    kwargs = dict(
-        MAPNAV,
-        observation_topic="/panther/scan",
-        observation_topic_type="laserscan",
-        lidar_profile="",
-    )
-    tree = rendered(**kwargs)
+    # a 2D LiDAR sees 360 deg: STVL clears a thin slab over the whole circle from the sensor's own
+    # minimum distance, not a depth camera's cone nor an Ouster's 0.8 m blind zone
+    tree = rendered(**dict(SCAN, lidar_profile="os2_64"))
     for costmap in ("local_costmap", "global_costmap"):
         stvl = params(tree, costmap, costmap)["stvl_layer"]
-        assert stvl["observation_sources"] == "laserscan"
-        scan = stvl["laserscan"]
-        assert scan["model_type"] == 1
-        assert scan["horizontal_fov_angle"] == pytest.approx(6.29)
-        assert scan["topic"] == "/panther/scan"
+        assert stvl["observation_sources"] == "pointcloud"
+        cloud = stvl["pointcloud"]
+        assert (cloud["marking"], cloud["clearing"]) == (True, True)
+        assert cloud["model_type"] == 1
+        assert cloud["horizontal_fov_angle"] == pytest.approx(6.29)
+        assert cloud["vertical_fov_angle"] == pytest.approx(0.01)
+        assert cloud["min_z"] == pytest.approx(0.1)
+
+
+@pytest.mark.parametrize("profile", ["os2_64", "os0_32"])
+def test_a_2d_lidar_takes_only_the_profile_speed_cap(profile):
+    tree = rendered(**dict(SCAN, lidar_profile=profile))
+    slice_ = params(tree, "pointcloud_to_laserscan")
+    # an Ouster's blind zone is not a 2D LiDAR's: the slice keeps what the crop box left
+    assert slice_["range_min"] == pytest.approx(mp.PLANAR_RANGE_MIN)
+    assert (slice_["min_height"], slice_["max_height"]) == (0.05, 2.0)
+    for costmap in ("local_costmap", "global_costmap"):
+        stvl = params(tree, costmap, costmap)["stvl_layer"]
+        assert stvl["pointcloud"]["min_obstacle_height"] == pytest.approx(0.1)
+    cap = mp.speed_cap(profile)
+    follow = params(tree, "controller_server")["FollowPath"]
+    if cap is not None:
+        assert follow["vx_max"] == pytest.approx(cap)
 
 
 def test_os2_64_caps_speed_at_all_times():

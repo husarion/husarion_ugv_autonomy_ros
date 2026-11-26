@@ -26,26 +26,30 @@ import os
 
 import yaml
 
-# Robot bounding boxes (base_footprint frame). `bb_padding` widens the footprint for safety.
-BB_PADDING = 0.03
+# Bare robot bounding boxes (base_footprint frame). The costmaps pad the footprint themselves
+# (`footprint_padding` in nav2_params.yaml).
 ROBOT_BOUNDING_BOX = {
     "panther": {
-        "min_x": -0.41 - BB_PADDING,
-        "min_y": -0.43 - BB_PADDING,
+        "min_x": -0.41,
+        "min_y": -0.43,
         "min_z": 0.05,
-        "max_x": 0.41 + BB_PADDING,
-        "max_y": 0.43 + BB_PADDING,
+        "max_x": 0.41,
+        "max_y": 0.43,
         "max_z": 0.5,
     },
     "lynx": {
-        "min_x": -0.32 - BB_PADDING,
-        "min_y": -0.27 - BB_PADDING,
+        "min_x": -0.32,
+        "min_y": -0.27,
         "min_z": 0.05,
-        "max_x": 0.32 + BB_PADDING,
-        "max_y": 0.27 + BB_PADDING,
+        "max_x": 0.32,
+        "max_y": 0.27,
         "max_z": 0.5,
     },
 }
+# m: the crop box reaches this far past the robot's sides. It drops what the meshes do not show
+# (cables, a LiDAR mounted a little off its URDF pose); a wall closer than this to the robot is
+# dropped with it, so keep it small.
+CROP_MARGIN = 0.05
 
 # Ouster sensor profiles (datasheet Rev 7). `vertical_fov` is the full vertical field in radians,
 # `range_min` the sensor's minimum range in metres, `speed_cap` a linear speed cap in m/s that holds
@@ -64,11 +68,23 @@ ABOVE_ROBOT_TOP = 0.2  # m: obstacles count up to the robot's top plus this
 CROP_ABOVE_TOP = 0.05  # m: the crop box reaches the robot's top plus this
 SCAN_BINS = 1024  # one LaserScan bin per Ouster column (lidar_mode 1024x10)
 SCAN_RANGE_MAX = 20.0
+# A 2D scan: the driver already drops what is below its own minimum range and the crop box drops
+# the robot, so the slice keeps everything else (a profile's 0.8 m blind zone is an Ouster's).
+PLANAR_RANGE_MIN = 0.0
+# STVL clearing for a 360 deg 2D LiDAR (model_type 1): the whole circle, a thin slab around the
+# scan plane, from the sensor's own minimum distance (the crop box keeps the cloud in its frame).
+PLANAR_FRUSTUM = {
+    "model_type": 1,
+    "vertical_fov_angle": 0.01,
+    "vertical_fov_padding": 0.05,
+    "horizontal_fov_angle": 6.29,
+    "min_z": 0.1,
+}
 # m above base_footprint, (min, max) of the 2D scan slice per observation type
 SCAN_HEIGHTS = {"laserscan": ("0.05", "2.0"), "pointcloud": ("0.25", "1.0")}
-STOP_MARGIN = 0.15  # m: the stop polygon is the footprint plus this
-SLOWDOWN_MARGIN = 0.6  # m: the slowdown polygon is the footprint plus this
-SLOWDOWN_RATIO = 0.5
+# The collision monitor simulates the commanded motion of the bare footprint and slows down to keep
+# contact at least this far ahead. Any padding would already overlap the walls of a narrow corridor.
+TIME_BEFORE_COLLISION = 1.0  # s
 # The sensor sits on the rail; nothing of the robot (or of the sensor) is above this much over it.
 SENSOR_HEIGHT_ABOVE_RAIL = 0.08
 
@@ -106,6 +122,18 @@ def velocity_routing(use_collision_monitor: bool, cmd_vel_out: str):
     return smoother_out, behavior_out, lifecycle_nodes
 
 
+def observation_path(namespace: str, observation_topic: str, observation_topic_type: str):
+    """The cloud the stack reads: (topic, the scan it comes from or None, planar).
+
+    A 2D scan becomes a cloud first, so it takes the same crop box as a 3D cloud: the robot's own
+    posts, cables and a LiDAR mounted a little off its URDF pose all stand in the scan plane.
+    """
+    if observation_topic_type != "laserscan":
+        return observation_topic, None, False
+    cloud = "/" + "/".join(p for p in (namespace.strip("/"), "observation/scan_cloud") if p)
+    return cloud, observation_topic, True
+
+
 def is_true(value) -> bool:
     """Launch arguments arrive as strings."""
     if isinstance(value, bool):
@@ -140,6 +168,10 @@ def render_placeholders(
     pointcloud = observation_topic_type == "pointcloud"
     replacements = {
         "<namespace>/": namespace_prefix(namespace),
+        "<crop_min_x>": str(round(box["min_x"] - CROP_MARGIN, 4)),
+        "<crop_max_x>": str(round(box["max_x"] + CROP_MARGIN, 4)),
+        "<crop_min_y>": str(round(box["min_y"] - CROP_MARGIN, 4)),
+        "<crop_max_y>": str(round(box["max_y"] + CROP_MARGIN, 4)),
         "<min_x>": str(box["min_x"]),
         "<max_x>": str(box["max_x"]),
         "<min_y>": str(box["min_y"]),
@@ -179,23 +211,15 @@ def collision_monitor_params(
     """Parameters of nav2_collision_monitor between the smoother and the robot's input."""
     prefix = namespace_prefix(namespace)
     polygons = {
-        "FootprintStop": {
+        "FootprintApproach": {
             "type": "polygon",
-            "points": footprint_points(robot_model, STOP_MARGIN),
-            "action_type": "stop",
+            "points": footprint_points(robot_model),
+            "action_type": "approach",
+            "time_before_collision": TIME_BEFORE_COLLISION,
+            "simulation_time_step": 0.02,
             "min_points": 4,
             "visualize": True,
-            "polygon_pub_topic": "collision_monitor/stop_polygon",
-            "enabled": True,
-        },
-        "Slowdown": {
-            "type": "polygon",
-            "points": footprint_points(robot_model, SLOWDOWN_MARGIN),
-            "action_type": "slowdown",
-            "slowdown_ratio": SLOWDOWN_RATIO,
-            "min_points": 4,
-            "visualize": True,
-            "polygon_pub_topic": "collision_monitor/slowdown_polygon",
+            "polygon_pub_topic": "collision_monitor_footprint",
             "enabled": True,
         },
     }
@@ -245,13 +269,16 @@ def build_overlay(
     scan_max_height: str = "",
     map_update_interval: str = "",
     initial_pose=None,
+    planar=False,
 ) -> dict:
     """The parameter overlay for the map-nav arguments; {} when every one is at its default.
 
     `mount_height` is the rail level (mount_link) above base_footprint in metres; it is needed
     when `lidar_profile` is set. `robot_height` is the robot's top with its payload above
     base_footprint; obstacles count up to it plus 0.2 m. Empty with a `lidar_profile`: the rail
-    plus the sensor. `initial_pose` is (x, y, yaw) in the map frame, or None.
+    plus the sensor. `initial_pose` is (x, y, yaw) in the map frame, or None. `planar`: the
+    observation is a 2D scan turned into a cloud; a `lidar_profile` then only caps the speed and
+    sets the crop height, and the slice and STVL take a 2D LiDAR's settings.
     """
     nodes = {}
 
@@ -279,6 +306,7 @@ def build_overlay(
             "robot_box": {"max_z": round(robot_top + CROP_ABOVE_TOP, 4)}
         }
 
+    if profile is not None and not planar:
         # The 2D slice for SLAM and AMCL: one bin per column, the sensor's minimum range.
         node("pointcloud_to_laserscan").update(
             {
@@ -304,6 +332,30 @@ def build_overlay(
             nodes.setdefault(costmap, {}).setdefault(costmap, {"ros__parameters": {}})
             nodes[costmap][costmap]["ros__parameters"]["stvl_layer"] = {
                 "pointcloud": dict(stvl_pointcloud)
+            }
+
+    if planar:
+        node("pointcloud_to_laserscan").update(
+            {
+                "angle_min": -math.pi,
+                "angle_max": math.pi,
+                "angle_increment": 2.0 * math.pi / SCAN_BINS,
+                "range_min": PLANAR_RANGE_MIN,
+                "range_max": SCAN_RANGE_MAX,
+            }
+        )
+        stvl_pointcloud = dict(PLANAR_FRUSTUM)
+        if profile is not None:
+            stvl_pointcloud.update(
+                {
+                    "min_obstacle_height": OBSTACLE_MIN_HEIGHT,
+                    "max_obstacle_height": round(robot_top + ABOVE_ROBOT_TOP, 3),
+                }
+            )
+        for costmap in ("local_costmap", "global_costmap"):
+            nodes.setdefault(costmap, {}).setdefault(costmap, {"ros__parameters": {}})
+            nodes[costmap][costmap]["ros__parameters"]["stvl_layer"] = {
+                "pointcloud": stvl_pointcloud
             }
 
     if scan_min_height != "":

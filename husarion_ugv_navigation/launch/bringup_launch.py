@@ -20,6 +20,7 @@ from husarion_ugv_navigation.mapnav_params import (
     apply_overlay,
     build_overlay,
     is_true,
+    observation_path,
     read_saved_pose,
     render_placeholders,
     scan_heights,
@@ -42,7 +43,6 @@ from launch.substitutions import (
     EnvironmentVariable,
     LaunchConfiguration,
     PathJoinSubstitution,
-    PythonExpression,
 )
 from launch_ros.actions import Node, PushRosNamespace
 from launch_ros.descriptions import ParameterFile
@@ -62,8 +62,11 @@ def render_params_file(context, measured_mount_height=None) -> str:
 
     namespace = arg("namespace")
     robot_model = arg("robot_model")
-    observation_topic = arg("observation_topic")
-    observation_topic_type = arg("observation_topic_type")
+    scan_type = arg("observation_topic_type")
+    observation_topic, _, planar = observation_path(
+        arg("namespace"), arg("observation_topic"), scan_type
+    )
+    observation_topic_type = "pointcloud"
     lidar_profile = arg("lidar_profile")
     slam = is_true(arg("slam"))
 
@@ -77,7 +80,7 @@ def render_params_file(context, measured_mount_height=None) -> str:
         mount_height = float(arg("mount_height")) if arg("mount_height") else measured_mount_height
 
     scan_min_height, scan_max_height = scan_heights(
-        observation_topic_type, arg("scan_min_height"), arg("scan_max_height")
+        scan_type, arg("scan_min_height"), arg("scan_max_height")
     )
 
     initial_pose = None
@@ -98,6 +101,7 @@ def render_params_file(context, measured_mount_height=None) -> str:
         scan_max_height=scan_max_height,
         map_update_interval=arg("map_update_interval"),
         initial_pose=initial_pose,
+        planar=planar,
     )
     cap = speed_cap(lidar_profile)
     if overlay or cap is not None:
@@ -119,8 +123,6 @@ def launch_setup(context, mount_height=None):
     log_level = LaunchConfiguration("log_level")
     map = LaunchConfiguration("map")
     namespace = LaunchConfiguration("namespace")
-    observation_topic = LaunchConfiguration("observation_topic")
-    observation_topic_type = LaunchConfiguration("observation_topic_type")
     slam = LaunchConfiguration("slam")
     use_composition = LaunchConfiguration("use_composition")
     use_respawn = LaunchConfiguration("use_respawn")
@@ -137,9 +139,22 @@ def launch_setup(context, mount_height=None):
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {"use_sim_time": use_sim_time, "yaml_filename": map}
 
-    observation_topic_filtered = PythonExpression(
-        ["'", observation_topic, "_filtered'"],
+    observation_topic, scan_source, _ = observation_path(
+        namespace.perform(context),
+        LaunchConfiguration("observation_topic").perform(context),
+        LaunchConfiguration("observation_topic_type").perform(context),
     )
+    scan_to_cloud = []
+    if scan_source:
+        scan_to_cloud.append(
+            Node(
+                package="pointcloud_to_laserscan",
+                executable="laserscan_to_pointcloud_node",
+                name="scan_to_cloud",
+                remappings=[("scan_in", scan_source), ("cloud", observation_topic)],
+                output="screen",
+            )
+        )
 
     configured_params = ParameterFile(
         RewrittenYaml(
@@ -159,10 +174,8 @@ def launch_setup(context, mount_height=None):
     bringup_cmd_group = GroupAction(
         [
             PushRosNamespace(namespace),
+            *scan_to_cloud,
             Node(
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
                 package="pointcloud_crop_box",
                 executable="pointcloud_crop_box_node",
                 name="pointcloud_crop_box",
@@ -170,14 +183,11 @@ def launch_setup(context, mount_height=None):
                 output="screen",
             ),
             Node(
-                condition=IfCondition(
-                    PythonExpression(["'", observation_topic_type, "' == 'pointcloud'"])
-                ),
                 package="pointcloud_to_laserscan",
                 executable="pointcloud_to_laserscan_node",
                 name="pointcloud_to_laserscan",
                 parameters=[configured_params],
-                remappings=[("cloud_in", observation_topic_filtered)],
+                remappings=[("cloud_in", observation_topic + "_filtered")],
                 output="screen",
             ),
             Node(
@@ -357,7 +367,10 @@ def generate_launch_description():
     declare_observation_topic_type_arg = DeclareLaunchArgument(
         "observation_topic_type",
         default_value="pointcloud",
-        description="Observation topic type.",
+        description=(
+            "Observation topic type. A laserscan becomes a cloud first and takes the same crop "
+            "box; the stack treats it as a 2D LiDAR (a lidar_profile then only caps the speed)."
+        ),
         choices=["laserscan", "pointcloud"],
     )
     declare_params_file_arg = DeclareLaunchArgument(

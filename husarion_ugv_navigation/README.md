@@ -13,9 +13,16 @@ This package contains:
 
 ## Velocity Chain
 
-`controller_server` → `cmd_vel_nav` → `velocity_smoother` → `cmd_vel_smoothed` → `collision_monitor` → `cmd_vel`
+`controller_server` → `cmd_vel_nav` → `velocity_smoother` → `cmd_vel_smoothed` → `collision_monitor` → `cmd_vel_out` (with `use_collision_monitor:=True`; without it the smoother publishes `cmd_vel_out` directly)
 
-`collision_monitor` (nav2_collision_monitor) simulates the commanded motion of the bare robot footprint against the observation source (the cropped point cloud, or the laser scan) and slows the robot down so that contact stays at least 1 s ahead, down to a full stop. If the source stops publishing for 1 s, it stops the robot.
+`collision_monitor` (nav2_collision_monitor) simulates the commanded motion of the bare robot footprint against the cropped observation cloud and slows the robot down so that contact stays at least 1 s ahead, down to a full stop. If the source stops publishing for 1 s, it stops the robot.
+
+## Observation and the Crop Box
+
+Everything reads one cropped cloud: `pointcloud_crop_box` drops the robot's box (base_footprint frame) plus 5 cm past its sides, up to the robot's top. The margin removes what the meshes do not show, such as cables or a LiDAR mounted slightly off its URDF pose; a wall closer than 5 cm to the robot is dropped with it. The costmaps pad the bare footprint by 4 cm (`footprint_padding`).
+
+- `observation_topic_type:=pointcloud`: the crop box reads `observation_topic`; the costmaps' STVL layer and the collision monitor read `<observation_topic>_filtered`, and `pointcloud_to_laserscan` slices it into `scan` for SLAM and AMCL.
+- `observation_topic_type:=laserscan`: a 2D scan first becomes a cloud on `observation/scan_cloud` (`laserscan_to_pointcloud`), then takes the same path. The stack treats it as a 2D LiDAR: a `lidar_profile` only caps the speed and sets the crop height, the slice keeps every range the driver reports, and STVL clears a thin slab over the whole circle.
 
 - `collision_monitor_state` [*nav2_msgs/CollisionMonitorState*]: Current action and the polygon that triggered it.
 - `collision_monitor_footprint` [*geometry_msgs/PolygonStamped*]: Footprint used by the monitor, for visualization.

@@ -19,9 +19,10 @@ The real bringup with the map-nav arguments, against a standing fake robot (test
 - `<ns>/autonomous/cmd_vel` has exactly one publisher, the collision monitor, as TwistStamped, and
   nothing publishes `<ns>/cmd_vel`;
 - a command through the velocity smoother arrives there stamped with a live stamp;
-- an obstacle in the stop polygon (from the 3D cloud through the crop box) stops it, and so does a
-  table edge at 0.8 m, below the robot's top (robot_height 0.7 m) plus 0.2 m;
-- the crop box drops the robot's own body, a DEV09 gate included, and keeps the obstacle;
+- an obstacle 9 cm ahead (from the 3D cloud through the crop box) slows it to keep contact 1 s
+  ahead, and so does a table edge at 0.8 m, below the robot's top (robot_height 0.7 m) plus 0.2 m;
+- the crop box drops the robot's own body, a DEV09 gate included, and a cable within its 5 cm margin
+  past the robot's side, and keeps the obstacle and a wall 6 cm beyond that margin;
 - with use_map_gateway the map gateway reports Nav2 and the collision monitor active, sends the
   map, and its pause and resume triggers take the real Nav2 down and up (spec R2, §11.6);
 - the gateway sends the real local costmap, placed in the map frame through AMCL's map -> odom, as
@@ -216,10 +217,9 @@ class TestMapNavStack(unittest.TestCase):
         return list(self.out)
 
     def assert_stops(self, obstacle):
-        """Driving freely, then `obstacle` appears: the output falls to zero and stays there.
-
-        (Once stopped, the collision monitor sends zeros for stop_pub_timeout and then goes
-        quiet, so the test starts from motion.)
+        """Driving freely, then `obstacle` appears: the output falls so that contact stays the
+        approach polygon's 1 s ahead, i.e. to at most the gap (0.09 m: obstacle at 0.5 m, footprint
+        front at 0.41 m) per second.
         """
         self.set_obstacle(-1000.0)
         out = self.drive(0.4, 4.0, obstacle_at=1.5, obstacle=obstacle)
@@ -228,7 +228,7 @@ class TestMapNavStack(unittest.TestCase):
         xs = [x for x, _ in out]
         self.assertGreater(max(xs), 0.1, "it never drove before the obstacle")
         tail = xs[-10:]
-        self.assertTrue(all(abs(x) < 1e-6 for x in tail), f"did not stop: {tail}")
+        self.assertTrue(all(abs(x) <= 0.1 for x in tail), f"did not slow down: {tail}")
 
     def test_1_output_wiring(self):
         pubs = self.node.get_publishers_info_by_topic(f"/{NS}/autonomous/cmd_vel")
@@ -269,8 +269,13 @@ class TestMapNavStack(unittest.TestCase):
         ]
         body = [p for p in pts if abs(p[0]) < 0.4 and abs(p[1]) < 0.4 and p[2] < 0.7]
         obstacle = [p for p in pts if math.hypot(p[0] - 1.0, p[1]) < 0.2]
+        cable = [p for p in pts if abs(p[0]) < 1.0 and abs(p[1] - 0.47) < 0.01]
+        side_wall = [p for p in pts if abs(p[0]) < 1.0 and abs(p[1] - 0.54) < 0.01]
         self.assertEqual(body, [])
         self.assertGreater(len(obstacle), 10)
+        # the crop box's margin past the robot's side drops a cable, and keeps a wall beyond it
+        self.assertEqual(cable, [])
+        self.assertEqual(len(side_wall), 14)
 
     def wait_state(self, key, value, timeout):
         end = time.monotonic() + timeout
